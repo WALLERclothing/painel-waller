@@ -38,13 +38,14 @@
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
+        /* DASHBOARD METRICS */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
         .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
         .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
         .dash-card.green-text span { color: var(--green); }
 
-        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
+        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; }
         .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
         
         .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--gray); padding: 1rem; border: 2px solid var(--black); }
@@ -71,30 +72,46 @@
         .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
         .btn-remove-item { background: var(--red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--black); vertical-align: middle; }
-        th { font-weight: 900; color: var(--black); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; border-top: 2px solid var(--black); border-bottom: 3px solid var(--black); }
-        .item-lista-tabela { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #ccc; }
-        .item-lista-tabela:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        /* ========================================== */
+        /* NOVO DESIGN DOS CARDS DE PEDIDO (A TABELA SUMIU) */
+        /* ========================================== */
+        .pedido-card { background: var(--white); border: 3px solid var(--black); margin-bottom: 1.5rem; box-shadow: 5px 5px 0px var(--black); display: flex; flex-direction: column; }
+        .pedido-header { background: var(--gray); border-bottom: 2px solid var(--black); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .pedido-id { font-size: 1.4rem; font-weight: 900; font-style: italic; display: flex; align-items: center; gap: 10px; }
+        .pedido-data { font-size: 0.8rem; color: var(--red); font-weight: 800; font-style: normal; border: 1px solid var(--red); padding: 2px 6px; background: white; }
+        
+        .pedido-body { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; padding: 1.5rem; }
+        .pedido-cliente { display: flex; flex-direction: column; gap: 5px; }
+        .cliente-nome { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; }
+        .cliente-zap { font-weight: 700; color: #555; font-size: 0.9rem; }
+        .cliente-financas { margin-top: 10px; background: var(--gray); border: 2px dashed var(--black); padding: 10px; }
+        
+        .pedido-itens-lista { display: flex; flex-direction: column; gap: 10px; }
+        .item-tag { background: white; border: 2px solid var(--black); border-left: 5px solid var(--red); padding: 10px; display: flex; flex-direction: column; }
+        .item-tag-topo { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 1.1rem; margin-bottom: 5px; }
+        .item-tag-detalhes { font-size: 0.85rem; font-weight: 700; color: #444; }
+        .item-tag-estampa { color: var(--red); font-weight: 900; font-size: 0.85rem; margin-top: 5px; text-transform: uppercase; }
+        
+        .pedido-footer { display: flex; border-top: 2px solid var(--black); }
+        .pedido-footer button { flex: 1; padding: 1rem; font-size: 0.85rem; border: none; border-right: 2px solid var(--black); box-shadow: none; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .pedido-footer button:last-child { border-right: none; }
+        .pedido-footer button:hover { transform: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        .btn-card-whats { background: #25D366; color: var(--black); }
+        .btn-card-edit { background: var(--gray); color: var(--black); }
+        .btn-card-del { background: var(--red); color: var(--white); }
 
-        .select-status { padding: 0.4rem 0.6rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor: pointer; width: 100%; margin-bottom: 5px;}
+        .select-status { padding: 0.4rem 0.6rem; font-size: 0.85rem; font-weight: 900; text-transform: uppercase; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
         .status-pedido-feito { background-color: var(--white); color: var(--black); border: 2px dashed var(--black); box-shadow: none; }
         .status-aguardando { background-color: #ffbe0b; color: var(--black); }
         .status-estampa-pronta { background-color: #3a86ff; color: var(--white); }
         .status-pedido-enviado { background-color: #8338ec; color: var(--white); }
         .status-pedido-entregue { background-color: var(--green); color: var(--black); }
 
-        .btn-pgto { width: 100%; padding: 0.4rem; font-size: 0.7rem; border: 2px solid var(--black); cursor: pointer; box-shadow: 2px 2px 0px var(--black); }
+        .btn-pgto { padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 900; border: 2px solid var(--black); cursor: pointer; box-shadow: 2px 2px 0px var(--black); text-transform: uppercase; }
         .pgto-pendente { background-color: var(--white); color: var(--red); }
         .pgto-pago { background-color: var(--black); color: var(--green); }
 
-        .acoes-container { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-        .btn-whatsapp { padding: 0.5rem 0.8rem; font-size: 0.75rem; border: 2px solid var(--black); text-transform: uppercase; height: 35px; background-color: #25D366; color: var(--black); font-weight: 800; }
-        .btn-whatsapp:hover { background-color: var(--black); color: #25D366; }
-        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--white); border: 2px solid var(--black); color: var(--black); font-weight: 900; cursor: pointer; }
-        .btn-excluir { background-color: var(--red); color: var(--white); }
-        
-        #carregando { font-size: 0.85rem; color: var(--red); font-weight: 800; text-transform: uppercase; }
+        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--red); font-weight: 800; text-transform: uppercase; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
         .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
@@ -103,9 +120,19 @@
         .item-edit-wrapper { border: 2px dashed var(--black); padding: 15px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-remove-peca { position: absolute; top: 10px; right: 10px; background: var(--red); color: white; border: 2px solid var(--black); padding: 0.3rem 0.6rem; cursor: pointer; font-weight: 900; font-size: 0.8rem; z-index: 2; }
         
-        @media (max-width: 600px) {
+        /* Tabela simples para estampas */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--black); vertical-align: middle; }
+        th { font-weight: 900; color: var(--black); text-transform: uppercase; border-top: 2px solid var(--black); border-bottom: 3px solid var(--black); }
+
+        @media (max-width: 768px) {
             .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
             .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .pedido-body { grid-template-columns: 1fr; gap: 1rem; }
+            .pedido-header { flex-direction: column; align-items: flex-start; }
+            .pedido-footer { flex-direction: column; }
+            .pedido-footer button { border-right: none; border-bottom: 2px solid var(--black); width: 100%; }
+            .pedido-footer a { width: 100%; }
             .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 10px; }
         }
     </style>
@@ -137,7 +164,7 @@
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
             </div>
             <div class="form-grid">
-                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)">
+                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)" readonly style="background-color: #fee2e2; color: var(--red);">
                 <select id="metodoPagamento">
                     <option value="PIX">PIX</option>
                     <option value="CARTÃO">CARTÃO</option>
@@ -176,53 +203,29 @@
 </div>
 
 <!-- ============================================== -->
-<!-- ABA 2: FILA DE PRODUÇÃO -->
+<!-- ABA 2: FILA DE PRODUÇÃO (NOVO DESIGN DE CARDS) -->
 <!-- ============================================== -->
 <div id="aba-producao" class="container" style="display: none;">
     <div class="dashboard-grid">
-        <div class="dash-card">
-            <h3>Pedidos no Mês</h3>
-            <span id="dashPedidosMes">0</span>
-        </div>
-        <div class="dash-card">
-            <h3>Peças na Fila (Estampa)</h3>
-            <span id="dashFilaEstampa">0</span>
-        </div>
-        <div class="dash-card">
-            <h3>Caixas p/ Enviar Hoje</h3>
-            <span id="dashEnviar">0</span>
-        </div>
-        <div class="dash-card green-text">
-            <h3>Faturamento Mensal (Pago)</h3>
-            <span id="dashFaturamento">R$ 0,00</span>
+        <div class="dash-card"><h3>Pedidos no Mês</h3><span id="dashPedidosMes">0</span></div>
+        <div class="dash-card"><h3>Peças na Fila (Estampa)</h3><span id="dashFilaEstampa">0</span></div>
+        <div class="dash-card"><h3>Caixas p/ Enviar Hoje</h3><span id="dashEnviar">0</span></div>
+        <div class="dash-card green-text"><h3>Faturamento Mensal (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
+    </div>
+
+    <h2 class="card-title" style="margin-top: 2rem;">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
+    
+    <div class="filtros-container">
+        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME, NÚMERO OU TELEFONE..." onkeyup="aplicarFiltros()">
+        <div class="botoes-filtro">
+            <button class="btn-filtro ativo" id="filtro-todos" onclick="setFiltroBtn('TODOS')">Ver Todos</button>
+            <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('PENDENTE_PGTO')">⏳ Só Pendente de Pagamento</button>
+            <button class="btn-filtro" id="filtro-estampa" onclick="setFiltroBtn('AGUARDANDO ESTAMPA')">👕 Fila de Estampa</button>
         </div>
     </div>
 
-    <div class="card">
-        <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
-        
-        <div class="filtros-container">
-            <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME, NÚMERO OU TELEFONE..." onkeyup="aplicarFiltros()">
-            <div class="botoes-filtro">
-                <button class="btn-filtro ativo" id="filtro-todos" onclick="setFiltroBtn('TODOS')">Ver Todos</button>
-                <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('PENDENTE_PGTO')">⏳ Só Pendente de Pagamento</button>
-                <button class="btn-filtro" id="filtro-estampa" onclick="setFiltroBtn('AGUARDANDO ESTAMPA')">👕 Fila de Estampa</button>
-            </div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 15%;">Pedido / Data</th>
-                    <th style="width: 20%;">Cliente & Financeiro</th>
-                    <th style="width: 35%;">Itens (Qtd / Peça / Valor)</th>
-                    <th style="width: 15%;">Status (Logística)</th>
-                    <th style="width: 15%;">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="listaPedidos"></tbody>
-        </table>
-    </div>
+    <!-- ONDE OS CARDS DE PEDIDO VÃO ENTRAR -->
+    <div id="listaPedidosContainer"></div>
 </div>
 
 <!-- ============================================== -->
@@ -257,7 +260,6 @@
         <h2 class="card-title" style="margin-bottom: 1rem; font-size: 1.2rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
         <input type="hidden" id="editId">
         
-        <div class="form-section-title" style="font-size: 0.85rem;">DADOS DO CLIENTE</div>
         <div class="form-grid" style="margin-bottom: 1rem;">
             <input type="text" id="editNome" placeholder="NOME DO CLIENTE">
             <input type="text" id="editWhatsapp" placeholder="WHATSAPP">
@@ -290,7 +292,6 @@
         return "R$ " + value.toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
     }
 
-    // Escutador global para todos os inputs com a classe 'moeda'
     document.addEventListener('input', function(e) {
         if(e.target.classList.contains('moeda') && !e.target.readOnly) {
             let value = e.target.value.replace(/\D/g, "");
@@ -370,7 +371,6 @@
             let cod = e.target.value.toUpperCase().trim();
             if(catalogoEstampas[cod]) e.target.closest('.item-edit-wrapper').querySelector('.edit-nom').value = catalogoEstampas[cod];
         }
-        // Recalcula o total sempre que o valor ou quantidade da edição mudar
         if(e.target.classList.contains('edit-valor') || e.target.classList.contains('edit-qtd')) {
             recalcularSomaEdicao();
         }
@@ -389,7 +389,7 @@
         const tip = document.getElementById('tipoPeca').value;
         const tam = document.getElementById('tamanho').value;
         const cor = document.getElementById('cor').value;
-        const val = unmaskCurrency(document.getElementById('valorUnitario').value); // Lê formatado
+        const val = unmaskCurrency(document.getElementById('valorUnitario').value);
         const qtd = document.getElementById('quantidade').value;
 
         if(!cod || !nom) { alert("Preencha o código e o nome da peça!"); return; }
@@ -421,7 +421,6 @@
                 </div>`;
         });
 
-        // Preenche automaticamente o campo Valor Total em Reais
         document.getElementById('valorTotal').value = formatCurrency(somaCarrinho);
         
         if(carrinhoTemporario.length === 0) { document.getElementById('carrinho-container').style.display = 'none'; return; }
@@ -449,11 +448,11 @@
             document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('valorTotal').value = '';
             carrinhoTemporario = []; atualizarTelaCarrinho();
             
-            alert(`Pedido #${numeroGerado} salvo com sucesso! Vá para a aba "Fila de Produção" para gerenciar.`);
+            alert(`Pedido #${numeroGerado} salvo com sucesso!`);
         } catch (error) { alert("Erro ao salvar."); }
     }
 
-    // LISTENER DO BANCO, TABELA E DASHBOARD
+    // LISTENER DO BANCO E DASHBOARD
     db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
         document.getElementById('carregando').style.display = 'none'; 
         todosPedidos = []; 
@@ -497,7 +496,7 @@
     });
 
     // ==========================================
-    // SISTEMA DE BUSCA E FILTROS
+    // RENDERIZAR CARDS NA FILA DE PRODUÇÃO
     // ==========================================
     function setFiltroBtn(tipo) {
         filtroStatusAtivo = tipo;
@@ -510,8 +509,8 @@
 
     function aplicarFiltros() {
         let termo = document.getElementById('inputBusca').value.toUpperCase();
-        let tbody = document.getElementById('listaPedidos');
-        tbody.innerHTML = '';
+        let container = document.getElementById('listaPedidosContainer');
+        container.innerHTML = '';
 
         let pedidosFiltrados = todosPedidos.filter(p => {
             let textoBusca = `${p.nome} ${p.numeroPedido} ${p.whatsapp}`.toUpperCase();
@@ -523,6 +522,11 @@
 
             return bateuBusca && bateuFiltro;
         });
+
+        if(pedidosFiltrados.length === 0){
+            container.innerHTML = `<p style="text-align:center; font-weight:bold; color:#777; margin-top:2rem;">Nenhum pedido encontrado nessa categoria.</p>`;
+            return;
+        }
 
         pedidosFiltrados.forEach(pedido => {
             let classeLogistica = 'select-status ';
@@ -538,44 +542,60 @@
 
             let valorFormatado = formatCurrency(pedido.valorTotal);
 
+            // MONTA AS PEÇAS NO NOVO VISUAL
             let htmlItens = pedido.itens.map(i => `
-                <div class="item-lista-tabela">
-                    <strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (${i.tamanho}) - ${formatCurrency(i.valorUnitario)} un<br>
-                    <small style="color: #444;">[${i.codigoEstampa}] ${i.nomeEstampa}</small>
+                <div class="item-tag">
+                    <div class="item-tag-topo">
+                        <span>${i.quantidade}x ${i.tipoPeca}</span>
+                        <span>${formatCurrency(i.valorUnitario)}</span>
+                    </div>
+                    <div class="item-tag-detalhes">Cor: <strong>${i.cor}</strong> | Tam: <strong>${i.tamanho}</strong></div>
+                    <div class="item-tag-estampa">[${i.codigoEstampa}] ${i.nomeEstampa}</div>
                 </div>
             `).join('');
             
             let linkWhats = `https://wa.me/55${pedido.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Salve ${pedido.nome}! O status do seu pedido #${pedido.numeroPedido} da Waller foi atualizado para: ${pedido.statusAtualizado}.`)}`;
 
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong style="font-size:1.1rem;">#${pedido.numeroPedido}</strong><br><small style="color: var(--red); font-weight: 800;">📅 ${pedido.dataFormatada}</small></td>
-                <td>
-                    <strong>${pedido.nome}</strong><br><small>${pedido.whatsapp}</small><br>
-                    <div style="margin-top: 5px; font-size: 0.8rem; font-weight: 800; display:flex; justify-content:space-between;">
-                        <span>${valorFormatado}</span> <span>${pedido.metodoPagamento || '-'}</span>
+            let card = document.createElement('div');
+            card.className = 'pedido-card';
+            card.innerHTML = `
+                <div class="pedido-header">
+                    <div class="pedido-id">#${pedido.numeroPedido} <span class="pedido-data">📅 ${pedido.dataFormatada}</span></div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${btnPagamento}
+                        <select class="${classeLogistica}" onchange="mudarStatusLogistica('${pedido.id}', this.value)">
+                            <option value="PEDIDO FEITO" ${pedido.statusAtualizado === 'PEDIDO FEITO' ? 'selected' : ''}>PEDIDO FEITO</option>
+                            <option value="AGUARDANDO ESTAMPA" ${pedido.statusAtualizado === 'AGUARDANDO ESTAMPA' ? 'selected' : ''}>FILA ESTAMPA</option>
+                            <option value="ESTAMPA PRONTA" ${pedido.statusAtualizado === 'ESTAMPA PRONTA' ? 'selected' : ''}>PRONTO / ENVIAR</option>
+                            <option value="PEDIDO ENVIADO" ${pedido.statusAtualizado === 'PEDIDO ENVIADO' ? 'selected' : ''}>ENVIADO</option>
+                            <option value="PEDIDO ENTREGUE" ${pedido.statusAtualizado === 'PEDIDO ENTREGUE' ? 'selected' : ''}>ENTREGUE</option>
+                        </select>
                     </div>
-                    <div style="margin-top: 3px;">${btnPagamento}</div>
-                </td>
-                <td>${htmlItens}</td>
-                <td>
-                    <select class="${classeLogistica}" onchange="mudarStatusLogistica('${pedido.id}', this.value)">
-                        <option value="PEDIDO FEITO" ${pedido.statusAtualizado === 'PEDIDO FEITO' ? 'selected' : ''}>PEDIDO FEITO</option>
-                        <option value="AGUARDANDO ESTAMPA" ${pedido.statusAtualizado === 'AGUARDANDO ESTAMPA' ? 'selected' : ''}>FILA ESTAMPA</option>
-                        <option value="ESTAMPA PRONTA" ${pedido.statusAtualizado === 'ESTAMPA PRONTA' ? 'selected' : ''}>PRONTO / ENVIAR</option>
-                        <option value="PEDIDO ENVIADO" ${pedido.statusAtualizado === 'PEDIDO ENVIADO' ? 'selected' : ''}>ENVIADO</option>
-                        <option value="PEDIDO ENTREGUE" ${pedido.statusAtualizado === 'PEDIDO ENTREGUE' ? 'selected' : ''}>ENTREGUE</option>
-                    </select>
-                </td>
-                <td>
-                    <div class="acoes-container">
-                        <a href="${linkWhats}" target="_blank" style="text-decoration: none;"><button class="btn-whatsapp" title="WhatsApp">AVISAR</button></a>
-                        <button class="btn-icone" onclick="abrirModalEdicao('${pedido.id}')" title="Editar">✎</button>
-                        <button class="btn-icone btn-excluir" onclick="excluirPedido('${pedido.id}')" title="Excluir">X</button>
+                </div>
+                <div class="pedido-body">
+                    <div class="pedido-cliente">
+                        <div style="font-size:0.8rem; color:var(--red); font-weight:900; margin-bottom:5px;">DADOS DO CLIENTE</div>
+                        <div class="cliente-nome">${pedido.nome}</div>
+                        <div class="cliente-zap">${pedido.whatsapp}</div>
+                        <div class="cliente-financas">
+                            Total do Pedido: <strong style="font-size:1.2rem;">${valorFormatado}</strong><br>
+                            Método: <strong>${pedido.metodoPagamento || '-'}</strong>
+                        </div>
                     </div>
-                </td>
+                    <div class="pedido-itens-lista">
+                        <div style="font-size:0.8rem; color:var(--red); font-weight:900; margin-bottom:5px;">PEÇAS INCLUSAS (${pedido.itens.length})</div>
+                        ${htmlItens}
+                    </div>
+                </div>
+                <div class="pedido-footer">
+                    <a href="${linkWhats}" target="_blank" style="text-decoration: none; flex:1;">
+                        <button class="btn-card-whats" style="width:100%; height:100%;">💬 AVISAR CLIENTE NO WHATSAPP</button>
+                    </a>
+                    <button class="btn-card-edit" onclick="abrirModalEdicao('${pedido.id}')" style="flex:0.5;">✏️ EDITAR PEDIDO</button>
+                    <button class="btn-card-del" onclick="excluirPedido('${pedido.id}')" style="flex:0.5;">❌ EXCLUIR PEDIDO</button>
+                </div>
             `;
-            tbody.appendChild(tr);
+            container.appendChild(card);
         });
     }
 
@@ -584,7 +604,7 @@
     function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
 
     // ==========================================
-    // EDIÇÃO DE PEDIDOS COM SELECTS IDÊNTICOS
+    // EDIÇÃO DE PEDIDOS
     // ==========================================
     function abrirModalEdicao(id) {
         const p = todosPedidos.find(x => x.id === id); if(!p) return;
@@ -609,7 +629,6 @@
         recalcularSomaEdicao();
     }
 
-    // HTML GERA EXATAMENTE AS CAIXAS DE SELEÇÃO DA ABA DE LANÇAR DROP
     function gerarHtmlLinhaEdicao(item) {
         const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
         return `
