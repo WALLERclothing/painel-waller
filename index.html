@@ -38,11 +38,10 @@
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
-        /* DASHBOARD METRICS COMPACTADO */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .dash-card { background: var(--white); border: var(--border-thick); padding: 0.8rem 1rem; box-shadow: 4px 4px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.2rem 0; font-size: 0.7rem; text-transform: uppercase; color: #555; font-weight: 900; }
-        .dash-card span { font-size: 1.4rem; font-weight: 900; font-style: italic; color: var(--red); }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
+        .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
         .dash-card.green-text span { color: var(--green); }
 
         .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
@@ -88,9 +87,11 @@
         .cliente-zap { font-weight: 700; color: #555; font-size: 0.8rem; }
         .cliente-financas { margin-top: 5px; font-size: 0.85rem; font-weight: 900; color: var(--black); }
         
-        .pedido-separador { border-top: 1px dashed #ccc; margin: 5px 0; }
+        /* BOTÃO DE OCULTAR PEÇAS */
+        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); border: 2px dashed var(--black); padding: 8px 10px; font-size: 0.85rem; font-weight: 900; cursor: pointer; margin-top: 5px; transition: all 0.2s; }
+        .toggle-itens-btn:hover { background: var(--black); color: var(--white); }
         
-        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; }
+        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
         .item-tag-compacto { background: var(--white); border: 2px solid var(--black); border-left: 4px solid var(--red); padding: 8px; font-size: 0.8rem; }
         .item-tag-topo { display: flex; justify-content: space-between; font-weight: 900; font-size: 0.9rem; margin-bottom: 3px; }
         .item-tag-cor-tam { font-weight: 700; color: #444; margin-bottom: 3px; }
@@ -191,7 +192,7 @@
                 <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 
-                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN" style="flex: 0.5;">
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN (Valor da Peça)" style="flex: 0.5;">
                 <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
             </div>
             <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
@@ -209,7 +210,6 @@
 <!-- ABA 2: FILA DE PRODUÇÃO -->
 <!-- ============================================== -->
 <div id="aba-producao" class="container" style="display: none;">
-    <!-- DASHBOARD COMPACTO -->
     <div class="dashboard-grid">
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
         <div class="dash-card"><h3>Fila de Estamparia</h3><span id="dashFilaEstampa">0</span></div>
@@ -324,6 +324,21 @@
     }
     document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
     document.getElementById('editWhatsapp').addEventListener('input', aplicarMascaraTelefone);
+
+    // ==========================================
+    // FUNÇÃO SANFONA (OCULTAR/MOSTRAR PEÇAS)
+    // ==========================================
+    function toggleItens(id) {
+        let lista = document.getElementById('itens-' + id);
+        let seta = document.getElementById('seta-' + id);
+        if (lista.style.display === 'none') {
+            lista.style.display = 'flex';
+            seta.innerHTML = '▲';
+        } else {
+            lista.style.display = 'none';
+            seta.innerHTML = '▼';
+        }
+    }
 
     // ==========================================
     // FIREBASE INIT
@@ -526,6 +541,7 @@
 
             let valorFormatado = formatCurrency(pedido.valorTotal);
 
+            // MONTA AS PEÇAS NO NOVO VISUAL
             let htmlItens = pedido.itens.map(i => `
                 <div class="item-tag-compacto">
                     <div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span> <span>${formatCurrency(i.valorUnitario)}</span></div>
@@ -534,18 +550,14 @@
                 </div>
             `).join('');
             
-            // ==========================================
-            // WHATSAPP (COM RECIBO COMPLETO E CONDICIONAL)
-            // ==========================================
+            // WHATSAPP INTELIGENTE E RECIBO
             let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa} - ${formatCurrency(i.valorUnitario)} un`).join('\n');
             let mensagemWhats = "";
-            
             if (pedido.statusAtualizado === 'PEDIDO FEITO') {
                 mensagemWhats = `Salve ${pedido.nome}! O seu pedido #${pedido.numeroPedido} foi recebido com sucesso pela Waller. 💀🔥\n\n*Resumo do Pedido:*\n${itensWhats}\n\n*Valor Total:* ${valorFormatado}\n*Pagamento:* ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento})\n\nLogo menos avisaremos sobre a produção!`;
             } else {
                 mensagemWhats = `Salve ${pedido.nome}! O status do seu pedido #${pedido.numeroPedido} da Waller foi atualizado para: *${pedido.statusAtualizado}*.\n\n*Itens do pedido:*\n${itensWhats}`;
             }
-            
             let linkWhats = `https://wa.me/55${pedido.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(mensagemWhats)}`;
 
             let card = document.createElement('div');
@@ -574,7 +586,17 @@
                         <div class="cliente-financas">${valorFormatado} - ${pedido.metodoPagamento || 'PIX'}</div>
                     </div>
                     <div class="pedido-separador"></div>
-                    <div class="pedido-itens-lista">${htmlItens}</div>
+                    
+                    <!-- NOVO BOTÃO SANFONA -->
+                    <div class="toggle-itens-btn" onclick="toggleItens('${pedido.id}')">
+                        <span>📦 PEÇAS DO PEDIDO (${pedido.itens.length})</span>
+                        <span id="seta-${pedido.id}">▲</span>
+                    </div>
+
+                    <!-- CAIXA DE ITENS QUE PODE SER OCULTADA (Inicia visível para vc não perder tempo) -->
+                    <div class="pedido-itens-lista" id="itens-${pedido.id}" style="display: flex;">
+                        ${htmlItens}
+                    </div>
                 </div>
                 <div class="pedido-footer">
                     <a href="${linkWhats}" target="_blank" style="flex:1; display:flex; text-decoration:none;">
@@ -622,8 +644,8 @@
         const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
         return `
         <div class="item-edit-wrapper">
-            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X</button>
-            <div class="form-grid" style="margin-bottom: 10px; padding-right: 40px;">
+            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER PEÇA</button>
+            <div class="form-grid" style="margin-bottom: 10px; padding-right: 120px;">
                 <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
                 <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
             </div>
