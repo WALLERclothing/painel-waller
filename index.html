@@ -36,13 +36,13 @@
         .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
         .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); transform: translate(2px, 2px); pointer-events: none; }
 
-        .container { max-width: 1300px; margin: 3rem auto; padding: 0 1rem; }
+        .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
-        /* DASHBOARD METRICS */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
-        .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
+        /* DASHBOARD METRICS COMPACTADO */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 0.8rem 1rem; box-shadow: 4px 4px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.2rem 0; font-size: 0.7rem; text-transform: uppercase; color: #555; font-weight: 900; }
+        .dash-card span { font-size: 1.4rem; font-weight: 900; font-style: italic; color: var(--red); }
         .dash-card.green-text span { color: var(--green); }
 
         .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
@@ -72,16 +72,8 @@
         .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
         .btn-remove-item { background: var(--red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
 
-        /* ========================================== */
-        /* NOVO LAYOUT DA FILA DE PRODUÇÃO (GRID DE CARDS) */
-        /* ========================================== */
-        .grid-pedidos {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
+        /* GRID DE PEDIDOS NA FILA */
+        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
         .pedido-card { background: var(--white); border: 3px solid var(--black); box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
         
         .pedido-header { background: var(--gray); border-bottom: 2px solid var(--black); padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
@@ -143,7 +135,7 @@
         @media (max-width: 600px) {
             .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
             .dashboard-grid { grid-template-columns: 1fr 1fr; }
-            .grid-pedidos { grid-template-columns: 1fr; } /* No mobile fica 1 por linha */
+            .grid-pedidos { grid-template-columns: 1fr; }
             .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 10px; }
         }
     </style>
@@ -166,7 +158,7 @@
 <!-- ============================================== -->
 <div id="aba-cadastro" class="container">
     <div class="card">
-        <h2 class="card-title">Novo Pedido</h2>
+        <h2 class="card-title">Lançar Drop / Pedido</h2>
         
         <div class="form-section">
             <div class="form-section-title">1. Dados do Cliente e Financeiro</div>
@@ -214,17 +206,18 @@
 </div>
 
 <!-- ============================================== -->
-<!-- ABA 2: FILA DE PRODUÇÃO (NOVO GRID) -->
+<!-- ABA 2: FILA DE PRODUÇÃO -->
 <!-- ============================================== -->
 <div id="aba-producao" class="container" style="display: none;">
+    <!-- DASHBOARD COMPACTO -->
     <div class="dashboard-grid">
-        <div class="dash-card"><h3>Pedidos no Mês</h3><span id="dashPedidosMes">0</span></div>
-        <div class="dash-card"><h3>Peças na Fila (Estampa)</h3><span id="dashFilaEstampa">0</span></div>
-        <div class="dash-card"><h3>Caixas p/ Enviar Hoje</h3><span id="dashEnviar">0</span></div>
+        <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
+        <div class="dash-card"><h3>Fila de Estamparia</h3><span id="dashFilaEstampa">0</span></div>
+        <div class="dash-card"><h3>Envios Pendentes</h3><span id="dashEnviar">0</span></div>
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
 
-    <h2 class="card-title" style="margin-top: 2rem;">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
+    <h2 class="card-title" style="margin-top: 1rem;">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
     
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME, NÚMERO OU TELEFONE..." onkeyup="aplicarFiltros()">
@@ -235,7 +228,6 @@
         </div>
     </div>
 
-    <!-- ONDE OS CARDS GRID VÃO ENTRAR -->
     <div class="grid-pedidos" id="gridPedidosContainer"></div>
 </div>
 
@@ -434,6 +426,7 @@
         if(!nome || !whatsapp) { alert("Preencha o Nome e WhatsApp!"); return; }
         if(carrinhoTemporario.length === 0) { alert("Adicione 1 peça!"); return; }
 
+        document.getElementById('carregando').style.display = 'inline'; document.getElementById('carregando').innerText = 'Salvando pedido...';
         let numeroGerado = Math.floor(1000 + Math.random() * 9000).toString();
 
         try {
@@ -541,14 +534,18 @@
                 </div>
             `).join('');
             
-            // WHATSAPP INTELIGENTE E RECIBO
-            let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa} - ${formatCurrency(i.valorUnitario)}`).join('\n');
+            // ==========================================
+            // WHATSAPP (COM RECIBO COMPLETO E CONDICIONAL)
+            // ==========================================
+            let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa} - ${formatCurrency(i.valorUnitario)} un`).join('\n');
             let mensagemWhats = "";
+            
             if (pedido.statusAtualizado === 'PEDIDO FEITO') {
                 mensagemWhats = `Salve ${pedido.nome}! O seu pedido #${pedido.numeroPedido} foi recebido com sucesso pela Waller. 💀🔥\n\n*Resumo do Pedido:*\n${itensWhats}\n\n*Valor Total:* ${valorFormatado}\n*Pagamento:* ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento})\n\nLogo menos avisaremos sobre a produção!`;
             } else {
                 mensagemWhats = `Salve ${pedido.nome}! O status do seu pedido #${pedido.numeroPedido} da Waller foi atualizado para: *${pedido.statusAtualizado}*.\n\n*Itens do pedido:*\n${itensWhats}`;
             }
+            
             let linkWhats = `https://wa.me/55${pedido.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(mensagemWhats)}`;
 
             let card = document.createElement('div');
@@ -696,7 +693,7 @@
     }
 
     // ==========================================
-    // GERADOR DE PDF
+    // GERADOR DE PDF 
     // ==========================================
     function gerarPDF() {
         const { jsPDF } = window.jspdf;
