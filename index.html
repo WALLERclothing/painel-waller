@@ -28,16 +28,17 @@
         
         .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
-        .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; }
+        .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; display: none; } /* Começa invisível na aba cadastro */
         .btn-pdf:hover { background-color: var(--white); color: var(--black); }
 
-        .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; }
-        .tab-btn { background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1.5rem; font-weight: 900; font-size: 1rem; cursor: pointer; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; text-transform: uppercase; }
+        .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
+        .tab-btn { flex: 1; text-align: center; background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; text-transform: uppercase; }
         .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
         .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); transform: translate(2px, 2px); pointer-events: none; }
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
+        /* DASHBOARD METRICS */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
         .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
@@ -47,6 +48,7 @@
         .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
         .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
         
+        /* BUSCA E FILTROS */
         .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--gray); padding: 1rem; border: 2px solid var(--black); }
         .botoes-filtro { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .btn-filtro { background: var(--white); border: 2px solid var(--black); font-weight: 800; font-size: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; text-transform: uppercase; }
@@ -100,7 +102,6 @@
         .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
         .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--black); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
         
-        /* LAYOUT DE EDIÇÃO DE ITENS */
         .item-edit-wrapper { border-left: 4px solid var(--black); padding: 15px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-remove-peca { position: absolute; top: 10px; right: 10px; background: var(--red); color: white; border: 2px solid var(--black); padding: 0.3rem 0.6rem; cursor: pointer; font-weight: 900; font-size: 0.8rem; z-index: 2; }
         
@@ -117,36 +118,17 @@
     <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
 </nav>
 
+<!-- MENU DE ABAS ATUALIZADO -->
 <div class="tab-menu">
-    <button id="tabPedidosBtn" class="tab-btn tab-active" onclick="mudarAba('pedidos')">🛒 Fila de Pedidos</button>
+    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Cadastro de Pedidos</button>
+    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Fila de Produção</button>
     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
 </div>
 
 <!-- ============================================== -->
-<!-- ABA 1: PEDIDOS -->
+<!-- ABA 1: CADASTRO DE PEDIDOS -->
 <!-- ============================================== -->
-<div id="aba-pedidos" class="container">
-    
-    <!-- DASHBOARD DE MÉTRICAS -->
-    <div class="dashboard-grid">
-        <div class="dash-card">
-            <h3>Pedidos no Mês</h3>
-            <span id="dashPedidosMes">0</span>
-        </div>
-        <div class="dash-card">
-            <h3>Peças na Fila (Estampa)</h3>
-            <span id="dashFilaEstampa">0</span>
-        </div>
-        <div class="dash-card">
-            <h3>Caixas p/ Enviar Hoje</h3>
-            <span id="dashEnviar">0</span>
-        </div>
-        <div class="dash-card green-text">
-            <h3>Faturamento Mensal (Pago)</h3>
-            <span id="dashFaturamento">R$ 0,00</span>
-        </div>
-    </div>
-
+<div id="aba-cadastro" class="container">
     <div class="card">
         <h2 class="card-title">Lançar Drop / Pedido</h2>
         
@@ -181,7 +163,6 @@
                 <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 
-                <!-- NOVO CAMPO: VALOR UNITÁRIO -->
                 <input type="number" id="valorUnitario" placeholder="R$ UN (Valor da Peça)" step="0.01" style="flex: 0.5;">
                 <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
             </div>
@@ -193,6 +174,31 @@
             <div id="listaCarrinho"></div>
         </div>
         <button type="button" class="btn-primary" onclick="salvarPedidoCompleto()">LANÇAR ORDEM DE SERVIÇO</button>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- ABA 2: FILA DE PRODUÇÃO -->
+<!-- ============================================== -->
+<div id="aba-producao" class="container" style="display: none;">
+    <!-- DASHBOARD DE MÉTRICAS -->
+    <div class="dashboard-grid">
+        <div class="dash-card">
+            <h3>Pedidos no Mês</h3>
+            <span id="dashPedidosMes">0</span>
+        </div>
+        <div class="dash-card">
+            <h3>Peças na Fila (Estampa)</h3>
+            <span id="dashFilaEstampa">0</span>
+        </div>
+        <div class="dash-card">
+            <h3>Caixas p/ Enviar Hoje</h3>
+            <span id="dashEnviar">0</span>
+        </div>
+        <div class="dash-card green-text">
+            <h3>Faturamento Mensal (Pago)</h3>
+            <span id="dashFaturamento">R$ 0,00</span>
+        </div>
     </div>
 
     <div class="card">
@@ -224,7 +230,7 @@
 </div>
 
 <!-- ============================================== -->
-<!-- ABA 2: CATÁLOGO DE ESTAMPAS -->
+<!-- ABA 3: CATÁLOGO DE ESTAMPAS -->
 <!-- ============================================== -->
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
@@ -272,12 +278,19 @@
 </div>
 
 <script>
+    // ==========================================
+    // SISTEMA DE NAVEGAÇÃO DE ABAS
+    // ==========================================
     function mudarAba(aba) {
-        document.getElementById('aba-pedidos').style.display = aba === 'pedidos' ? 'block' : 'none';
+        document.getElementById('aba-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
+        document.getElementById('aba-producao').style.display = aba === 'producao' ? 'block' : 'none';
         document.getElementById('aba-estampas').style.display = aba === 'estampas' ? 'block' : 'none';
-        document.getElementById('tabPedidosBtn').classList.toggle('tab-active', aba === 'pedidos');
+        
+        document.getElementById('tabCadastroBtn').classList.toggle('tab-active', aba === 'cadastro');
+        document.getElementById('tabProducaoBtn').classList.toggle('tab-active', aba === 'producao');
         document.getElementById('tabEstampasBtn').classList.toggle('tab-active', aba === 'estampas');
-        document.getElementById('btnGerarPDF').style.display = aba === 'pedidos' ? 'block' : 'none';
+        
+        document.getElementById('btnGerarPDF').style.display = aba === 'producao' ? 'block' : 'none';
     }
 
     function aplicarMascaraTelefone(e) {
@@ -328,7 +341,6 @@
         if(catalogoEstampas[cod]) document.getElementById('nomeEstampa').value = catalogoEstampas[cod];
     });
     
-    // Auto-preenche nome e recalcula valor ao digitar na Edição
     document.getElementById('editItensContainer').addEventListener('input', function(e) {
         if(e.target.classList.contains('edit-cod')) {
             let cod = e.target.value.toUpperCase().trim();
@@ -340,7 +352,7 @@
     });
 
     // ==========================================
-    // SISTEMA DE PEDIDOS
+    // SISTEMA DE PEDIDOS E CADASTRO
     // ==========================================
     let todosPedidos = []; 
     let carrinhoTemporario = []; 
@@ -384,7 +396,6 @@
                 </div>`;
         });
 
-        // AUTO PREENCHE A SOMA TOTAL NA TELA PRINCIPAL
         document.getElementById('valorTotal').value = somaCarrinho.toFixed(2);
         
         if(carrinhoTemporario.length === 0) { document.getElementById('carrinho-container').style.display = 'none'; return; }
@@ -401,7 +412,6 @@
         if(!nome || !whatsapp) { alert("Preencha o Nome e WhatsApp!"); return; }
         if(carrinhoTemporario.length === 0) { alert("Adicione 1 peça!"); return; }
 
-        document.getElementById('carregando').style.display = 'inline'; document.getElementById('carregando').innerText = 'Salvando...';
         let numeroGerado = Math.floor(1000 + Math.random() * 9000).toString();
 
         try {
@@ -412,10 +422,14 @@
             });
             document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('valorTotal').value = '';
             carrinhoTemporario = []; atualizarTelaCarrinho();
+            
+            alert(`Pedido #${numeroGerado} salvo com sucesso! Vá para a aba "Fila de Produção" para gerenciar.`);
+            // Se quiser que mude de aba automaticamente, tire os // da linha abaixo:
+            // mudarAba('producao');
         } catch (error) { alert("Erro ao salvar."); }
     }
 
-    // LISTENER DO BANCO E CÁLCULO DO DASHBOARD
+    // LISTENER DO BANCO, TABELA E DASHBOARD
     db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
         document.getElementById('carregando').style.display = 'none'; 
         todosPedidos = []; 
@@ -426,7 +440,6 @@
         querySnapshot.forEach((doc) => {
             let pedido = doc.data(); pedido.id = doc.id; 
             
-            // Retrocompatibilidade
             if(!pedido.itens) pedido.itens = [{ codigoEstampa: pedido.codigoEstampa||"-", nomeEstampa: pedido.nomeEstampa||"-", tipoPeca: pedido.tipoPeca||"OVERSIZED", tamanho: pedido.tamanho||"-", cor: pedido.cor||"-", quantidade: pedido.quantidade||1, valorUnitario: 0 }];
             if(!pedido.numeroPedido) pedido.numeroPedido = "ANTIGO";
             if(pedido.statusPagamento === undefined) pedido.statusPagamento = "PAGO";
@@ -501,7 +514,6 @@
 
             let valorFormatado = parseFloat(pedido.valorTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            // MOSTRA O VALOR UNITÁRIO NA TABELA
             let htmlItens = pedido.itens.map(i => `
                 <div class="item-lista-tabela">
                     <strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (Tam: ${i.tamanho}) - R$ ${parseFloat(i.valorUnitario||0).toFixed(2)} un<br>
@@ -545,10 +557,10 @@
 
     function mudarStatusLogistica(id, novoStatus) { db.collection("pedidos").doc(id).update({ status: novoStatus }); }
     function trocarPagamento(id, novoStatusPgto) { db.collection("pedidos").doc(id).update({ statusPagamento: novoStatusPgto }); }
-    function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
+    function excluirPedido(id) { if (confirm("Deletar pedido?")) db.collection("pedidos").doc(id).delete(); }
 
     // ==========================================
-    // EDIÇÃO DE PEDIDOS (COM SELECTS E CÁLCULO)
+    // EDIÇÃO DE PEDIDOS
     // ==========================================
     function abrirModalEdicao(id) {
         const p = todosPedidos.find(x => x.id === id); if(!p) return;
@@ -563,7 +575,7 @@
         p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
         
         document.getElementById('modalEdicao').style.display = 'flex';
-        recalcularSomaEdicao(); // Calcula a soma ao abrir
+        recalcularSomaEdicao(); 
     }
 
     function adicionarItemEdicao() {
@@ -573,7 +585,6 @@
         recalcularSomaEdicao();
     }
 
-    // AQUI ESTÃO OS SELECTS (Opções Limitadas de Edição)
     function gerarHtmlLinhaEdicao(item) {
         const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
         return `
@@ -609,7 +620,6 @@
         </div>`;
     }
 
-    // Calcula a soma e trava no campo Valor Total na aba de edição
     function recalcularSomaEdicao() {
         let soma = 0;
         document.querySelectorAll('.item-edit-wrapper').forEach(row => {
