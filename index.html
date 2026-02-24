@@ -14,59 +14,98 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { --black: #000000; --white: #ffffff; --red: #d90429; --gray: #f4f4f4; --border-thick: 3px solid var(--black); }
+        /* === ESTILO UNDERGROUND WALLER CLOTHING === */
+        :root {
+            --black: #000000;
+            --white: #ffffff;
+            --red: #d90429;
+            --green: #06d6a0;
+            --gray: #f4f4f4;
+            --border-thick: 3px solid var(--black);
+        }
+
         body { font-family: 'Montserrat', sans-serif; background-color: var(--white); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(#e5e5e5 1px, transparent 1px); background-size: 20px 20px; }
+        
         .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
         .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; }
         .btn-pdf:hover { background-color: var(--white); color: var(--black); }
+
         .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; }
         .tab-btn { background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1.5rem; font-weight: 900; font-size: 1rem; cursor: pointer; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; text-transform: uppercase; }
         .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
         .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); transform: translate(2px, 2px); pointer-events: none; }
+
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
+        
+        /* DASHBOARD METRICS */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
+        .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
+        .dash-card.green-text span { color: var(--green); }
+
         .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
         .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        
+        /* BUSCA E FILTROS */
+        .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--gray); padding: 1rem; border: 2px solid var(--black); }
+        .botoes-filtro { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-filtro { background: var(--white); border: 2px solid var(--black); font-weight: 800; font-size: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; text-transform: uppercase; }
+        .btn-filtro.ativo { background: var(--black); color: var(--white); }
+
         .form-section { border-bottom: 2px dashed var(--black); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
         .form-section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--red); }
         .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-grid > * { flex: 1; min-width: 180px; }
+        
         input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--black); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); text-transform: uppercase; }
         input:focus, select:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
         ::placeholder { color: #a3a3a3; font-weight: 500; text-transform: none; }
+        
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
         .btn-add { background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--black); }
         .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
         .btn-primary { background-color: var(--black); color: var(--white); border: 2px solid var(--black); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--red); }
         .btn-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
+        
         #carrinho-container { background-color: var(--gray); border: 2px solid var(--black); padding: 1rem; margin-bottom: 1.5rem; display: none; }
         .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
-        .carrinho-item:last-child { border-bottom: none; }
         .btn-remove-item { background: var(--red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-weight: 500; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
         th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--black); vertical-align: middle; }
         th { font-weight: 900; color: var(--black); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; border-top: 2px solid var(--black); border-bottom: 3px solid var(--black); }
-        .item-lista-tabela { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; }
+        .item-lista-tabela { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #ccc; }
         .item-lista-tabela:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        .select-status { padding: 0.4rem 0.6rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor: pointer; width: auto; }
+
+        .select-status { padding: 0.4rem 0.6rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor: pointer; width: 100%; margin-bottom: 5px;}
         .status-pedido-feito { background-color: var(--white); color: var(--black); border: 2px dashed var(--black); box-shadow: none; }
         .status-aguardando { background-color: #ffbe0b; color: var(--black); }
         .status-estampa-pronta { background-color: #3a86ff; color: var(--white); }
         .status-pedido-enviado { background-color: #8338ec; color: var(--white); }
-        .status-pedido-entregue { background-color: #06d6a0; color: var(--black); }
+        .status-pedido-entregue { background-color: var(--green); color: var(--black); }
+
+        .btn-pgto { width: 100%; padding: 0.4rem; font-size: 0.7rem; border: 2px solid var(--black); cursor: pointer; box-shadow: 2px 2px 0px var(--black); }
+        .pgto-pendente { background-color: var(--white); color: var(--red); }
+        .pgto-pago { background-color: var(--black); color: var(--green); }
+
         .acoes-container { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
         .btn-whatsapp { padding: 0.5rem 0.8rem; font-size: 0.75rem; border: 2px solid var(--black); text-transform: uppercase; height: 35px; background-color: #25D366; color: var(--black); font-weight: 800; }
         .btn-whatsapp:hover { background-color: var(--black); color: #25D366; }
         .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--white); border: 2px solid var(--black); color: var(--black); font-weight: 900; cursor: pointer; }
-        .btn-icone:hover { background-color: var(--black); color: var(--white); }
-        .btn-excluir { background-color: var(--red); color: var(--white); font-family: monospace; }
-        .btn-excluir:hover { background-color: var(--black); color: var(--red); }
-        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--red); font-weight: 800; text-transform: uppercase; }
+        .btn-excluir { background-color: var(--red); color: var(--white); }
+        
+        #carregando { font-size: 0.85rem; color: var(--red); font-weight: 800; text-transform: uppercase; }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; max-height: 90vh; overflow-y: auto; }
         .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--black); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
-        .btn-close-modal:hover { background: var(--black); color: var(--red); }
-        @media (max-width: 600px) { .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; border: 1px solid white;} .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; } }
+        
+        @media (max-width: 600px) {
+            .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -78,76 +117,114 @@
 
 <div class="tab-menu">
     <button id="tabPedidosBtn" class="tab-btn tab-active" onclick="mudarAba('pedidos')">🛒 Fila de Pedidos</button>
-    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo de Estampas</button>
+    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
 </div>
 
+<!-- ============================================== -->
 <!-- ABA 1: PEDIDOS -->
+<!-- ============================================== -->
 <div id="aba-pedidos" class="container">
+    
+    <!-- DASHBOARD DE MÉTRICAS -->
+    <div class="dashboard-grid">
+        <div class="dash-card">
+            <h3>Pedidos no Mês</h3>
+            <span id="dashPedidosMes">0</span>
+        </div>
+        <div class="dash-card">
+            <h3>Peças na Fila (Estampa)</h3>
+            <span id="dashFilaEstampa">0</span>
+        </div>
+        <div class="dash-card">
+            <h3>Caixas p/ Enviar Hoje</h3>
+            <span id="dashEnviar">0</span>
+        </div>
+        <div class="dash-card green-text">
+            <h3>Faturamento Mensal (Pago)</h3>
+            <span id="dashFaturamento">R$ 0,00</span>
+        </div>
+    </div>
+
     <div class="card">
         <h2 class="card-title">Lançar Drop / Pedido</h2>
+        
         <div class="form-section">
-            <div class="form-section-title">1. Dados do Cliente</div>
+            <div class="form-section-title">1. Dados do Cliente e Financeiro</div>
             <div class="form-grid">
                 <input type="text" id="nome" placeholder="NOME DO CLIENTE">
-                <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: (11) 99999-9999)" maxlength="15">
+                <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
+            </div>
+            <!-- NOVOS CAMPOS FINANCEIROS -->
+            <div class="form-grid">
+                <input type="number" id="valorTotal" placeholder="VALOR TOTAL (R$)" step="0.01">
+                <select id="metodoPagamento">
+                    <option value="PIX">PIX</option>
+                    <option value="CARTÃO">CARTÃO</option>
+                    <option value="DINHEIRO">DINHEIRO / BOLETO</option>
+                </select>
+                <select id="statusPagamento">
+                    <option value="PAGO">💰 PAGO</option>
+                    <option value="PENDENTE">⏳ PENDENTE</option>
+                </select>
             </div>
         </div>
+        
         <div class="form-section" style="border-bottom: none;">
             <div class="form-section-title">2. Adicionar Peças ao Pedido</div>
             <div class="form-grid">
-                <input type="text" id="codigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" style="flex: 0.5;">
-                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA (Preenche automático)" style="flex: 1.5;">
+                <input type="text" id="codigoEstampa" placeholder="CÓDIGO" style="flex: 0.5;">
+                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1.5;">
             </div>
             <div class="form-grid">
-                <select id="tipoPeca">
-                    <option value="">TIPO DE PEÇA</option>
-                    <option value="OVERSIZED">OVERSIZED</option>
-                    <option value="MOLETOM">MOLETOM</option>
-                    <option value="REGATA">REGATA</option>
-                    <option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option>
-                </select>
-                <select id="tamanho">
-                    <option value="">TAMANHO</option>
-                    <option value="P">P</option>
-                    <option value="M">M</option>
-                    <option value="G">G</option>
-                    <option value="GG">GG</option>
-                    <option value="XG">XG</option>
-                </select>
-                <select id="cor">
-                    <option value="">COR</option>
-                    <option value="PRETA">PRETA</option>
-                    <option value="BRANCA">BRANCA</option>
-                    <option value="MESCLA">MESCLA</option>
-                    <option value="OFF-WHITE">OFF-WHITE</option>
-                </select>
+                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
+                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
+                <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
             </div>
             <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
         </div>
+
         <div id="carrinho-container">
             <div class="form-section-title" style="margin-bottom: 0.5rem;">Resumo do Pedido:</div>
             <div id="listaCarrinho"></div>
         </div>
-        <button type="button" class="btn-primary" onclick="salvarPedidoCompleto()">LANÇAR ORDEM DE SERVIÇO COMPLETA</button>
+        <button type="button" class="btn-primary" onclick="salvarPedidoCompleto()">LANÇAR ORDEM DE SERVIÇO</button>
     </div>
 
     <div class="card">
-        <h2 class="card-title">
-            Fila de Produção
-            <span id="carregando">Sincronizando...</span>
-        </h2>
+        <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
+        
+        <!-- BUSCA E FILTROS -->
+        <div class="filtros-container">
+            <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME, NÚMERO OU TELEFONE..." onkeyup="aplicarFiltros()">
+            <div class="botoes-filtro">
+                <button class="btn-filtro ativo" id="filtro-todos" onclick="setFiltroBtn('TODOS')">Ver Todos</button>
+                <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('PENDENTE_PGTO')">⏳ Só Pendente de Pagamento</button>
+                <button class="btn-filtro" id="filtro-estampa" onclick="setFiltroBtn('AGUARDANDO ESTAMPA')">👕 Fila de Estampa</button>
+            </div>
+        </div>
+
         <table>
-            <thead><tr><th>Pedido / Data</th><th>Cliente</th><th>Itens do Pedido</th><th>Status do Pedido</th><th>Ações</th></tr></thead>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Pedido / Data</th>
+                    <th style="width: 25%;">Cliente & Financeiro</th>
+                    <th style="width: 30%;">Itens</th>
+                    <th style="width: 15%;">Status (Logística)</th>
+                    <th style="width: 15%;">Ações</th>
+                </tr>
+            </thead>
             <tbody id="listaPedidos"></tbody>
         </table>
     </div>
 </div>
 
-<!-- ABA 2: CATÁLOGO -->
+<!-- ============================================== -->
+<!-- ABA 2: CATÁLOGO DE ESTAMPAS -->
+<!-- ============================================== -->
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title">Cadastrar Estampa na Nuvem</h2>
+        <h2 class="card-title">Cadastrar Estampa</h2>
         <form onsubmit="salvarNovaEstampa(event)">
             <div class="form-grid">
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
@@ -165,85 +242,72 @@
     </div>
 </div>
 
-<!-- MODAL DE EDIÇÃO -->
+<!-- ============================================== -->
+<!-- MODAL DE EDIÇÃO AVANÇADA DE PEDIDOS -->
+<!-- ============================================== -->
 <div id="modalEdicao" class="modal-overlay">
     <div class="modal-box">
         <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
         <h2 class="card-title" style="margin-bottom: 1rem; font-size: 1.2rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
         <input type="hidden" id="editId">
-        <div class="form-section-title" style="font-size: 0.85rem;">DADOS DO CLIENTE</div>
-        <div class="form-grid" style="margin-bottom: 2rem;">
+        
+        <div class="form-grid" style="margin-bottom: 1rem;">
             <input type="text" id="editNome" placeholder="NOME DO CLIENTE">
-            <input type="text" id="editWhatsapp" placeholder="WHATSAPP" maxlength="15">
+            <input type="text" id="editWhatsapp" placeholder="WHATSAPP">
         </div>
+        <div class="form-grid" style="margin-bottom: 2rem;">
+            <input type="number" id="editValorTotal" placeholder="VALOR (R$)" step="0.01">
+            <select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO / BOLETO</option></select>
+        </div>
+
         <div class="form-section-title" style="font-size: 0.85rem;">PEÇAS DO PEDIDO</div>
         <div id="editItensContainer"></div>
-        <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 1.5rem; font-size: 0.8rem; padding: 0.6rem;">+ ADICIONAR NOVA PEÇA A ESTE PEDIDO</button>
+        <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 1.5rem; font-size: 0.8rem; padding: 0.6rem;">+ ADICIONAR NOVA PEÇA</button>
         <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
     </div>
 </div>
 
 <script>
     function mudarAba(aba) {
-        if(aba === 'pedidos') {
-            document.getElementById('aba-pedidos').style.display = 'block';
-            document.getElementById('aba-estampas').style.display = 'none';
-            document.getElementById('tabPedidosBtn').classList.add('tab-active');
-            document.getElementById('tabEstampasBtn').classList.remove('tab-active');
-            document.getElementById('btnGerarPDF').style.display = 'block';
-        } else {
-            document.getElementById('aba-pedidos').style.display = 'none';
-            document.getElementById('aba-estampas').style.display = 'block';
-            document.getElementById('tabPedidosBtn').classList.remove('tab-active');
-            document.getElementById('tabEstampasBtn').classList.add('tab-active');
-            document.getElementById('btnGerarPDF').style.display = 'none';
-        }
+        document.getElementById('aba-pedidos').style.display = aba === 'pedidos' ? 'block' : 'none';
+        document.getElementById('aba-estampas').style.display = aba === 'estampas' ? 'block' : 'none';
+        document.getElementById('tabPedidosBtn').classList.toggle('tab-active', aba === 'pedidos');
+        document.getElementById('tabEstampasBtn').classList.toggle('tab-active', aba === 'estampas');
+        document.getElementById('btnGerarPDF').style.display = aba === 'pedidos' ? 'block' : 'none';
     }
 
     function aplicarMascaraTelefone(e) {
         let v = e.target.value.replace(/\D/g, ''); 
-        if (v.length <= 2) { e.target.value = v; } 
-        else if (v.length <= 6) { e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; } 
-        else if (v.length <= 10) { e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; } 
-        else { e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`; }
+        if (v.length <= 2) { e.target.value = v; } else if (v.length <= 6) { e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; } else if (v.length <= 10) { e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; } else { e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`; }
     }
     document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
     document.getElementById('editWhatsapp').addEventListener('input', aplicarMascaraTelefone);
 
-    // CHAVES DO FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyDnch84Sl5VyIi0YmOAde4jTftsssLEsNA",
         authDomain: "banco-de-dados-waller.firebaseapp.com",
         projectId: "banco-de-dados-waller",
         storageBucket: "banco-de-dados-waller.firebasestorage.app",
         messagingSenderId: "595978694752",
-        appId: "1:595978694752:web:69aa74348560268a5a1305",
-        measurementId: "G-JZB84G9FJ6"
+        appId: "1:595978694752:web:69aa74348560268a5a1305"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ==========================================
+    // CATÁLOGO DE ESTAMPAS 
+    // ==========================================
     let catalogoEstampas = {}; 
-    const listaEstampasTabela = document.getElementById('listaEstampas');
-    const carregandoEstampas = document.getElementById('carregandoEstampas');
-
-    // === RASTREADOR DE ERRO (ESTAMPAS) ===
     db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
-        carregandoEstampas.style.display = 'none';
-        listaEstampasTabela.innerHTML = '';
+        document.getElementById('carregandoEstampas').style.display = 'none';
+        document.getElementById('listaEstampas').innerHTML = '';
         catalogoEstampas = {}; 
         querySnapshot.forEach((doc) => {
             let estampa = doc.data();
             catalogoEstampas[estampa.codigo] = estampa.nome;
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td><strong>${estampa.codigo}</strong></td><td>${estampa.nome}</td><td><button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')" title="Excluir">X</button></td>`;
-            listaEstampasTabela.appendChild(tr);
+            document.getElementById('listaEstampas').innerHTML += `<tr><td><strong>${estampa.codigo}</strong></td><td>${estampa.nome}</td><td><button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')">X</button></td></tr>`;
         });
-    }, (error) => {
-        alert("🚨 ERRO NO BANCO (Estampas): \n" + error.message);
-        carregandoEstampas.innerText = "ERRO: " + error.message;
-        carregandoEstampas.style.color = "red";
     });
 
     function salvarNovaEstampa(e) {
@@ -251,35 +315,27 @@
         let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
         let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
         db.collection("estampas").doc(cod).set({ codigo: cod, nome: nom })
-        .then(() => { document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadCodigoEstampa').focus(); })
-        .catch(error => { alert("Erro ao salvar estampa: " + error.message); });
+        .then(() => { document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadCodigoEstampa').focus(); });
     }
-
-    function excluirEstampa(idCodigo) {
-        if(confirm(`Tem certeza que deseja apagar a estampa ${idCodigo}?`)){
-            db.collection("estampas").doc(idCodigo).delete();
-        }
-    }
+    function excluirEstampa(idCodigo) { if(confirm(`Apagar estampa ${idCodigo}?`)) db.collection("estampas").doc(idCodigo).delete(); }
 
     document.getElementById('codigoEstampa').addEventListener('input', function(e) {
         let codigoDigitado = e.target.value.toUpperCase().trim();
-        if(catalogoEstampas[codigoDigitado]) { document.getElementById('nomeEstampa').value = catalogoEstampas[codigoDigitado]; }
+        if(catalogoEstampas[codigoDigitado]) document.getElementById('nomeEstampa').value = catalogoEstampas[codigoDigitado];
     });
-
     document.getElementById('editItensContainer').addEventListener('input', function(e) {
         if(e.target.classList.contains('edit-cod')) {
             let codigoDigitado = e.target.value.toUpperCase().trim();
-            if(catalogoEstampas[codigoDigitado]) { e.target.closest('.item-edit-row').querySelector('.edit-nom').value = catalogoEstampas[codigoDigitado]; }
+            if(catalogoEstampas[codigoDigitado]) e.target.closest('.item-edit-row').querySelector('.edit-nom').value = catalogoEstampas[codigoDigitado];
         }
     });
 
-    let pedidos = [];
+    // ==========================================
+    // SISTEMA DE PEDIDOS
+    // ==========================================
+    let todosPedidos = []; 
     let carrinhoTemporario = []; 
-    const listaPedidos = document.getElementById('listaPedidos');
-    const carregando = document.getElementById('carregando');
-    const carrinhoContainer = document.getElementById('carrinho-container');
-    const listaCarrinho = document.getElementById('listaCarrinho');
-    const modalEdicao = document.getElementById('modalEdicao');
+    let filtroStatusAtivo = "TODOS";
 
     function adicionarAoCarrinho() {
         const cod = document.getElementById('codigoEstampa').value.toUpperCase().trim();
@@ -288,154 +344,213 @@
         const tam = document.getElementById('tamanho').value;
         const cor = document.getElementById('cor').value;
         const qtd = document.getElementById('quantidade').value;
-        if(!cod || !nom || !tip || !tam || !cor || !qtd) { alert("Preencha todos os dados da peça!"); return; }
 
+        if(!cod || !nom) { alert("Preencha a peça!"); return; }
         carrinhoTemporario.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: tip, tamanho: tam, cor: cor, quantidade: parseInt(qtd) });
         atualizarTelaCarrinho();
-        document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = '';
-        document.getElementById('tipoPeca').value = ''; document.getElementById('tamanho').value = '';
-        document.getElementById('cor').value = ''; document.getElementById('quantidade').value = '1';
-        document.getElementById('codigoEstampa').focus();
+        document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('codigoEstampa').focus();
     }
-
     function removerDoCarrinho(index) { carrinhoTemporario.splice(index, 1); atualizarTelaCarrinho(); }
-
     function atualizarTelaCarrinho() {
-        if(carrinhoTemporario.length === 0) { carrinhoContainer.style.display = 'none'; return; }
-        carrinhoContainer.style.display = 'block'; listaCarrinho.innerHTML = '';
+        if(carrinhoTemporario.length === 0) { document.getElementById('carrinho-container').style.display = 'none'; return; }
+        document.getElementById('carrinho-container').style.display = 'block'; document.getElementById('listaCarrinho').innerHTML = '';
         carrinhoTemporario.forEach((peca, index) => {
-            let div = document.createElement('div'); div.className = 'carrinho-item';
-            div.innerHTML = `<span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} ${peca.cor} (${peca.tamanho}) - [${peca.codigoEstampa}] ${peca.nomeEstampa}</span>
-                             <button class="btn-remove-item" onclick="removerDoCarrinho(${index})">X</button>`;
-            listaCarrinho.appendChild(div);
+            document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} - [${peca.codigoEstampa}] ${peca.nomeEstampa}</span><button class="btn-remove-item" onclick="removerDoCarrinho(${index})">X</button></div>`;
         });
     }
 
     async function salvarPedidoCompleto() {
         let nome = document.getElementById('nome').value.toUpperCase();
         let whatsapp = document.getElementById('whatsapp').value;
-        if(!nome || !whatsapp) { alert("Preencha o Nome e WhatsApp!"); return; }
-        if(carrinhoTemporario.length === 0) { alert("Adicione pelo menos 1 peça!"); return; }
+        let valorTotal = document.getElementById('valorTotal').value || 0;
+        let metodo = document.getElementById('metodoPagamento').value;
+        let statusPgto = document.getElementById('statusPagamento').value;
 
-        carregando.style.display = 'inline'; carregando.innerText = 'Salvando pedido...';
+        if(!nome || !whatsapp) { alert("Preencha o Nome e WhatsApp!"); return; }
+        if(carrinhoTemporario.length === 0) { alert("Adicione 1 peça!"); return; }
+
+        document.getElementById('carregando').style.display = 'inline'; document.getElementById('carregando').innerText = 'Salvando...';
         let numeroGerado = Math.floor(1000 + Math.random() * 9000).toString();
 
         try {
             await db.collection("pedidos").add({
-                numeroPedido: numeroGerado, nome: nome, whatsapp: whatsapp, itens: carrinhoTemporario,
-                status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+                numeroPedido: numeroGerado, nome: nome, whatsapp: whatsapp, 
+                valorTotal: parseFloat(valorTotal), metodoPagamento: metodo, statusPagamento: statusPgto,
+                itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
             });
-            document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = '';
+            document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('valorTotal').value = '';
             carrinhoTemporario = []; atualizarTelaCarrinho();
-        } catch (error) { alert("Erro ao salvar: " + error.message); }
+        } catch (error) { alert("Erro ao salvar."); }
     }
 
-    // === RASTREADOR DE ERRO (PEDIDOS) ===
+    // LISTENER DO BANCO E CÁLCULO DO DASHBOARD
     db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
-        carregando.style.display = 'none'; listaPedidos.innerHTML = ''; pedidos = []; 
+        document.getElementById('carregando').style.display = 'none'; 
+        todosPedidos = []; 
+
+        let metricas = { pedMes: 0, filaEstampa: 0, paraEnviar: 0, faturamento: 0 };
+        let mesAtual = new Date().getMonth();
 
         querySnapshot.forEach((doc) => {
             let pedido = doc.data(); pedido.id = doc.id; 
-            if(!pedido.itens) {
-                pedido.itens = [{ codigoEstampa: pedido.codigoEstampa || "-", nomeEstampa: pedido.nomeEstampa || pedido.estampa || "Antigo", tipoPeca: pedido.tipoPeca || "OVERSIZED", tamanho: pedido.tamanho || "-", cor: pedido.cor || "-", quantidade: pedido.quantidade || 1 }];
-                pedido.numeroPedido = pedido.numeroPedido || "ANTIGO";
-            }
+            
+            // Retrocompatibilidade
+            if(!pedido.itens) pedido.itens = [{ codigoEstampa: pedido.codigoEstampa||"-", nomeEstampa: pedido.nomeEstampa||"-", tipoPeca: pedido.tipoPeca||"OVERSIZED", tamanho: pedido.tamanho||"-", cor: pedido.cor||"-", quantidade: pedido.quantidade||1 }];
+            if(!pedido.numeroPedido) pedido.numeroPedido = "ANTIGO";
+            if(pedido.statusPagamento === undefined) pedido.statusPagamento = "PAGO"; // Antigos entram como pagos pra não sujar filtro
+            if(pedido.valorTotal === undefined) pedido.valorTotal = 0;
             
             let currentStatus = (pedido.status || 'PEDIDO FEITO').toUpperCase();
-            if(currentStatus === 'AGUARDANDO ESTAMPA') currentStatus = 'AGUARDANDO ESTAMPA';
-            else if(currentStatus === 'PRONTA / ESTAMPADA') currentStatus = 'ESTAMPA PRONTA';
-            else if(currentStatus === 'ENTREGUE') currentStatus = 'PEDIDO ENTREGUE';
+            if(currentStatus === 'PRONTA / ESTAMPADA') currentStatus = 'ESTAMPA PRONTA';
             pedido.statusAtualizado = currentStatus;
             
-            let dataFormatada = (pedido.dataCriacao && pedido.dataCriacao.toDate) ? pedido.dataCriacao.toDate().toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
-            pedidos.push(pedido);
+            let dataObj = pedido.dataCriacao ? pedido.dataCriacao.toDate() : new Date();
+            pedido.dataFormatada = dataObj.toLocaleDateString('pt-BR');
 
-            let classeStatus = 'select-status ';
-            if (currentStatus === 'PEDIDO FEITO') classeStatus += 'status-pedido-feito';
-            else if (currentStatus === 'AGUARDANDO ESTAMPA') classeStatus += 'status-aguardando';
-            else if (currentStatus === 'ESTAMPA PRONTA') classeStatus += 'status-estampa-pronta';
-            else if (currentStatus === 'PEDIDO ENVIADO') classeStatus += 'status-pedido-enviado';
-            else if (currentStatus === 'PEDIDO ENTREGUE') classeStatus += 'status-pedido-entregue';
-            else classeStatus += 'status-pedido-feito';
+            // CÁLCULO DE MÉTRICAS (Apenas do Mês Atual para Finanças)
+            if(dataObj.getMonth() === mesAtual) {
+                metricas.pedMes++;
+                if(pedido.statusPagamento === 'PAGO') metricas.faturamento += parseFloat(pedido.valorTotal);
+            }
+            if(currentStatus === 'AGUARDANDO ESTAMPA') {
+                pedido.itens.forEach(i => metricas.filaEstampa += parseInt(i.quantidade));
+            }
+            if(currentStatus === 'ESTAMPA PRONTA') metricas.paraEnviar++;
 
-            let htmlItens = pedido.itens.map(i => `<div class="item-lista-tabela"><strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (Tam: ${i.tamanho})<br><small style="color: #444;">[${i.codigoEstampa}] ${i.nomeEstampa}</small></div>`).join('');
-            let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa}`).join('\n');
-            let mensagemWhats = `Salve ${pedido.nome}! O status do seu pedido #${pedido.numeroPedido} da Waller foi atualizado para: ${currentStatus}.\n\nItens do pedido:\n${itensWhats}`;
-            let linkWhats = `https://wa.me/55${pedido.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(mensagemWhats)}`;
+            todosPedidos.push(pedido);
+        });
+
+        // ATUALIZA DASHBOARD VISUALMENTE
+        document.getElementById('dashPedidosMes').innerText = metricas.pedMes;
+        document.getElementById('dashFilaEstampa').innerText = metricas.filaEstampa;
+        document.getElementById('dashEnviar').innerText = metricas.paraEnviar;
+        document.getElementById('dashFaturamento').innerText = metricas.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        aplicarFiltros(); // Renderiza a tabela
+    });
+
+    // ==========================================
+    // SISTEMA DE BUSCA E FILTROS
+    // ==========================================
+    function setFiltroBtn(tipo) {
+        filtroStatusAtivo = tipo;
+        document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('ativo'));
+        if(tipo === 'TODOS') document.getElementById('filtro-todos').classList.add('ativo');
+        if(tipo === 'PENDENTE_PGTO') document.getElementById('filtro-pendente').classList.add('ativo');
+        if(tipo === 'AGUARDANDO ESTAMPA') document.getElementById('filtro-estampa').classList.add('ativo');
+        aplicarFiltros();
+    }
+
+    function aplicarFiltros() {
+        let termo = document.getElementById('inputBusca').value.toUpperCase();
+        let tbody = document.getElementById('listaPedidos');
+        tbody.innerHTML = '';
+
+        let pedidosFiltrados = todosPedidos.filter(p => {
+            let textoBusca = `${p.nome} ${p.numeroPedido} ${p.whatsapp}`.toUpperCase();
+            let bateuBusca = textoBusca.includes(termo);
+            
+            let bateuFiltro = true;
+            if(filtroStatusAtivo === 'PENDENTE_PGTO') bateuFiltro = p.statusPagamento === 'PENDENTE';
+            if(filtroStatusAtivo === 'AGUARDANDO ESTAMPA') bateuFiltro = p.statusAtualizado === 'AGUARDANDO ESTAMPA';
+
+            return bateuBusca && bateuFiltro;
+        });
+
+        pedidosFiltrados.forEach(pedido => {
+            let classeLogistica = 'select-status ';
+            if(pedido.statusAtualizado === 'PEDIDO FEITO') classeLogistica += 'status-pedido-feito';
+            else if(pedido.statusAtualizado === 'AGUARDANDO ESTAMPA') classeLogistica += 'status-aguardando';
+            else if(pedido.statusAtualizado === 'ESTAMPA PRONTA') classeLogistica += 'status-estampa-pronta';
+            else if(pedido.statusAtualizado === 'PEDIDO ENVIADO') classeLogistica += 'status-pedido-enviado';
+            else if(pedido.statusAtualizado === 'PEDIDO ENTREGUE') classeLogistica += 'status-pedido-entregue';
+
+            let btnPagamento = pedido.statusPagamento === 'PAGO' 
+                ? `<button class="btn-pgto pgto-pago" onclick="trocarPagamento('${pedido.id}', 'PENDENTE')">💰 PAGO</button>`
+                : `<button class="btn-pgto pgto-pendente" onclick="trocarPagamento('${pedido.id}', 'PAGO')">⏳ PENDENTE</button>`;
+
+            let valorFormatado = parseFloat(pedido.valorTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            let htmlItens = pedido.itens.map(i => `<div class="item-lista-tabela"><strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (${i.tamanho})<br><small style="color: #444;">[${i.codigoEstampa}] ${i.nomeEstampa}</small></div>`).join('');
+            
+            let linkWhats = `https://wa.me/55${pedido.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Salve ${pedido.nome}! O status do seu pedido #${pedido.numeroPedido} da Waller foi atualizado para: ${pedido.statusAtualizado}.`)}`;
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong style="font-size:1.1rem;">#${pedido.numeroPedido}</strong><br><small style="color: var(--red); font-weight: 800; font-size: 0.75rem;">📅 ${dataFormatada}</small></td>
-                <td><strong>${pedido.nome}</strong><br><small style="color: #666; font-weight: 700;">${pedido.whatsapp}</small></td>
+                <td><strong style="font-size:1.1rem;">#${pedido.numeroPedido}</strong><br><small style="color: var(--red); font-weight: 800;">📅 ${pedido.dataFormatada}</small></td>
+                <td>
+                    <strong>${pedido.nome}</strong><br><small>${pedido.whatsapp}</small><br>
+                    <div style="margin-top: 5px; font-size: 0.8rem; font-weight: 800;">${valorFormatado} - ${pedido.metodoPagamento || '-'}</div>
+                    <div style="margin-top: 3px;">${btnPagamento}</div>
+                </td>
                 <td>${htmlItens}</td>
                 <td>
-                    <select class="${classeStatus}" onchange="mudarStatusDireto('${pedido.id}', this.value)">
-                        <option value="PEDIDO FEITO" ${currentStatus === 'PEDIDO FEITO' ? 'selected' : ''}>PEDIDO FEITO</option>
-                        <option value="AGUARDANDO ESTAMPA" ${currentStatus === 'AGUARDANDO ESTAMPA' ? 'selected' : ''}>AGUARDANDO ESTAMPA</option>
-                        <option value="ESTAMPA PRONTA" ${currentStatus === 'ESTAMPA PRONTA' ? 'selected' : ''}>ESTAMPA PRONTA</option>
-                        <option value="PEDIDO ENVIADO" ${currentStatus === 'PEDIDO ENVIADO' ? 'selected' : ''}>PEDIDO ENVIADO</option>
-                        <option value="PEDIDO ENTREGUE" ${currentStatus === 'PEDIDO ENTREGUE' ? 'selected' : ''}>PEDIDO ENTREGUE</option>
+                    <select class="${classeLogistica}" onchange="mudarStatusLogistica('${pedido.id}', this.value)">
+                        <option value="PEDIDO FEITO" ${pedido.statusAtualizado === 'PEDIDO FEITO' ? 'selected' : ''}>PEDIDO FEITO</option>
+                        <option value="AGUARDANDO ESTAMPA" ${pedido.statusAtualizado === 'AGUARDANDO ESTAMPA' ? 'selected' : ''}>FILA ESTAMPA</option>
+                        <option value="ESTAMPA PRONTA" ${pedido.statusAtualizado === 'ESTAMPA PRONTA' ? 'selected' : ''}>PRONTO / ENVIAR</option>
+                        <option value="PEDIDO ENVIADO" ${pedido.statusAtualizado === 'PEDIDO ENVIADO' ? 'selected' : ''}>ENVIADO</option>
+                        <option value="PEDIDO ENTREGUE" ${pedido.statusAtualizado === 'PEDIDO ENTREGUE' ? 'selected' : ''}>ENTREGUE</option>
                     </select>
                 </td>
                 <td>
                     <div class="acoes-container">
-                        <a href="${linkWhats}" target="_blank" style="text-decoration: none;"><button class="btn-whatsapp" title="Avisar no WhatsApp">AVISAR</button></a>
-                        <button class="btn-icone" onclick="abrirModalEdicao('${pedido.id}')" title="Editar Pedido">✎</button>
-                        <button class="btn-icone btn-excluir" onclick="excluirPedido('${pedido.id}')" title="Excluir Pedido">X</button>
+                        <a href="${linkWhats}" target="_blank" style="text-decoration: none;"><button class="btn-whatsapp" title="WhatsApp">AVISAR</button></a>
+                        <button class="btn-icone" onclick="abrirModalEdicao('${pedido.id}')" title="Editar">✎</button>
+                        <button class="btn-icone btn-excluir" onclick="excluirPedido('${pedido.id}')" title="Excluir">X</button>
                     </div>
                 </td>
             `;
-            listaPedidos.appendChild(tr);
+            tbody.appendChild(tr);
         });
-    }, (error) => {
-        // AQUI ESTÁ O RASTREADOR DE ERROS
-        alert("🚨 ERRO NO BANCO (Pedidos): \n" + error.message);
-        carregando.innerText = "ERRO: " + error.message;
-        carregando.style.color = "red";
-    });
+    }
 
-    function mudarStatusDireto(id, novoStatus) { db.collection("pedidos").doc(id).update({ status: novoStatus }); }
-    function excluirPedido(id) { if (confirm("Deletar este PEDIDO INTEIRO do sistema?")) { db.collection("pedidos").doc(id).delete(); } }
+    function mudarStatusLogistica(id, novoStatus) { db.collection("pedidos").doc(id).update({ status: novoStatus }); }
+    function trocarPagamento(id, novoStatusPgto) { db.collection("pedidos").doc(id).update({ statusPagamento: novoStatusPgto }); }
+    function excluirPedido(id) { if (confirm("Deletar pedido?")) db.collection("pedidos").doc(id).delete(); }
 
+    // ==========================================
+    // EDIÇÃO DE PEDIDOS
+    // ==========================================
     function abrirModalEdicao(id) {
-        const pedido = pedidos.find(p => p.id === id); if(!pedido) return;
-        document.getElementById('editId').value = pedido.id;
-        document.getElementById('tituloEditPedido').innerText = "#" + pedido.numeroPedido;
-        document.getElementById('editNome').value = pedido.nome || '';
-        document.getElementById('editWhatsapp').value = pedido.whatsapp || '';
+        const p = todosPedidos.find(x => x.id === id); if(!p) return;
+        document.getElementById('editId').value = p.id;
+        document.getElementById('tituloEditPedido').innerText = "#" + p.numeroPedido;
+        document.getElementById('editNome').value = p.nome || '';
+        document.getElementById('editWhatsapp').value = p.whatsapp || '';
+        document.getElementById('editValorTotal').value = p.valorTotal || 0;
+        if(p.metodoPagamento) document.getElementById('editMetodoPagamento').value = p.metodoPagamento;
         
-        let containerItens = document.getElementById('editItensContainer'); containerItens.innerHTML = '';
-        pedido.itens.forEach((item) => { containerItens.innerHTML += gerarHtmlLinhaEdicao(item); });
-        modalEdicao.style.display = 'flex';
+        let container = document.getElementById('editItensContainer'); container.innerHTML = '';
+        p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
+        document.getElementById('modalEdicao').style.display = 'flex';
     }
 
     function adicionarItemEdicao() {
-        let containerItens = document.getElementById('editItensContainer');
         let tempDiv = document.createElement('div');
         tempDiv.innerHTML = gerarHtmlLinhaEdicao({ codigoEstampa: "", nomeEstampa: "", tipoPeca: "OVERSIZED", tamanho: "", cor: "", quantidade: 1 });
-        containerItens.appendChild(tempDiv.firstElementChild);
+        document.getElementById('editItensContainer').appendChild(tempDiv.firstElementChild);
     }
 
     function gerarHtmlLinhaEdicao(item) {
-        return `
-            <div class="form-grid item-edit-row" style="border-left: 4px solid var(--black); padding-left: 10px; margin-bottom: 15px; background: #fafafa; padding-top: 10px; padding-bottom: 10px; padding-right:10px; align-items: center;">
-                <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5; font-size:0.8rem;">
-                <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5; font-size:0.8rem;">
-                <input type="text" class="edit-tip" value="${item.tipoPeca}" placeholder="TIPO" style="font-size:0.8rem;">
-                <input type="text" class="edit-tam" value="${item.tamanho}" placeholder="TAM" style="flex:0.5; font-size:0.8rem;">
-                <input type="text" class="edit-cor" value="${item.cor}" placeholder="COR" style="font-size:0.8rem;">
-                <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" style="flex:0.3; font-size:0.8rem;">
-                <button type="button" onclick="this.closest('.item-edit-row').remove()" style="background: var(--red); color: white; border: 2px solid var(--black); padding: 0.5rem 0.8rem; cursor: pointer; font-weight: 900;" title="Remover Peça">X</button>
-            </div>`;
+        return `<div class="form-grid item-edit-row" style="border-left: 4px solid var(--black); padding-left: 10px; margin-bottom: 15px; background: #fafafa; padding-top: 10px; padding-bottom: 10px; padding-right:10px; align-items: center;">
+            <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5; font-size:0.8rem;">
+            <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5; font-size:0.8rem;">
+            <input type="text" class="edit-tip" value="${item.tipoPeca}" placeholder="TIPO" style="font-size:0.8rem;">
+            <input type="text" class="edit-tam" value="${item.tamanho}" placeholder="TAM" style="flex:0.5; font-size:0.8rem;">
+            <input type="text" class="edit-cor" value="${item.cor}" placeholder="COR" style="font-size:0.8rem;">
+            <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" style="flex:0.3; font-size:0.8rem;">
+            <button type="button" onclick="this.closest('.item-edit-row').remove()" style="background: var(--red); color: white; border: 2px solid var(--black); padding: 0.5rem 0.8rem; cursor: pointer; font-weight: 900;">X</button>
+        </div>`;
     }
 
-    function fecharModalEdicao() { modalEdicao.style.display = 'none'; }
+    function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
 
     function salvarAlteracoesEdicao() {
         const id = document.getElementById('editId').value;
-        let itensAtualizados = [];
+        let itens = [];
         document.querySelectorAll('.item-edit-row').forEach(row => {
-            itensAtualizados.push({
+            itens.push({
                 codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(),
                 nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
                 tipoPeca: row.querySelector('.edit-tip').value.toUpperCase().trim(),
@@ -444,14 +559,15 @@
                 quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
             });
         });
-
-        if(itensAtualizados.length === 0) { alert("Atenção! Um pedido precisa ter pelo menos 1 peça."); return; }
+        if(itens.length === 0) { alert("O pedido precisa de 1 peça."); return; }
 
         db.collection("pedidos").doc(id).update({
             nome: document.getElementById('editNome').value.toUpperCase(),
             whatsapp: document.getElementById('editWhatsapp').value,
-            itens: itensAtualizados 
-        }).then(() => { fecharModalEdicao(); }).catch(e => { console.error(e); alert("Erro ao atualizar o banco."); });
+            valorTotal: parseFloat(document.getElementById('editValorTotal').value || 0),
+            metodoPagamento: document.getElementById('editMetodoPagamento').value,
+            itens: itens 
+        }).then(() => { fecharModalEdicao(); }).catch(e => { alert("Erro ao atualizar banco."); });
     }
 
     // ==========================================
@@ -460,7 +576,6 @@
     function gerarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("WALLER CLOTHING - RELATORIO COMPLETO", 14, 15);
         doc.setFontSize(9); doc.setFont("helvetica", "normal"); 
         let dataHoje = new Date().toLocaleDateString('pt-BR'); doc.text("Documento gerado em: " + dataHoje, 14, 21);
@@ -469,14 +584,13 @@
         let currentY = 30; let encontrouPedidos = false;
 
         statusList.forEach(status => {
-            const pendentes = pedidos.filter(p => p.statusAtualizado === status);
+            const pendentes = todosPedidos.filter(p => p.statusAtualizado === status);
             if (pendentes.length > 0) {
                 encontrouPedidos = true;
                 doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(217, 4, 41); 
                 doc.text(`> STATUS: ${status}`, 14, currentY); currentY += 5; 
 
                 let totalPecasBloco = 0; 
-
                 const contagem = {};
                 pendentes.forEach(pedido => {
                     pedido.itens.forEach(item => {
@@ -484,9 +598,7 @@
                         let nom = item.nomeEstampa || "Desconhecido";
                         let peca = item.tipoPeca || "OVERSIZED";
                         let qtd = parseInt(item.quantidade) || 1; 
-                        
                         totalPecasBloco += qtd; 
-
                         const chave = `${cod} | ${nom} | ${peca} | ${item.cor} | ${item.tamanho}`;
                         if(!contagem[chave]) contagem[chave] = 0;
                         contagem[chave] += qtd; 
@@ -499,30 +611,23 @@
                 });
 
                 dadosTabela.sort((a, b) => {
-                    let codA = String(a[0]).trim().toUpperCase();
-                    let codB = String(b[0]).trim().toUpperCase();
-                    if(codA === "-" && codB !== "-") return 1;  
-                    if(codB === "-" && codA !== "-") return -1;
+                    let codA = String(a[0]).trim().toUpperCase(); let codB = String(b[0]).trim().toUpperCase();
+                    if(codA === "-" && codB !== "-") return 1; if(codB === "-" && codA !== "-") return -1;
                     return codA.localeCompare(codB, 'pt-BR', { numeric: true, sensitivity: 'base' });
                 });
 
                 doc.autoTable({
                     startY: currentY, head: [['Cód', 'Estampa', 'Peça', 'Cor', 'Tam', 'Qtd']], body: dadosTabela, 
-                    foot: [[
-                        { content: 'TOTAL DE PEÇAS:', colSpan: 5, styles: { halign: 'right', fillColor: [217, 4, 41], textColor: [255,255,255] } },
-                        { content: totalPecasBloco.toString(), styles: { halign: 'center', fillColor: [217, 4, 41], textColor: [255,255,255] } }
-                    ]],
-                    theme: 'grid',
-                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' }, styles: { font: 'helvetica', fontSize: 9 },
+                    foot: [[ { content: 'TOTAL DE PEÇAS:', colSpan: 5, styles: { halign: 'right', fillColor: [217, 4, 41], textColor: [255,255,255] } }, { content: totalPecasBloco.toString(), styles: { halign: 'center', fillColor: [217, 4, 41], textColor: [255,255,255] } } ]],
+                    theme: 'grid', headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' }, styles: { font: 'helvetica', fontSize: 9 },
                     columnStyles: { 0: { cellWidth: 15 }, 4: { cellWidth: 15, halign: 'center' }, 5: { cellWidth: 15, halign: 'center', fontStyle: 'bold' } }
                 });
-
                 currentY = doc.lastAutoTable.finalY + 15; 
                 if(currentY > 270) { doc.addPage(); currentY = 20; }
             }
         });
 
-        if(!encontrouPedidos) { alert("Nenhum pedido encontrado no sistema!"); return; }
+        if(!encontrouPedidos) { alert("Nenhum pedido encontrado!"); return; }
         doc.save(`relatorio_waller_${dataHoje.replace(/\//g, '-')}.pdf`);
     }
 </script>
