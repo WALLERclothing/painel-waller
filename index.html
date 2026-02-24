@@ -28,7 +28,7 @@
         
         .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
-        .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; display: none; } /* Começa invisível na aba cadastro */
+        .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; display: none; }
         .btn-pdf:hover { background-color: var(--white); color: var(--black); }
 
         .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
@@ -38,7 +38,6 @@
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
-        /* DASHBOARD METRICS */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
         .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
@@ -48,7 +47,6 @@
         .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
         .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
         
-        /* BUSCA E FILTROS */
         .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--gray); padding: 1rem; border: 2px solid var(--black); }
         .botoes-filtro { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .btn-filtro { background: var(--white); border: 2px solid var(--black); font-weight: 800; font-size: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; text-transform: uppercase; }
@@ -102,12 +100,13 @@
         .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
         .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--black); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
         
-        .item-edit-wrapper { border-left: 4px solid var(--black); padding: 15px; margin-bottom: 15px; background: #fafafa; position: relative; }
+        .item-edit-wrapper { border: 2px dashed var(--black); padding: 15px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-remove-peca { position: absolute; top: 10px; right: 10px; background: var(--red); color: white; border: 2px solid var(--black); padding: 0.3rem 0.6rem; cursor: pointer; font-weight: 900; font-size: 0.8rem; z-index: 2; }
         
         @media (max-width: 600px) {
             .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
             .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 10px; }
         }
     </style>
 </head>
@@ -118,7 +117,6 @@
     <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
 </nav>
 
-<!-- MENU DE ABAS ATUALIZADO -->
 <div class="tab-menu">
     <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Cadastro de Pedidos</button>
     <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Fila de Produção</button>
@@ -139,7 +137,7 @@
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
             </div>
             <div class="form-grid">
-                <input type="number" id="valorTotal" placeholder="VALOR TOTAL (Calculado auto)" step="0.01">
+                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)">
                 <select id="metodoPagamento">
                     <option value="PIX">PIX</option>
                     <option value="CARTÃO">CARTÃO</option>
@@ -155,7 +153,7 @@
         <div class="form-section" style="border-bottom: none;">
             <div class="form-section-title">2. Adicionar Peças ao Pedido</div>
             <div class="form-grid">
-                <input type="text" id="codigoEstampa" placeholder="CÓDIGO" style="flex: 0.5;">
+                <input type="text" id="codigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" style="flex: 0.5;">
                 <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1.5;">
             </div>
             <div class="form-grid">
@@ -163,7 +161,7 @@
                 <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 
-                <input type="number" id="valorUnitario" placeholder="R$ UN (Valor da Peça)" step="0.01" style="flex: 0.5;">
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN (Valor da Peça)" style="flex: 0.5;">
                 <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
             </div>
             <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
@@ -181,7 +179,6 @@
 <!-- ABA 2: FILA DE PRODUÇÃO -->
 <!-- ============================================== -->
 <div id="aba-producao" class="container" style="display: none;">
-    <!-- DASHBOARD DE MÉTRICAS -->
     <div class="dashboard-grid">
         <div class="dash-card">
             <h3>Pedidos no Mês</h3>
@@ -204,7 +201,6 @@
     <div class="card">
         <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
         
-        <!-- BUSCA E FILTROS -->
         <div class="filtros-container">
             <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME, NÚMERO OU TELEFONE..." onkeyup="aplicarFiltros()">
             <div class="botoes-filtro">
@@ -261,25 +257,53 @@
         <h2 class="card-title" style="margin-bottom: 1rem; font-size: 1.2rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
         <input type="hidden" id="editId">
         
+        <div class="form-section-title" style="font-size: 0.85rem;">DADOS DO CLIENTE</div>
         <div class="form-grid" style="margin-bottom: 1rem;">
             <input type="text" id="editNome" placeholder="NOME DO CLIENTE">
             <input type="text" id="editWhatsapp" placeholder="WHATSAPP">
         </div>
         <div class="form-grid" style="margin-bottom: 2rem;">
-            <input type="number" id="editValorTotal" placeholder="SOMA TOTAL (R$)" step="0.01" style="color: var(--red); font-weight: 900; background: #fee2e2;" readonly title="O total é calculado automaticamente somando os valores das peças abaixo!">
+            <input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL (Calculado Auto)" style="color: var(--red); font-weight: 900; background: #fee2e2;" readonly>
             <select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO / BOLETO</option></select>
         </div>
 
         <div class="form-section-title" style="font-size: 0.85rem;">PEÇAS DO PEDIDO</div>
         <div id="editItensContainer"></div>
-        <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 1.5rem; font-size: 0.8rem; padding: 0.6rem;">+ ADICIONAR NOVA PEÇA</button>
+        <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 1.5rem; font-size: 0.8rem; padding: 0.6rem;">+ ADICIONAR NOVA PEÇA AO PEDIDO</button>
         <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
     </div>
 </div>
 
 <script>
     // ==========================================
-    // SISTEMA DE NAVEGAÇÃO DE ABAS
+    // FORMATAÇÃO DE MOEDA (R$ 0,00)
+    // ==========================================
+    function unmaskCurrency(value) {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        value = value.toString().replace(/[^\d,]/g, '').replace(',', '.');
+        return parseFloat(value) || 0;
+    }
+
+    function formatCurrency(num) {
+        let value = parseFloat(num) || 0;
+        return "R$ " + value.toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+    }
+
+    // Escutador global para todos os inputs com a classe 'moeda'
+    document.addEventListener('input', function(e) {
+        if(e.target.classList.contains('moeda') && !e.target.readOnly) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value === "") { e.target.value = ""; return; }
+            value = (parseInt(value) / 100).toFixed(2) + "";
+            value = value.replace(".", ",");
+            value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+            e.target.value = "R$ " + value;
+        }
+    });
+
+    // ==========================================
+    // NAVEGAÇÃO DE ABAS
     // ==========================================
     function mudarAba(aba) {
         document.getElementById('aba-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
@@ -346,6 +370,7 @@
             let cod = e.target.value.toUpperCase().trim();
             if(catalogoEstampas[cod]) e.target.closest('.item-edit-wrapper').querySelector('.edit-nom').value = catalogoEstampas[cod];
         }
+        // Recalcula o total sempre que o valor ou quantidade da edição mudar
         if(e.target.classList.contains('edit-valor') || e.target.classList.contains('edit-qtd')) {
             recalcularSomaEdicao();
         }
@@ -364,7 +389,7 @@
         const tip = document.getElementById('tipoPeca').value;
         const tam = document.getElementById('tamanho').value;
         const cor = document.getElementById('cor').value;
-        const val = document.getElementById('valorUnitario').value || 0;
+        const val = unmaskCurrency(document.getElementById('valorUnitario').value); // Lê formatado
         const qtd = document.getElementById('quantidade').value;
 
         if(!cod || !nom) { alert("Preencha o código e o nome da peça!"); return; }
@@ -388,7 +413,7 @@
         
         carrinhoTemporario.forEach((peca, index) => {
             somaCarrinho += (peca.quantidade * peca.valorUnitario);
-            let valFormat = peca.valorUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            let valFormat = formatCurrency(peca.valorUnitario);
             document.getElementById('listaCarrinho').innerHTML += `
                 <div class="carrinho-item">
                     <span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} (${peca.tamanho}) - [${peca.codigoEstampa}] ${peca.nomeEstampa} - <strong>${valFormat} un</strong></span>
@@ -396,7 +421,8 @@
                 </div>`;
         });
 
-        document.getElementById('valorTotal').value = somaCarrinho.toFixed(2);
+        // Preenche automaticamente o campo Valor Total em Reais
+        document.getElementById('valorTotal').value = formatCurrency(somaCarrinho);
         
         if(carrinhoTemporario.length === 0) { document.getElementById('carrinho-container').style.display = 'none'; return; }
         document.getElementById('carrinho-container').style.display = 'block'; 
@@ -405,7 +431,7 @@
     async function salvarPedidoCompleto() {
         let nome = document.getElementById('nome').value.toUpperCase();
         let whatsapp = document.getElementById('whatsapp').value;
-        let valorTotal = document.getElementById('valorTotal').value || 0;
+        let valorTotal = unmaskCurrency(document.getElementById('valorTotal').value);
         let metodo = document.getElementById('metodoPagamento').value;
         let statusPgto = document.getElementById('statusPagamento').value;
 
@@ -424,8 +450,6 @@
             carrinhoTemporario = []; atualizarTelaCarrinho();
             
             alert(`Pedido #${numeroGerado} salvo com sucesso! Vá para a aba "Fila de Produção" para gerenciar.`);
-            // Se quiser que mude de aba automaticamente, tire os // da linha abaixo:
-            // mudarAba('producao');
         } catch (error) { alert("Erro ao salvar."); }
     }
 
@@ -467,7 +491,7 @@
         document.getElementById('dashPedidosMes').innerText = metricas.pedMes;
         document.getElementById('dashFilaEstampa').innerText = metricas.filaEstampa;
         document.getElementById('dashEnviar').innerText = metricas.paraEnviar;
-        document.getElementById('dashFaturamento').innerText = metricas.faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('dashFaturamento').innerText = formatCurrency(metricas.faturamento);
 
         aplicarFiltros(); 
     });
@@ -512,11 +536,11 @@
                 ? `<button class="btn-pgto pgto-pago" onclick="trocarPagamento('${pedido.id}', 'PENDENTE')">💰 PAGO</button>`
                 : `<button class="btn-pgto pgto-pendente" onclick="trocarPagamento('${pedido.id}', 'PAGO')">⏳ PENDENTE</button>`;
 
-            let valorFormatado = parseFloat(pedido.valorTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            let valorFormatado = formatCurrency(pedido.valorTotal);
 
             let htmlItens = pedido.itens.map(i => `
                 <div class="item-lista-tabela">
-                    <strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (Tam: ${i.tamanho}) - R$ ${parseFloat(i.valorUnitario||0).toFixed(2)} un<br>
+                    <strong>${i.quantidade}x ${i.tipoPeca}</strong> ${i.cor} (${i.tamanho}) - ${formatCurrency(i.valorUnitario)} un<br>
                     <small style="color: #444;">[${i.codigoEstampa}] ${i.nomeEstampa}</small>
                 </div>
             `).join('');
@@ -557,10 +581,10 @@
 
     function mudarStatusLogistica(id, novoStatus) { db.collection("pedidos").doc(id).update({ status: novoStatus }); }
     function trocarPagamento(id, novoStatusPgto) { db.collection("pedidos").doc(id).update({ statusPagamento: novoStatusPgto }); }
-    function excluirPedido(id) { if (confirm("Deletar pedido?")) db.collection("pedidos").doc(id).delete(); }
+    function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
 
     // ==========================================
-    // EDIÇÃO DE PEDIDOS
+    // EDIÇÃO DE PEDIDOS COM SELECTS IDÊNTICOS
     // ==========================================
     function abrirModalEdicao(id) {
         const p = todosPedidos.find(x => x.id === id); if(!p) return;
@@ -568,7 +592,7 @@
         document.getElementById('tituloEditPedido').innerText = "#" + p.numeroPedido;
         document.getElementById('editNome').value = p.nome || '';
         document.getElementById('editWhatsapp').value = p.whatsapp || '';
-        document.getElementById('editValorTotal').value = p.valorTotal || 0;
+        document.getElementById('editValorTotal').value = formatCurrency(p.valorTotal || 0);
         if(p.metodoPagamento) document.getElementById('editMetodoPagamento').value = p.metodoPagamento;
         
         let container = document.getElementById('editItensContainer'); container.innerHTML = '';
@@ -585,22 +609,23 @@
         recalcularSomaEdicao();
     }
 
+    // HTML GERA EXATAMENTE AS CAIXAS DE SELEÇÃO DA ABA DE LANÇAR DROP
     function gerarHtmlLinhaEdicao(item) {
         const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
         return `
         <div class="item-edit-wrapper">
-            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">REMOVER PEÇA</button>
-            <div class="form-grid" style="margin-bottom: 5px; padding-right: 120px;">
-                <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO">
-                <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA">
+            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER PEÇA</button>
+            <div class="form-grid" style="margin-bottom: 10px; padding-right: 120px;">
+                <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
+                <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
+            </div>
+            <div class="form-grid">
                 <select class="edit-tip">
                     <option value="OVERSIZED" ${t==='OVERSIZED'?'selected':''}>OVERSIZED</option>
                     <option value="MOLETOM" ${t==='MOLETOM'?'selected':''}>MOLETOM</option>
                     <option value="REGATA" ${t==='REGATA'?'selected':''}>REGATA</option>
                     <option value="CAMISETA TRADICIONAL" ${t==='CAMISETA TRADICIONAL'?'selected':''}>CAM. TRADICIONAL</option>
                 </select>
-            </div>
-            <div class="form-grid">
                 <select class="edit-tam">
                     <option value="P" ${tam==='P'?'selected':''}>P</option>
                     <option value="M" ${tam==='M'?'selected':''}>M</option>
@@ -614,8 +639,8 @@
                     <option value="MESCLA" ${c==='MESCLA'?'selected':''}>MESCLA</option>
                     <option value="OFF-WHITE" ${c==='OFF-WHITE'?'selected':''}>OFF-WHITE</option>
                 </select>
-                <input type="number" class="edit-valor" value="${item.valorUnitario || 0}" step="0.01" placeholder="R$ UN" style="flex: 0.8;">
-                <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" min="1" style="flex: 0.5;">
+                <input type="text" class="edit-valor moeda" value="${formatCurrency(item.valorUnitario)}" placeholder="R$ UN" style="flex: 0.5;">
+                <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" min="1" style="flex: 0.3;">
             </div>
         </div>`;
     }
@@ -623,11 +648,11 @@
     function recalcularSomaEdicao() {
         let soma = 0;
         document.querySelectorAll('.item-edit-wrapper').forEach(row => {
-            let v = parseFloat(row.querySelector('.edit-valor').value) || 0;
+            let v = unmaskCurrency(row.querySelector('.edit-valor').value);
             let q = parseInt(row.querySelector('.edit-qtd').value) || 1;
             soma += (v * q);
         });
-        document.getElementById('editValorTotal').value = soma.toFixed(2);
+        document.getElementById('editValorTotal').value = formatCurrency(soma);
     }
 
     function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
@@ -642,23 +667,25 @@
                 tipoPeca: row.querySelector('.edit-tip').value,
                 tamanho: row.querySelector('.edit-tam').value,
                 cor: row.querySelector('.edit-cor').value,
-                valorUnitario: parseFloat(row.querySelector('.edit-valor').value) || 0,
+                valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value),
                 quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
             });
         });
         if(itens.length === 0) { alert("O pedido precisa de pelo menos 1 peça."); return; }
 
+        let valorTotalCalculado = unmaskCurrency(document.getElementById('editValorTotal').value);
+
         db.collection("pedidos").doc(id).update({
             nome: document.getElementById('editNome').value.toUpperCase(),
             whatsapp: document.getElementById('editWhatsapp').value,
-            valorTotal: parseFloat(document.getElementById('editValorTotal').value || 0),
+            valorTotal: valorTotalCalculado,
             metodoPagamento: document.getElementById('editMetodoPagamento').value,
             itens: itens 
         }).then(() => { fecharModalEdicao(); }).catch(e => { alert("Erro ao atualizar banco."); });
     }
 
     // ==========================================
-    // GERADOR DE PDF 
+    // GERADOR DE PDF
     // ==========================================
     function gerarPDF() {
         const { jsPDF } = window.jspdf;
