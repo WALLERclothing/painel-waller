@@ -12,30 +12,38 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        /* === ESTILO BRUTALISTA ORIGINAL + DARK MODE SUAVIZADO === */
+        /* === ESTILO BRUTALISTA TOM SOBRE TOM === */
         :root {
-            --black: #000000;
+            color-scheme: light;
+            --black: #111111;
             --white: #ffffff;
-            --red: #d90429;
-            --green: #06d6a0;
-            --gray: #f4f4f4;
-            --border-color: #000000;
-            --border-thick: 3px solid var(--border-color);
-        }
-
-        /* Dark mode com contraste reduzido (confortável para a visão) */
-        [data-theme="dark"] {
-            --black: #d4d4d4;       
-            --white: #181818;       
-            --gray: #222222;        
-            --border-color: #555555; 
-            --red: #e63946;         
+            --gray: #f0f0f0;
+            --border-color: #111111;
+            --border-thick: 2px solid var(--border-color);
+            --red: #c1121f;
             --green: #2a9d8f;
+            --text-muted: #666666;
+            --bg-body: #ffffff;
+            --bg-dots: #e0e0e0;
         }
 
-        body { font-family: 'Montserrat', sans-serif; background-color: var(--white); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(var(--gray) 2px, transparent 1px); background-size: 20px 20px; transition: 0.2s; }
+        /* DARK MODE TOM SOBRE TOM SUAVE */
+        [data-theme="dark"] {
+            color-scheme: dark;
+            --black: #cccccc;        /* Texto cinza claro, sem estourar o branco */
+            --white: #1c1c1c;        /* Fundo dos painéis chumbo escuro */
+            --gray: #2a2a2a;         /* Fundo de elementos secundários */
+            --border-color: #3a3a3a; /* Bordas suaves */
+            --red: #a83232;          /* Vermelho mais apagado e terroso */
+            --green: #3b7a57;        /* Verde militar mais calmo */
+            --text-muted: #888888;
+            --bg-body: #121212;      /* Fundo da tela base */
+            --bg-dots: #222222;
+        }
+
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(var(--bg-dots) 2px, transparent 1px); background-size: 20px 20px; transition: background-color 0.3s, color 0.3s; }
         
-        .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
+        .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 4px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
         .nav-actions { position: absolute; right: 2rem; display: flex; gap: 10px; }
         .btn-nav { background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; transition: 0.1s; }
@@ -43,107 +51,111 @@
 
         .tab-menu { display: flex; gap: 1rem; max-width: 1400px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
         .tab-btn { flex: 1; text-align: center; background-color: var(--white); color: var(--black); border: var(--border-thick); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--border-color); transition: all 0.1s; text-transform: uppercase; }
-        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--border-color); }
-        .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); pointer-events: none; }
+        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--border-color); background-color: var(--gray); }
+        .tab-active { background-color: var(--black); color: var(--bg-body); box-shadow: 4px 4px 0px var(--red); pointer-events: none; }
 
         .container { max-width: 1400px; margin: 3rem auto; padding: 0 1rem; }
         
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; font-weight: 900; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; font-weight: 900; color: var(--text-muted); }
         .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
         .dash-card.green-text span { color: var(--green); }
         .best-sellers-list { font-size: 0.8rem; font-weight: 800; color: var(--black); margin-top: 10px; width: 100%; }
 
-        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--border-color); margin-bottom: 3rem; overflow-x: auto; }
-        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 6px 6px 0px var(--border-color); margin-bottom: 3rem; overflow-x: auto; }
+        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: var(--black); }
         
         .form-section { border-bottom: 2px dashed var(--border-color); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
         .form-section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--red); display: flex; justify-content: space-between; align-items: center;}
         .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-grid > * { flex: 1; min-width: 180px; }
         
-        input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--border-color); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
-        input:focus, select:focus, textarea:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
-        ::placeholder { color: #888; font-weight: 500; text-transform: none; }
+        input, select, textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: var(--border-thick); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
+        input:focus, select:focus, textarea:focus { border-color: var(--red); box-shadow: 2px 2px 0px var(--red); }
+        ::placeholder { color: var(--text-muted); font-weight: 500; text-transform: none; }
         input:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
+        select option { background-color: var(--white); color: var(--black); }
         
-        textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--border-color); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); resize: vertical; min-height: 100px; }
+        textarea { resize: vertical; min-height: 100px; }
 
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
-        .btn-add { background-color: var(--white); color: var(--black); border: 2px solid var(--border-color); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--border-color); }
-        .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
-        .btn-primary { background-color: var(--black); color: var(--white); border: 2px solid var(--border-color); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--red); }
+        .btn-add { background-color: var(--gray); color: var(--black); border: var(--border-thick); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--border-color); }
+        .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); background-color: var(--white); }
+        .btn-primary { background-color: var(--black); color: var(--bg-body); border: var(--border-thick); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 4px 4px 0px var(--red); }
         .btn-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
         
-        #carrinho-container { background-color: var(--gray); border: 2px solid var(--border-color); padding: 1rem; margin-bottom: 1.5rem; display: none; }
-        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
-        .btn-remove-item { background: var(--red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+        #carrinho-container { background-color: var(--gray); border: var(--border-thick); padding: 1rem; margin-bottom: 1.5rem; display: none; }
+        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--black); }
+        .btn-remove-item { background: var(--red); color: var(--white); border: var(--border-thick); padding: 0.2rem 0.5rem; font-size: 0.7rem; }
 
-        /* KANBAN E CARDS */
-        .kanban-board { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
-        .kanban-col { background: var(--gray); border: var(--border-thick); padding: 1rem; min-width: 320px; flex: 1; display: flex; flex-direction: column; gap: 1rem; box-shadow: 6px 6px 0px var(--border-color); }
-        .kanban-header { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+        /* KANBAN (GRID PARA CABER NA TELA) */
+        .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; align-items: flex-start; padding-bottom: 1rem; }
+        .kanban-col { background: var(--gray); border: var(--border-thick); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: 4px 4px 0px var(--border-color); min-width: 0; }
+        .kanban-header { font-size: 1rem; font-weight: 900; text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem; color: var(--black); }
         
-        .pedido-card { background: var(--white); border: 2px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; cursor: grab; position: relative; }
+        .pedido-card { background: var(--white); border: var(--border-thick); display: flex; flex-direction: column; justify-content: space-between; cursor: grab; position: relative; }
         .pedido-card:active { cursor: grabbing; opacity: 0.8; }
         .checkbox-bulk { position: absolute; top: 10px; right: 10px; transform: scale(1.5); cursor: pointer; }
         
-        .pedido-header { background: var(--gray); border-bottom: 2px solid var(--border-color); padding: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .pedido-id { font-size: 1.2rem; font-weight: 900; font-style: italic; }
+        .pedido-header { background: var(--gray); border-bottom: var(--border-thick); padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .pedido-id { font-size: 1.1rem; font-weight: 900; font-style: italic; color: var(--black); }
         .pedido-data { font-size: 0.7rem; color: var(--red); font-weight: 800; border: 1px solid var(--red); padding: 2px 4px; background: var(--white); display: inline-block; width: fit-content; }
 
-        .pedido-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .cliente-nome { font-size: 1rem; font-weight: 900; text-transform: uppercase; padding-right: 25px; }
+        .pedido-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; color: var(--black); }
+        .cliente-nome { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; padding-right: 25px; }
         .cliente-financas { font-size: 0.85rem; font-weight: 900; color: var(--green); }
         
-        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); border: 2px dashed var(--border-color); padding: 6px 8px; font-size: 0.8rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
+        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); border: 1px dashed var(--border-color); padding: 6px 8px; font-size: 0.75rem; font-weight: 900; cursor: pointer; transition: all 0.2s; color: var(--black); }
         .toggle-itens-btn:hover { background: var(--black); color: var(--white); }
         .pedido-itens-lista { display: none; flex-direction: column; gap: 5px; margin-top: 5px; }
-        .item-tag-compacto { background: var(--white); border: 2px solid var(--border-color); border-left: 4px solid var(--red); padding: 6px; font-size: 0.75rem; }
+        .item-tag-compacto { background: var(--white); border: 1px solid var(--border-color); border-left: 3px solid var(--red); padding: 6px; font-size: 0.7rem; }
         
-        .pedido-footer { display: flex; border-top: 2px solid var(--border-color); }
-        .pedido-footer button { flex: 1; padding: 0.6rem; font-size: 1rem; border: none; border-right: 2px solid var(--border-color); box-shadow: none; display: flex; justify-content: center; align-items: center; background: var(--white); color: var(--black); }
+        .pedido-footer { display: flex; border-top: var(--border-thick); }
+        .pedido-footer button { flex: 1; padding: 0.5rem; font-size: 1rem; border: none; border-right: var(--border-thick); box-shadow: none; display: flex; justify-content: center; align-items: center; background: var(--gray); color: var(--black); }
         .pedido-footer button:last-child { border-right: none; }
         .pedido-footer button:hover { background: var(--black); color: var(--white); }
 
-        .btn-pgto { padding: 0.3rem 0.5rem; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); cursor: pointer; box-shadow: 2px 2px 0px var(--border-color); text-transform: uppercase; margin-top: 5px; width: 100%; }
+        .btn-pgto { padding: 0.3rem 0.5rem; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); cursor: pointer; text-transform: uppercase; margin-top: 5px; width: 100%; }
         .pgto-pendente { background-color: var(--white); color: var(--red); }
         .pgto-pago { background-color: var(--black); color: var(--green); }
 
         /* TABELAS E SELOS */
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color); vertical-align: middle; }
-        th { font-weight: 900; text-transform: uppercase; border-top: 2px solid var(--border-color); border-bottom: 3px solid var(--border-color); }
-        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--white); border: 2px solid var(--border-color); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s; text-decoration: none;}
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; color: var(--black); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick); border-bottom: 2px solid var(--border-color); }
+        .btn-icone { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: var(--gray); border: var(--border-thick); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s; text-decoration: none;}
         .btn-icone:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0px var(--border-color); }
         
-        /* NOVO LAYOUT DO SOLD OUT (Brutalista e Bonito) */
-        .badge-soldout { background: var(--red); color: white; padding: 3px 6px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); display: inline-block; margin-left: 8px; letter-spacing: 1px; vertical-align: middle; }
+        .badge-soldout { background: var(--red); color: var(--bg-body); padding: 4px 8px; font-size: 0.65rem; font-weight: 900; border: var(--border-thick); display: inline-block; margin-left: 8px; letter-spacing: 1px; vertical-align: middle; }
+        .badge-vip { background: #ffd700; color: #000; padding: 3px 6px; font-size: 0.65rem; font-weight: 900; border: 2px solid #000; display: inline-block; margin-left: 5px; }
 
         /* TOAST BRUTALISTA */
         .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
-        .brutal-toast { background: var(--black); color: var(--white); border: 3px solid var(--red); box-shadow: 6px 6px 0px var(--red); padding: 1rem; font-weight: 900; text-transform: uppercase; font-size: 0.9rem; animation: slideIn 0.3s ease-out; }
+        .brutal-toast { background: var(--white); color: var(--black); border: var(--border-thick); box-shadow: 4px 4px 0px var(--border-color); padding: 1rem; font-weight: 900; text-transform: uppercase; font-size: 0.9rem; animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
         /* BARRA DE AÇÃO EM MASSA (BULK) */
-        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); box-shadow: 8px 8px 0px var(--border-color); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: bottom 0.3s; }
+        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); box-shadow: 4px 4px 0px var(--border-color); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: bottom 0.3s; }
         #bulk-action-bar.show { bottom: 20px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
-        .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
-        .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--border-color); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
+        .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 6px 6px 0px var(--border-color); position: relative; margin: auto; }
+        .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--gray); border: var(--border-thick); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
         
         .grid-pdf-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-        .btn-pdf-opcao { background: var(--white); border: 2px solid var(--border-color); padding: 1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; box-shadow: 4px 4px 0px var(--border-color); transition: all 0.1s; }
-        .btn-pdf-opcao:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); background: var(--black); color: var(--white); }
+        .btn-pdf-opcao { background: var(--gray); border: var(--border-thick); padding: 1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; color: var(--black); transition: all 0.1s; box-shadow: 3px 3px 0px var(--border-color); }
+        .btn-pdf-opcao:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); background: var(--black); color: var(--bg-body); }
 
-        .label-fiel { color: var(--green); font-size: 0.75rem; font-weight: 900; text-transform: uppercase; border: 2px solid var(--green); padding: 2px 6px; display: none; }
+        .label-fiel { color: var(--green); font-size: 0.75rem; font-weight: 900; text-transform: uppercase; padding: 2px 6px; display: none; border: 2px solid var(--green); }
         
+        @media (max-width: 1100px) {
+            .kanban-board { display: flex; overflow-x: auto; }
+            .kanban-col { min-width: 280px; }
+        }
         @media (max-width: 768px) {
             .navbar h1 { font-size: 1.5rem; } .nav-actions { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
             .dashboard-grid { grid-template-columns: 1fr 1fr; }
-            .kanban-board { flex-direction: column; }
         }
     </style>
 </head>
@@ -155,7 +167,7 @@
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
         <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
-        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF / ETIQUETAS</button>
+        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
     </div>
 </nav>
 
@@ -189,7 +201,7 @@
                 <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
                 <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
                 <select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="background-color: var(--gray); color: var(--red); font-weight: 900;">
+                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="color: var(--red); font-weight: 900; border-color: var(--red);">
             </div>
         </div>
         
@@ -226,7 +238,7 @@
         <div class="dash-card green-text">
             <div style="display:flex; justify-content:space-between; width:100%;">
                 <h3>Faturamento</h3>
-                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem; border: 2px solid var(--border-color); box-shadow: 2px 2px 0px var(--border-color);">
+                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem;">
                     <option value="ALL">...</option>
                 </select>
             </div>
@@ -260,16 +272,24 @@
 
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title" id="tituloCardEstampa">Cadastrar Estampa</h2>
+        <h2 class="card-title" id="tituloCardEstampa">Cadastrar / Editar Estampa</h2>
         <form onsubmit="salvarNovaEstampa(event)">
             <input type="hidden" id="editEstampaCodigoOriginal" value="">
             <div class="form-grid">
-                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
+                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL)" required style="flex: 0.5;">
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
+            </div>
+            <div class="form-grid">
+                <select id="cadCategoriaEstampa" style="flex:1;">
+                    <option value="CAMISETA">CAMISETA</option>
+                    <option value="MOLETOM">MOLETOM</option>
+                    <option value="ACESSÓRIO">ACESSÓRIO</option>
+                    <option value="OUTROS">OUTROS</option>
+                </select>
                 <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ CADASTRAR</button>
+                <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ SALVAR ESTAMPA</button>
                 <button type="button" id="btnCancelarEstampa" class="btn-add" style="margin-top:0; flex: 1; display: none;" onclick="cancelarEdicaoEstampa()">CANCELAR</button>
             </div>
         </form>
@@ -277,7 +297,7 @@
     <div class="card">
         <h2 class="card-title">Estampas e Estoque</h2>
         <table>
-            <thead><tr><th style="width: 15%;">Código</th><th style="width: 55%;">Nome da Estampa</th><th style="width: 15%;">Estoque</th><th style="width: 15%;">Ações</th></tr></thead>
+            <thead><tr><th style="width: 15%;">Código</th><th style="width: 45%;">Nome e Categoria</th><th style="width: 25%;">Estoque (Ajuste Rápido)</th><th style="width: 15%;">Ações</th></tr></thead>
             <tbody id="listaEstampas"></tbody>
         </table>
     </div>
@@ -287,7 +307,7 @@
     <div class="card">
         <h2 class="card-title">Top Clientes da Waller</h2>
         <table>
-            <thead><tr><th>Nome</th><th>WhatsApp</th><th>Pedidos</th><th>Gasto</th><th>Ação</th></tr></thead>
+            <thead><tr><th>Cliente / Contato</th><th>Pedidos</th><th>Última Compra</th><th>Ticket Médio</th><th>Total Gasto</th><th>Ficha</th></tr></thead>
             <tbody id="listaClientesCRM"></tbody>
         </table>
     </div>
@@ -298,8 +318,8 @@
         <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
         <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
         
-        <div style="background:var(--gray); padding:1rem; border:2px dashed var(--border-color); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-            <div><strong style="font-size:1.2rem;" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
+        <div style="background:var(--gray); padding:1rem; border:var(--border-thick); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong style="font-size:1.2rem; color:var(--black);" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
             <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
         </div>
 
@@ -316,7 +336,7 @@
             <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:2;">
         </div>
         
-        <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Estilo, tamanhos que costuma usar, reclamações, VIP, etc)"></textarea>
+        <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Tamanhos preferidos, estilo, reclamações, etc)"></textarea>
         
         <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
     </div>
@@ -340,12 +360,12 @@
         <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
         <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIOS</h2>
         <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; background: var(--black); color: var(--white);">📄 O.S. FILA COMPLETA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--black);">📄 O.S. FILA COMPLETA</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; background: var(--red); color: white; border-color: var(--border-color);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; background: var(--green); color: var(--black);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
         </div>
     </div>
 </div>
@@ -358,7 +378,7 @@
         <option value="PEDIDO ENVIADO">Mover p/ ENVIADO</option>
         <option value="PEDIDO ENTREGUE">Mover p/ ENTREGUE</option>
     </select>
-    <button class="btn-add" style="width: auto; background: var(--black); color: var(--white);" onclick="executarBulkUpdate()">APLICAR</button>
+    <button class="btn-add" style="width: auto; background: var(--black); color: var(--bg-body);" onclick="executarBulkUpdate()">APLICAR</button>
     <button class="btn-add" style="width: auto; color: var(--red);" onclick="limparBulk()">CANCELAR</button>
 </div>
 
@@ -378,7 +398,7 @@
         let toast = document.createElement('div');
         toast.className = 'brutal-toast';
         toast.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
-        toast.style.boxShadow = isError ? '6px 6px 0px var(--red)' : '6px 6px 0px var(--green)';
+        toast.style.color = isError ? 'var(--red)' : 'var(--green)';
         toast.innerText = msg;
         document.getElementById('toastContainer').appendChild(toast);
         setTimeout(() => toast.remove(), 3500);
@@ -449,7 +469,7 @@
     const db = firebase.firestore();
 
     // ==========================================
-    // CATÁLOGO & AUTOCOMPLETE
+    // CATÁLOGO (COM AJUSTE RÁPIDO)
     // ==========================================
     let catalogoEstampas = {}; 
     db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
@@ -458,24 +478,36 @@
         catalogoEstampas = {}; 
         
         querySnapshot.forEach((doc) => {
-            let est = doc.data(); let estoque = est.estoque || 0;
-            catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque };
+            let est = doc.data(); let estoque = est.estoque || 0; let cat = est.categoria || 'CAMISETA';
+            catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque, categoria: cat };
             
             datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
             
             let badgeSoldOut = estoque <= 0 ? `<span class="badge-soldout">SOLD OUT</span>` : '';
+            
             document.getElementById('listaEstampas').innerHTML += `
             <tr>
                 <td><strong>${est.codigo}</strong></td>
-                <td>${est.nome} ${badgeSoldOut}</td>
-                <td style="color:${estoque <= 0 ? 'var(--red)' : 'inherit'}; font-weight:900;">${estoque} un</td>
+                <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat}</div></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', -1)">-</button>
+                        <span style="font-weight:900; font-size:1.1rem; width:30px; text-align:center; color:${estoque <= 0 ? 'var(--red)' : 'var(--black)'}">${estoque}</span>
+                        <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', 1)">+</button>
+                        ${badgeSoldOut}
+                    </div>
+                </td>
                 <td style="display:flex; gap:5px;">
-                    <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque})">✏️</button>
-                    <button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
+                    <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque}, '${cat}')">✏️</button>
+                    <button class="btn-icone" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
                 </td>
             </tr>`;
         });
     });
+
+    function ajustarEstoqueRapido(id, delta) {
+        db.collection("estampas").doc(id).update({ estoque: firebase.firestore.FieldValue.increment(delta) });
+    }
 
     function autocompletarEstampa(val) {
         let code = val.toUpperCase().trim();
@@ -486,24 +518,29 @@
         e.preventDefault();
         let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
         let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
+        let cat = document.getElementById('cadCategoriaEstampa').value;
         let est = parseInt(document.getElementById('cadEstoque').value) || 0;
         let docId = document.getElementById('editEstampaCodigoOriginal').value || cod;
 
-        db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, estoque: est }, { merge: true })
+        db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, categoria: cat, estoque: est }, { merge: true })
         .then(() => { cancelarEdicaoEstampa(); showToast("Estampa Salva!"); });
     }
+    
     function excluirEstampa(id) { if(confirm(`Apagar estampa?`)) db.collection("estampas").doc(id).delete(); }
     
-    function prepararEdicaoEstampa(c, n, e) {
+    function prepararEdicaoEstampa(c, n, e, cat) {
         document.getElementById('cadCodigoEstampa').value = c; document.getElementById('cadCodigoEstampa').disabled = true;
         document.getElementById('cadNomeEstampa').value = n; document.getElementById('cadEstoque').value = e;
+        document.getElementById('cadCategoriaEstampa').value = cat || 'CAMISETA';
         document.getElementById('editEstampaCodigoOriginal').value = c;
         document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR'; document.getElementById('btnCancelarEstampa').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    
     function cancelarEdicaoEstampa() {
         document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
         document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadEstoque').value = '0';
+        document.getElementById('cadCategoriaEstampa').value = 'CAMISETA';
         document.getElementById('editEstampaCodigoOriginal').value = '';
         document.getElementById('btnSalvarEstampa').innerText = '+ CADASTRAR'; document.getElementById('btnCancelarEstampa').style.display = 'none';
     }
@@ -515,23 +552,20 @@
     db.collection("clientes").onSnapshot(snap => {
         clientesCadastrados = {};
         snap.forEach(doc => clientesCadastrados[doc.id] = doc.data());
-        if(Object.keys(mapaClientes).length > 0) renderizarCRM(); // Recarrega CRM se atualizar ficha
+        if(Object.keys(mapaClientes).length > 0) renderizarCRM();
     });
 
-    let mapaClientes = {}; // Guarda compras
+    let mapaClientes = {}; 
     function verificarClienteFiel() {
         let w = document.getElementById('whatsapp').value.trim();
         if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
             document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
-            // Autopreenchimento pra poupar tempo
             if(clientesCadastrados[w] && !document.getElementById('nome').value) {
                  document.getElementById('nome').value = clientesCadastrados[w].nome || '';
                  document.getElementById('cep').value = clientesCadastrados[w].cep || '';
                  document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
             }
-        } else { 
-            document.getElementById('alertaClienteFiel').style.display = 'none'; 
-        }
+        } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
     }
 
     function abrirFichaCliente(whatsapp) {
@@ -557,17 +591,11 @@
     function salvarFichaCliente() {
         let w = document.getElementById('fichaWhatsapp').value;
         db.collection("clientes").doc(w).set({
-            whatsapp: w,
-            nome: document.getElementById('fichaNome').value.toUpperCase(),
-            insta: document.getElementById('fichaInsta').value,
-            dataNasc: document.getElementById('fichaDataNasc').value,
-            cep: document.getElementById('fichaCEP').value,
-            endereco: document.getElementById('fichaEndereco').value,
+            whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(),
+            insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value,
+            cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
             obs: document.getElementById('fichaObs').value
-        }, {merge: true}).then(() => {
-            showToast("Ficha do Cliente Salva!");
-            fecharFichaCliente();
-        });
+        }, {merge: true}).then(() => { showToast("Ficha do Cliente Salva!"); fecharFichaCliente(); });
     }
 
     // ==========================================
@@ -625,9 +653,7 @@
                 itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // ABATER ESTOQUE E SALVAR CLIENTE BASICO
             db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end }, { merge: true });
-
             carrinhoTemporario.forEach(item => {
                 if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
                     db.collection("estampas").doc(item.codigoEstampa).update({ estoque: firebase.firestore.FieldValue.increment(-item.quantidade) });
@@ -635,12 +661,9 @@
             });
 
             document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
-            carrinhoTemporario = []; atualizarTelaCarrinho();
-            document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO";
-            showToast(`PEDIDO #${numGerado} SALVO!`);
+            carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO"; showToast(`PEDIDO #${numGerado} SALVO!`);
         } catch (e) { showToast("Erro ao salvar", true); }
     }
-
 
     // ==========================================
     // LISTENER DE PEDIDOS E KANBAN
@@ -660,16 +683,15 @@
             if(p.statusPagamento === 'PAGO') meses.add(p.dataMesAno);
             if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
-            // Extração para CRM
+            // CRM Aggregate com Última Compra
             if(p.whatsapp) {
-                if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco };
+                if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d };
                 mapaClientes[p.whatsapp].qtd++;
+                if(d > mapaClientes[p.whatsapp].ultimaCompra) mapaClientes[p.whatsapp].ultimaCompra = d;
                 if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
             }
 
-            if(p.itens && p.statusPagamento === 'PAGO') {
-                p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); });
-            }
+            if(p.itens && p.statusPagamento === 'PAGO') { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
             todosPedidos.push(p);
         });
 
@@ -682,31 +704,35 @@
 
     function renderizarBestSellers(freq) {
         let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,3);
-        let html = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
-        document.getElementById('dashBestSellers').innerHTML = html;
+        document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
     }
 
     function renderizarCRM() {
         let combinados = {};
         Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
         Object.keys(clientesCadastrados).forEach(w => {
-            if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0 };
+            if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null };
             combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
         });
 
         let crmList = Object.entries(combinados).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
-        document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => `
-            <tr>
-                <td><strong>${c[1].nome}</strong></td>
-                <td>${c[0]}</td>
-                <td>${c[1].qtd}</td>
-                <td style="color:var(--green); font-weight:900;">${formatCurrency(c[1].totalGasto)}</td>
+        document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => {
+            let dataUc = c[1].ultimaCompra ? c[1].ultimaCompra.toLocaleDateString('pt-BR') : '-';
+            let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
+            let vipBadge = c[1].totalGasto >= 500 ? `<span class="badge-vip">VIP</span>` : '';
+            
+            return `<tr>
+                <td><strong style="font-size:1rem;">${c[1].nome}</strong> ${vipBadge}<br><span style="font-size:0.75rem; color:var(--text-muted);">${c[0]}</span></td>
+                <td><strong style="font-size:1.1rem;">${c[1].qtd}</strong></td>
+                <td style="color:var(--text-muted); font-size:0.8rem;">${dataUc}</td>
+                <td>${formatCurrency(tktMedio)}</td>
+                <td style="color:var(--green); font-weight:900; font-size:1.1rem;">${formatCurrency(c[1].totalGasto)}</td>
                 <td style="display:flex; gap:5px;">
-                    <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="text-decoration:none;">💬</a>
                     <button class="btn-icone" onclick="abrirFichaCliente('${c[0]}')" title="Abrir Ficha">👤</button>
+                    <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="background:var(--black); color:var(--bg-body);">💬</a>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     }
 
     // ==========================================
@@ -716,10 +742,10 @@
         let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
         
         todosPedidos.forEach(p => {
-            if(cols[p.statusAtualizado] === undefined) return; // Ignora se não estiver nessas 4 fases (ex: Entregue)
+            if(cols[p.statusAtualizado] === undefined) return; 
             
             let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
-            let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:#555; font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
+            let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:var(--text-muted); font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
             
             let cardHtml = `
             <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="drag(event)">
@@ -729,59 +755,44 @@
                     ${btnPgto}
                 </div>
                 <div class="pedido-body">
-                    <div class="cliente-nome">${p.nome} <br><span style="font-size:0.7rem; color:#888;">${p.whatsapp}</span></div>
+                    <div class="cliente-nome">${p.nome} <br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">${p.whatsapp}</span></div>
                     <div class="cliente-financas">${formatCurrency(p.valorTotal)} - ${p.metodoPagamento||'PIX'}</div>
                     <div class="toggle-itens-btn" onclick="toggleItens('${p.id}')"><span>📦 PEÇAS (${p.itens.length})</span><span id="seta-${p.id}">▼</span></div>
                     <div class="pedido-itens-lista" id="itens-${p.id}">${itensHtml}</div>
                 </div>
                 <div class="pedido-footer">
-                    <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️</button>
-                    <button onclick="excluirPedido('${p.id}')" title="Excluir" style="color:var(--red);">❌</button>
+                    <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️ EDITAR</button>
+                    <button onclick="excluirPedido('${p.id}')" title="Excluir" style="color:var(--red); flex: 0.3;">❌</button>
                 </div>
             </div>`;
             cols[p.statusAtualizado] += cardHtml;
         });
 
-        // Joga o HTML nos containers das colunas
         Object.keys(cols).forEach(k => {
             let el = document.getElementById('col-' + k.replace(/ /g,'-'));
             if(el) el.innerHTML = cols[k];
         });
     }
 
-    // Filtra o Kanban dinamicamente digitando na barra
     function filtrarKanban() {
         let termo = document.getElementById('inputBusca').value.toUpperCase();
-        document.querySelectorAll('.pedido-card').forEach(card => {
-            if(card.innerText.toUpperCase().includes(termo)) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
-        });
+        document.querySelectorAll('.pedido-card').forEach(card => { card.style.display = card.innerText.toUpperCase().includes(termo) ? 'flex' : 'none'; });
     }
 
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
     function allowDrop(ev) { ev.preventDefault(); }
-    function drop(ev, novoStatus) {
-        ev.preventDefault();
-        let id = ev.dataTransfer.getData("text");
-        db.collection("pedidos").doc(id).update({ status: novoStatus });
-        showToast("MOVIDO COM SUCESSO!");
-    }
-
+    function drop(ev, novoStatus) { ev.preventDefault(); db.collection("pedidos").doc(ev.dataTransfer.getData("text")).update({ status: novoStatus }); showToast("MOVIDO COM SUCESSO!"); }
     function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
     function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
 
     // ==========================================
-    // BULK UPDATE (Ação em Massa)
+    // BULK UPDATE E FATURAMENTO
     // ==========================================
     let selecionados = [];
     function checkBulk() {
         selecionados = Array.from(document.querySelectorAll('.checkbox-bulk:checked')).map(cb => cb.value);
-        let bar = document.getElementById('bulk-action-bar');
         document.getElementById('bulk-count').innerText = selecionados.length;
-        if(selecionados.length > 0) bar.classList.add('show'); else bar.classList.remove('show');
+        document.getElementById('bulk-action-bar').classList.toggle('show', selecionados.length > 0);
     }
     function limparBulk() { document.querySelectorAll('.checkbox-bulk').forEach(cb => cb.checked = false); checkBulk(); }
     function executarBulkUpdate() {
@@ -790,9 +801,6 @@
         batch.commit().then(() => { showToast(`${selecionados.length} PEDIDOS ATUALIZADOS!`); limparBulk(); });
     }
 
-    // ==========================================
-    // LÓGICA DE FATURAMENTO
-    // ==========================================
     function atualizarSelectFaturamento(mesesUnicos) {
         const select = document.getElementById('selectFaturamentoMes'); const valAnt = select.value; select.innerHTML = '';
         let arrayMeses = Array.from(mesesUnicos).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aB,mB-1)-new Date(aA,mA-1); });
@@ -827,8 +835,8 @@
     function gerarHtmlLinhaEdicao(item) {
         const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
         return `
-        <div class="item-edit-wrapper">
-            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
+        <div class="item-edit-wrapper" style="border: 2px dashed var(--border-color); padding: 15px; margin-bottom: 15px; background: var(--gray); position: relative;">
+            <button type="button" class="btn-remove-item" style="position: absolute; top: 10px; right: 10px;" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
             <div class="form-grid" style="margin-bottom: 10px; padding-right: 100px;">
                 <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
                 <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
@@ -844,9 +852,8 @@
     }
 
     function recalcularSomaEdicao() {
-        let soma = 0; document.querySelectorAll('.item-edit-wrapper').forEach(row => {
-            soma += (unmaskCurrency(row.querySelector('.edit-valor').value) * (parseInt(row.querySelector('.edit-qtd').value) || 1));
-        }); document.getElementById('editValorTotal').value = formatCurrency(soma);
+        let soma = 0; document.querySelectorAll('.item-edit-wrapper').forEach(row => { soma += (unmaskCurrency(row.querySelector('.edit-valor').value) * (parseInt(row.querySelector('.edit-qtd').value) || 1)); });
+        document.getElementById('editValorTotal').value = formatCurrency(soma);
     }
     
     function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
