@@ -14,176 +14,140 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        /* === VARIÁVEIS DE COR SUAVES (CLARO / ESCURO) === */
+        /* === ESTILO UNDERGROUND WALLER CLOTHING === */
         :root {
-            --bg-main: #f3f4f6;
-            --bg-card: #ffffff;
-            --bg-alt: #f9fafb;
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --border-main: #e5e7eb;
-            --accent-red: #d90429;
-            --accent-green: #10b981;
-            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius: 8px;
+            --black: #000000;
+            --white: #ffffff;
+            --red: #d90429;
+            --green: #06d6a0;
+            --gray: #f4f4f4;
+            --border-thick: 3px solid var(--black);
         }
 
-        /* TEMA ESCURO (DARK MODE SUAVE) */
-        [data-theme="dark"] {
-            --bg-main: #111827;
-            --bg-card: #1f2937;
-            --bg-alt: #374151;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --border-main: #374151;
-            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-        }
-
-        body { 
-            font-family: 'Montserrat', sans-serif; 
-            background-color: var(--bg-main); 
-            color: var(--text-main); 
-            margin: 0; padding: 0; 
-            transition: background-color 0.3s, color 0.3s;
-        }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--white); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(#e5e5e5 1px, transparent 1px); background-size: 20px 20px; }
         
-        .navbar { background-color: #000000; color: #ffffff; padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 4px solid var(--accent-red); box-shadow: var(--shadow-soft); }
+        .navbar { background-color: var(--black); color: var(--white); padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
-        
-        .nav-buttons { position: absolute; right: 2rem; display: flex; gap: 10px; }
-        .btn-nav { background-color: transparent; color: #ffffff; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 800; border: 1px solid #ffffff; border-radius: var(--radius); text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
-        .btn-nav:hover { background-color: #ffffff; color: #000000; }
+        .btn-pdf { position: absolute; right: 2rem; background-color: transparent; color: var(--white); padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid var(--white); text-transform: uppercase; cursor: pointer; display: none; }
+        .btn-pdf:hover { background-color: var(--white); color: var(--black); }
 
-        .tab-menu { display: flex; gap: 0.5rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
-        .tab-btn { flex: 1; text-align: center; background-color: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-main); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; padding: 1rem; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
-        .tab-btn:hover { background-color: var(--bg-alt); color: var(--text-main); }
-        .tab-active { background-color: var(--accent-red); color: #ffffff; border-color: var(--accent-red); pointer-events: none; }
+        .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
+        .tab-btn { flex: 1; text-align: center; background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; text-transform: uppercase; }
+        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
+        .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); transform: translate(2px, 2px); pointer-events: none; }
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
-        /* CARDS E PAINÉIS */
-        .card, .dash-card, .pedido-card, .modal-box { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-main); 
-            border-radius: var(--radius); 
-            box-shadow: var(--shadow-soft); 
-        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: #555; font-weight: 900; }
+        .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
+        .dash-card.green-text span { color: var(--green); }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .dash-card { padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; }
-        .dash-card span { font-size: 2rem; font-weight: 900; color: var(--text-main); }
-        .dash-card.green-text span { color: var(--accent-green); }
-
-        .card { padding: 2rem; margin-bottom: 3rem; overflow-x: auto; }
-        .card-title { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); }
+        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; overflow-x: auto; }
+        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
         
-        .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--bg-alt); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-main); }
+        .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--gray); padding: 1rem; border: 2px solid var(--black); }
         .botoes-filtro { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .btn-filtro { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-main); border-radius: 4px; font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1.2rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s;}
-        .btn-filtro:hover { border-color: var(--text-main); color: var(--text-main); }
-        .btn-filtro.ativo { background: var(--text-main); color: var(--bg-main); border-color: var(--text-main); }
+        .btn-filtro { background: var(--white); border: 2px solid var(--black); font-weight: 800; font-size: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; text-transform: uppercase; }
+        .btn-filtro.ativo { background: var(--black); color: var(--white); }
 
-        .form-section { border-bottom: 1px solid var(--border-main); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .form-section-title { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--text-muted); }
+        .form-section { border-bottom: 2px dashed var(--black); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .form-section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--red); }
         .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-grid > * { flex: 1; min-width: 180px; }
         
-        /* INPUTS ESTILO MODERNO */
-        input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: var(--text-main); border: 1px solid var(--border-main); border-radius: 6px; outline: none; box-sizing: border-box; background-color: var(--bg-main); transition: border-color 0.2s; }
-        input:focus, select:focus { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1); }
-        ::placeholder { color: var(--text-muted); font-weight: 500; }
-        input:disabled { opacity: 0.6; cursor: not-allowed; }
+        input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--black); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); text-transform: uppercase; }
+        input:focus, select:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
+        ::placeholder { color: #a3a3a3; font-weight: 500; text-transform: none; }
+        input:disabled { background-color: #e0e0e0; cursor: not-allowed; }
         
-        button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s; text-transform: uppercase; border: none; }
-        .btn-add { background-color: var(--bg-alt); color: var(--text-main); border: 1px dashed var(--border-main); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; }
-        .btn-add:hover { background-color: var(--border-main); }
-        .btn-primary { background-color: var(--accent-red); color: #ffffff; padding: 1.2rem; font-size: 1rem; width: 100%; margin-top: 1rem; box-shadow: var(--shadow-soft); }
-        .btn-primary:hover { background-color: #b00020; }
-        .btn-cancel { background-color: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-main); padding: 1.2rem; font-size: 1rem; width: 100%; margin-top: 1rem; }
-        .btn-cancel:hover { background-color: var(--border-main); }
+        button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
+        .btn-add { background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--black); }
+        .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
+        .btn-primary { background-color: var(--black); color: var(--white); border: 2px solid var(--black); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--red); }
+        .btn-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
+        .btn-cancel { background-color: var(--white); color: var(--black); border: 2px solid var(--black); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--black); }
+        .btn-cancel:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
         
-        #carrinho-container { background-color: var(--bg-alt); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem; display: none; }
-        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-main); padding: 0.8rem 0; font-size: 0.85rem; font-weight: 600; }
-        .carrinho-item:last-child { border-bottom: none; }
-        .btn-remove-item { background: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.3rem 0.6rem; font-size: 0.7rem; border-radius: 4px; }
-        .btn-remove-item:hover { background: var(--accent-red); color: white; }
+        #carrinho-container { background-color: var(--gray); border: 2px solid var(--black); padding: 1rem; margin-bottom: 1.5rem; display: none; }
+        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
+        .btn-remove-item { background: var(--red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
 
         /* GRID DE PEDIDOS NA FILA */
-        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-        .pedido-card { display: flex; flex-direction: column; justify-content: space-between; height: 100%; overflow: hidden; }
+        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .pedido-card { background: var(--white); border: 3px solid var(--black); box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
         
-        .pedido-header { background: var(--bg-alt); border-bottom: 1px solid var(--border-main); padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; }
+        .pedido-header { background: var(--gray); border-bottom: 2px solid var(--black); padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
         .header-linha-1 { display: flex; justify-content: space-between; align-items: center; }
-        .pedido-id { font-size: 1.4rem; font-weight: 900; color: var(--text-main); }
-        .pedido-data { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; background: var(--bg-card); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-main); }
-        .header-linha-2 { display: flex; gap: 8px; }
+        .pedido-id { font-size: 1.4rem; font-weight: 900; font-style: italic; }
+        .pedido-data { font-size: 0.75rem; color: var(--red); font-weight: 800; border: 1px solid var(--red); padding: 2px 6px; background: white; }
+        .header-linha-2 { display: flex; gap: 5px; }
 
-        .pedido-body { padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; }
-        .pedido-cliente { display: flex; flex-direction: column; gap: 4px; }
-        .cliente-nome { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; color: var(--text-main); }
-        .cliente-zap { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; }
-        .cliente-financas { margin-top: 5px; font-size: 0.95rem; font-weight: 800; color: var(--accent-green); }
+        .pedido-body { padding: 1rem; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }
+        .pedido-cliente { display: flex; flex-direction: column; gap: 2px; }
+        .cliente-nome { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; }
+        .cliente-zap { font-weight: 700; color: #555; font-size: 0.8rem; }
+        .cliente-financas { margin-top: 5px; font-size: 0.85rem; font-weight: 900; color: var(--black); }
         
         /* BOTÃO DE OCULTAR PEÇAS */
-        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); border: 1px solid var(--border-main); border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; margin-top: 10px; color: var(--text-main); transition: background 0.2s; }
-        .toggle-itens-btn:hover { background: var(--border-main); }
+        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); border: 2px dashed var(--black); padding: 8px 10px; font-size: 0.85rem; font-weight: 900; cursor: pointer; margin-top: 5px; transition: all 0.2s; }
+        .toggle-itens-btn:hover { background: var(--black); color: var(--white); }
         
-        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .item-tag-compacto { background: var(--bg-card); border: 1px solid var(--border-main); border-left: 4px solid var(--accent-red); border-radius: 4px; padding: 10px; font-size: 0.85rem; }
-        .item-tag-topo { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 5px; color: var(--text-main); }
-        .item-tag-cor-tam { font-weight: 600; color: var(--text-muted); margin-bottom: 5px; font-size: 0.8rem; }
-        .item-tag-estampa { color: var(--accent-red); font-weight: 800; text-transform: uppercase; font-size: 0.8rem;}
+        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .item-tag-compacto { background: var(--white); border: 2px solid var(--black); border-left: 4px solid var(--red); padding: 8px; font-size: 0.8rem; }
+        .item-tag-topo { display: flex; justify-content: space-between; font-weight: 900; font-size: 0.9rem; margin-bottom: 3px; }
+        .item-tag-cor-tam { font-weight: 700; color: #444; margin-bottom: 3px; }
+        .item-tag-estampa { color: var(--red); font-weight: 900; text-transform: uppercase; }
         
-        .pedido-footer { display: flex; border-top: 1px solid var(--border-main); background: var(--bg-alt); }
-        .pedido-footer button { flex: 1; padding: 1rem; font-size: 1.2rem; background: transparent; color: var(--text-muted); border-radius: 0; border-right: 1px solid var(--border-main); }
+        .pedido-footer { display: flex; border-top: 2px solid var(--black); }
+        .pedido-footer button { flex: 1; padding: 0.8rem; font-size: 1.2rem; border: none; border-right: 2px solid var(--black); box-shadow: none; display: flex; justify-content: center; align-items: center; }
         .pedido-footer button:last-child { border-right: none; }
-        .pedido-footer button:hover { background: var(--border-main); color: var(--text-main); }
-        .btn-card-del:hover { color: var(--accent-red) !important; }
+        .pedido-footer button:hover { background: var(--black); color: var(--white); }
+        .btn-card-whats { background: #25D366; color: var(--black); }
+        .btn-card-edit { background: var(--white); color: var(--black); }
+        .btn-card-del { background: #ffcccc; color: var(--red); }
+        .btn-card-del:hover { background: var(--red) !important; color: var(--white) !important; }
 
-        /* LABELS E STATUS COM CORES MAIS MODERNAS */
-        .select-status { flex: 2; padding: 0.6rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; border: none; cursor: pointer; color: #fff; }
-        .status-pedido-feito { background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-main); }
-        .status-aguardando { background-color: #f59e0b; color: #fff; }
-        .status-estampa-pronta { background-color: #3b82f6; color: #fff; }
-        .status-pedido-enviado { background-color: #8b5cf6; color: #fff; }
-        .status-pedido-entregue { background-color: var(--accent-green); color: #fff; }
+        .select-status { flex: 2; padding: 0.4rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
+        .status-pedido-feito { background-color: var(--white); color: var(--black); border: 2px dashed var(--black); box-shadow: none; }
+        .status-aguardando { background-color: #ffbe0b; color: var(--black); }
+        .status-estampa-pronta { background-color: #3a86ff; color: var(--white); }
+        .status-pedido-enviado { background-color: #8338ec; color: var(--white); }
+        .status-pedido-entregue { background-color: var(--green); color: var(--black); }
 
-        .btn-pgto { flex: 1; padding: 0.6rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; cursor: pointer; }
-        .pgto-pendente { background-color: #fee2e2; color: var(--accent-red); }
-        .pgto-pago { background-color: #d1fae5; color: var(--accent-green); }
+        .btn-pgto { flex: 1; padding: 0.4rem; font-size: 0.75rem; font-weight: 900; border: 2px solid var(--black); cursor: pointer; box-shadow: 2px 2px 0px var(--black); text-transform: uppercase; }
+        .pgto-pendente { background-color: var(--white); color: var(--red); }
+        .pgto-pago { background-color: var(--black); color: var(--green); }
 
-        /* TABELAS */
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 1.2rem; text-align: left; border-bottom: 1px solid var(--border-main); }
-        th { font-weight: 800; color: var(--text-muted); font-size: 0.8rem; }
-        .btn-icone { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: var(--bg-alt); color: var(--text-main); border: 1px solid var(--border-main); border-radius: 4px; cursor: pointer; transition: 0.2s;}
-        .btn-icone:hover { background-color: var(--text-main); color: var(--bg-main); }
-        .btn-excluir { background-color: #fee2e2; color: var(--accent-red); border-color: #fca5a5; }
-        .btn-excluir:hover { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
+        /* Tabela simples para estampas */
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--black); vertical-align: middle; }
+        th { font-weight: 900; color: var(--black); text-transform: uppercase; border-top: 2px solid var(--black); border-bottom: 3px solid var(--black); }
+        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--white); border: 2px solid var(--black); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s;}
+        .btn-icone:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0px black; }
+        .btn-excluir { background-color: var(--red); color: var(--white); }
 
-        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--accent-red); font-weight: 800; }
+        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--red); font-weight: 800; text-transform: uppercase; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(4px); overflow-y: auto; padding: 2rem 0; }
-        .modal-box { padding: 2.5rem; width: 95%; max-width: 900px; position: relative; margin: auto; }
-        .btn-close-modal { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-alt); color: var(--text-muted); padding: 0.5rem 0.8rem; font-size: 1rem; }
-        .btn-close-modal:hover { background: #fee2e2; color: var(--accent-red); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
+        .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
+        .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--black); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); font-size: 1.2rem; }
         
-        .item-edit-wrapper { border: 1px solid var(--border-main); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; background: var(--bg-main); position: relative; }
-        .btn-remove-peca { position: absolute; top: 15px; right: 15px; background: transparent; color: var(--accent-red); font-size: 0.8rem; padding: 0.4rem; border: 1px solid var(--accent-red); border-radius: 4px; }
+        .item-edit-wrapper { border: 2px dashed var(--black); padding: 15px; margin-bottom: 15px; background: #fafafa; position: relative; }
+        .btn-remove-peca { position: absolute; top: 10px; right: 10px; background: var(--red); color: white; border: 2px solid var(--black); padding: 0.3rem 0.6rem; cursor: pointer; font-weight: 900; font-size: 0.8rem; z-index: 2; }
         
-        /* BOTÕES DO MODAL PDF */
+        /* BOTÕES DO MODAL PDF NOVO NA ESTÉTICA ANTIGA */
+        .btn-pdf-opcao { background: var(--white); border: 2px solid var(--black); padding: 1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; }
+        .btn-pdf-opcao:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); background: var(--black); color: var(--white); }
         .grid-pdf-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-        .btn-pdf-opcao { background: var(--bg-main); border: 1px solid var(--border-main); color: var(--text-main); padding: 1.2rem; font-size: 0.9rem; transition: all 0.2s; }
-        .btn-pdf-opcao:hover { background: var(--bg-alt); border-color: var(--text-main); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
 
         @media (max-width: 600px) {
-            .navbar h1 { font-size: 1.5rem; } .nav-buttons { position: relative; right: 0; margin-top: 15px; justify-content: center; width: 100%; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
-            .dashboard-grid { grid-template-columns: 1fr; }
+            .navbar h1 { font-size: 1.5rem; } .btn-pdf { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
             .grid-pedidos { grid-template-columns: 1fr; }
-            .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 15px; }
+            .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 10px; }
             .grid-pdf-opcoes { grid-template-columns: 1fr; }
-            .form-grid-estampas { flex-direction: column; }
         }
     </style>
 </head>
@@ -191,10 +155,7 @@
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
-    <div class="nav-buttons">
-        <button class="btn-nav" id="btnThemeToggle" onclick="toggleTheme()">🌙 ESCURO</button>
-        <button class="btn-nav" id="btnGerarPDF" onclick="abrirModalPDF()">📄 GERAR PDF</button>
-    </div>
+    <button class="btn-pdf" id="btnGerarPDF" onclick="abrirModalPDF()">Gerar PDF</button>
 </nav>
 
 <div class="tab-menu">
@@ -214,7 +175,7 @@
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
             </div>
             <div class="form-grid">
-                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)" readonly style="background-color: #fee2e2; color: #d90429; font-weight: 900; border-color: #fca5a5;">
+                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)" readonly style="background-color: #fee2e2; color: var(--red);">
                 <select id="metodoPagamento">
                     <option value="PIX">PIX</option>
                     <option value="CARTÃO">CARTÃO</option>
@@ -260,7 +221,7 @@
         <div class="dash-card green-text">
             <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                 <h3>Faturamento</h3>
-                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:4px; font-weight:800; cursor:pointer;">
+                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0.2rem 0.5rem; font-size:0.75rem; font-weight:900; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); cursor:pointer;">
                     <option value="ALL">Carregando...</option>
                 </select>
             </div>
@@ -287,12 +248,12 @@
         <h2 class="card-title" id="tituloCardEstampa">Cadastrar Estampa</h2>
         <form onsubmit="salvarNovaEstampa(event)">
             <input type="hidden" id="editEstampaCodigoOriginal" value="">
-            <div class="form-grid form-grid-estampas">
+            <div class="form-grid">
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
                 <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ CADASTRAR ESTAMPA</button>
                 <button type="button" id="btnCancelarEstampa" class="btn-cancel" style="margin-top:0; flex: 1; display: none;" onclick="cancelarEdicaoEstampa()">CANCELAR EDIÇÃO</button>
             </div>
@@ -318,7 +279,7 @@
             <input type="text" id="editWhatsapp" placeholder="WHATSAPP">
         </div>
         <div class="form-grid" style="margin-bottom: 2rem;">
-            <input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" style="color: #d90429; font-weight: 900; background: #fee2e2;" readonly>
+            <input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" style="color: var(--red); font-weight: 900; background: #fee2e2;" readonly>
             <select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO / BOLETO</option></select>
         </div>
 
@@ -333,44 +294,21 @@
     <div class="modal-box" style="max-width: 600px;">
         <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
         <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIO</h2>
-        <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">Selecione qual demanda você quer exportar em PDF (visual otimizado):</p>
+        <p style="font-size: 0.9rem; font-weight: 700;">Selecione qual demanda você quer exportar:</p>
         
         <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; background: var(--accent-red); color: white; border-color: var(--accent-red);">📄 FILA COMPLETA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; background: var(--red); color: white; border-color: var(--black);">📄 FILA COMPLETA</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('ESTAMPA PRONTA')">📦 PRONTO / ENVIAR</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO ENVIADO')">🚚 ENVIADO</button>
             
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; background: var(--accent-green); color: white; border-color: var(--accent-green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; background: var(--black); color: white; border-color: var(--black);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
         </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // MODO ESCURO (DARK MODE SUAVE)
-    // ==========================================
-    function applyTheme(theme) {
-        if (theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.getElementById('btnThemeToggle').innerText = '☀️ MODO CLARO';
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-            document.getElementById('btnThemeToggle').innerText = '🌙 MODO ESCURO';
-        }
-    }
-
-    function toggleTheme() {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const newTheme = isDark ? 'light' : 'dark';
-        localStorage.setItem('waller_theme', newTheme);
-        applyTheme(newTheme);
-    }
-    const savedTheme = localStorage.getItem('waller_theme') || 'light';
-    applyTheme(savedTheme);
-
-
     // ==========================================
     // FORMATAÇÃO E UTILITÁRIOS
     // ==========================================
@@ -526,7 +464,7 @@
     });
 
     // ==========================================
-    // CADASTRO DE PEDIDOS (CARRINHO)
+    // CADASTRO DE PEDIDOS E ABATIMENTO DE ESTOQUE
     // ==========================================
     let todosPedidos = []; 
     let carrinhoTemporario = []; 
@@ -559,7 +497,7 @@
                 <div class="carrinho-item">
                     <span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} (${peca.tamanho}) - [${peca.codigoEstampa}] ${peca.nomeEstampa}</span>
                     <div>
-                        <span style="color:var(--accent-red); margin-right: 15px;">${valFormat} un</span>
+                        <span style="color:var(--red); margin-right: 15px; font-weight: 900;">${valFormat} un</span>
                         <button class="btn-remove-item" onclick="removerDoCarrinho(${index})">X</button>
                     </div>
                 </div>`;
@@ -587,9 +525,21 @@
                 valorTotal: parseFloat(valorTotal), metodoPagamento: metodo, statusPagamento: statusPgto,
                 itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            // LÓGICA DE ABATIMENTO DE ESTOQUE
+            let promessasEstoque = carrinhoTemporario.map(item => {
+                let cod = item.codigoEstampa;
+                if(cod && cod !== "-") {
+                    return db.collection("estampas").doc(cod).update({
+                        estoque: firebase.firestore.FieldValue.increment(-item.quantidade)
+                    }).catch(err => console.log("Erro ao abater estoque ou item não cadastrado", err));
+                }
+            });
+            await Promise.all(promessasEstoque);
+
             document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('valorTotal').value = '';
             carrinhoTemporario = []; atualizarTelaCarrinho();
-            alert(`Pedido #${numeroGerado} salvo com sucesso!`);
+            alert(`Pedido #${numeroGerado} salvo com sucesso! O estoque das peças foi atualizado.`);
         } catch (error) { alert("Erro ao salvar."); }
     }
 
@@ -624,7 +574,7 @@
             // Coleta os meses para o filtro de faturamento
             if (pedido.statusPagamento === 'PAGO') { mesesUnicos.add(pedido.dataMesAno); }
 
-            // Lógica do Card de Pedidos no Mês (Mês e Ano atuais)
+            // Lógica do Card de Pedidos no Mês
             if(dataObj.getMonth() === mesAtual && dataObj.getFullYear() === anoAtual) { metricas.pedMes++; }
             
             if(currentStatus === 'AGUARDANDO ESTAMPA') { pedido.itens.forEach(i => metricas.filaEstampa += parseInt(i.quantidade)); }
@@ -644,7 +594,7 @@
     });
 
     // ==========================================
-    // LÓGICA INFALÍVEL DE FATURAMENTO
+    // LÓGICA DE FATURAMENTO
     // ==========================================
     function atualizarSelectFaturamento(mesesUnicos) {
         const select = document.getElementById('selectFaturamentoMes');
@@ -707,7 +657,7 @@
         });
 
         if(pedidosFiltrados.length === 0){
-            container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 2rem; font-weight:bold; color:var(--text-muted); border: 1px dashed var(--border-main); border-radius: 8px;">Nenhum pedido encontrado.</div>`;
+            container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 2rem; font-weight:bold; color:#777; border: 2px dashed var(--black); background: var(--gray);">Nenhum pedido encontrado.</div>`;
             return;
         }
 
@@ -745,7 +695,7 @@
             let card = document.createElement('div');
             card.className = 'pedido-card';
             
-            // O botão da sanfona agora vem com a setinha para baixo e o painel começa escondido (display: none)
+            // A sanfona agora vem fechada (display: none e seta para baixo)
             card.innerHTML = `
                 <div class="pedido-header">
                     <div class="header-linha-1">
@@ -781,9 +731,9 @@
                 </div>
                 <div class="pedido-footer">
                     <a href="${linkWhats}" target="_blank" style="flex:1; display:flex; text-decoration:none;">
-                        <button title="Avisar WhatsApp" style="width:100%;">💬</button>
+                        <button class="btn-card-whats" title="Avisar WhatsApp" style="width:100%;">💬</button>
                     </a>
-                    <button onclick="abrirModalEdicao('${pedido.id}')" title="Editar" style="flex:1;">✏️</button>
+                    <button class="btn-card-edit" onclick="abrirModalEdicao('${pedido.id}')" title="Editar" style="flex:1;">✏️</button>
                     <button class="btn-card-del" onclick="excluirPedido('${pedido.id}')" title="Excluir" style="flex:1;">❌</button>
                 </div>
             `;
@@ -896,7 +846,7 @@
     }
 
     // ==========================================
-    // GERADOR DE PDF (LAYOUT PROFISSIONAL)
+    // GERADOR DE PDF (LAYOUT PROFISSIONAL NO DOCUMENTO)
     // ==========================================
     function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
     function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
