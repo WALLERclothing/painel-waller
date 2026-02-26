@@ -113,6 +113,11 @@
         .status-pedido-enviado { background-color: #8338ec; color: var(--white); }
         .status-pedido-entregue { background-color: var(--green); color: var(--black); }
 
+        /* <-- NOVOS ESTILOS DO MODAL DE PDF --> */
+        .btn-pdf-opcao { background: var(--white); border: 2px solid var(--black); padding: 1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; }
+        .btn-pdf-opcao:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); background: var(--black); color: var(--white); }
+        .grid-pdf-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+
         .btn-pgto { flex: 1; padding: 0.4rem; font-size: 0.75rem; font-weight: 900; border: 2px solid var(--black); cursor: pointer; box-shadow: 2px 2px 0px var(--black); text-transform: uppercase; }
         .pgto-pendente { background-color: var(--white); color: var(--red); }
         .pgto-pago { background-color: var(--black); color: var(--green); }
@@ -145,7 +150,7 @@
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
-    <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
+    <button class="btn-pdf" id="btnGerarPDF" onclick="abrirModalPDF()">Gerar PDF</button>
 </nav>
 
 <div class="tab-menu">
@@ -276,6 +281,23 @@
         <div id="editItensContainer"></div>
         <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 1.5rem; font-size: 0.8rem; padding: 0.6rem;">+ ADICIONAR PEÇA</button>
         <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
+    </div>
+</div>
+
+<div id="modalPDF" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIO</h2>
+        <p style="font-size: 0.9rem; font-weight: 700;">Selecione qual demanda você quer exportar:</p>
+        
+        <div class="grid-pdf-opcoes">
+            <button class="btn-pdf-opcao" onclick="gerarPDF('TODOS')" style="grid-column: 1 / -1; background: var(--red); color: white; border-color: var(--red);">📄 TODOS (COMPLETO)</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDF('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDF('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDF('ESTAMPA PRONTA')">📦 PRONTO / ENVIAR</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDF('PEDIDO ENVIADO')">🚚 ENVIADO</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDF('PEDIDO ENTREGUE')" style="grid-column: 1 / -1;">✅ ENTREGUE</button>
+        </div>
     </div>
 </div>
 
@@ -714,39 +736,22 @@
         }).then(() => { fecharModalEdicao(); }).catch(e => { alert("Erro ao atualizar banco."); });
     }
 
+  // ==========================================
+    // GERADOR DE PDF AVANÇADO
     // ==========================================
-    // GERADOR DE PDF 
-    // ==========================================
-    function gerarPDF() {
-        const opcao = prompt(
-            "Qual relatório você quer gerar? Digite o número:\n\n" +
-            "1 - TODOS (Completo)\n" +
-            "2 - PEDIDO FEITO\n" +
-            "3 - AGUARDANDO ESTAMPA (Fila Estamparia)\n" +
-            "4 - ESTAMPA PRONTA\n" +
-            "5 - PEDIDO ENVIADO\n" +
-            "6 - PEDIDO ENTREGUE"
-        );
+    function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
+    function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
 
-        if (!opcao) return; // Se clicar em cancelar, para a função
-
-        let statusSelecionados = [];
-        switch(opcao) {
-            case '1': statusSelecionados = ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE']; break;
-            case '2': statusSelecionados = ['PEDIDO FEITO']; break;
-            case '3': statusSelecionados = ['AGUARDANDO ESTAMPA']; break;
-            case '4': statusSelecionados = ['ESTAMPA PRONTA']; break;
-            case '5': statusSelecionados = ['PEDIDO ENVIADO']; break;
-            case '6': statusSelecionados = ['PEDIDO ENTREGUE']; break;
-            default: alert("Opção inválida!"); return;
-        }
+    function gerarPDF(opcao) {
+        let statusSelecionados = opcao === 'TODOS' 
+            ? ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE']
+            : [opcao];
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
         
-        // Atualiza o título do PDF baseado na escolha
-        let titulo = opcao === '1' ? "RELATORIO COMPLETO" : `RELATORIO - ${statusSelecionados[0]}`;
+        let titulo = opcao === 'TODOS' ? "RELATORIO COMPLETO" : `RELATORIO - ${opcao}`;
         doc.text(`WALLER CLOTHING - ${titulo}`, 14, 15);
         
         doc.setFontSize(9); doc.setFont("helvetica", "normal"); 
@@ -765,11 +770,8 @@
                 const contagem = {};
                 pendentes.forEach(pedido => {
                     pedido.itens.forEach(item => {
-                        let cod = item.codigoEstampa || "-";
-                        let nom = item.nomeEstampa || "Desconhecido";
-                        let peca = item.tipoPeca || "OVERSIZED";
-                        let qtd = parseInt(item.quantidade) || 1; 
-                        totalPecasBloco += qtd; 
+                        let cod = item.codigoEstampa || "-"; let nom = item.nomeEstampa || "Desconhecido"; let peca = item.tipoPeca || "OVERSIZED";
+                        let qtd = parseInt(item.quantidade) || 1; totalPecasBloco += qtd; 
                         const chave = `${cod} | ${nom} | ${peca} | ${item.cor} | ${item.tamanho}`;
                         if(!contagem[chave]) contagem[chave] = 0;
                         contagem[chave] += qtd; 
@@ -777,8 +779,7 @@
                 });
 
                 const dadosTabela = Object.keys(contagem).map(chave => {
-                    const [codigo, nome, peca, cor, tamanho] = chave.split(' | ');
-                    return [codigo, nome, peca, cor, tamanho, contagem[chave]]; 
+                    const [codigo, nome, peca, cor, tamanho] = chave.split(' | '); return [codigo, nome, peca, cor, tamanho, contagem[chave]]; 
                 });
 
                 dadosTabela.sort((a, b) => {
@@ -798,14 +799,16 @@
             }
         });
 
-        if(!encontrouPedidos) { alert("Nenhum pedido encontrado para esta demanda!"); return; }
+        if(!encontrouPedidos) { alert(`Nenhum pedido encontrado com status: ${opcao}`); return; }
         
-        // Define o nome do arquivo dinamicamente com base na opção escolhida
-        let sufixoNome = opcao === '1' ? 'completo' : statusSelecionados[0].toLowerCase().replace(/ /g, '_');
+        let sufixoNome = opcao === 'TODOS' ? 'completo' : opcao.toLowerCase().replace(/ /g, '_');
         doc.save(`relatorio_waller_${sufixoNome}_${dataHoje.replace(/\//g, '-')}.pdf`);
+        fecharModalPDF(); // Fecha o modal sozinho após baixar
+    }
     }
 </script>
 
 </body>
 </html>
+
 
