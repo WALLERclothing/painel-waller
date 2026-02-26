@@ -14,30 +14,29 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        /* === VARIÁVEIS DE COR (CLARO / ESCURO) === */
+        /* === VARIÁVEIS DE COR SUAVES (CLARO / ESCURO) === */
         :root {
-            --bg-main: #ffffff;
+            --bg-main: #f3f4f6; /* Cinza bem clarinho, descansa os olhos */
             --bg-card: #ffffff;
-            --bg-alt: #f4f4f4;
-            --text-main: #000000;
-            --text-muted: #555555;
-            --border-main: #000000;
+            --bg-alt: #f9fafb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-main: #e5e7eb;
             --accent-red: #d90429;
-            --accent-green: #06d6a0;
-            --shadow-main: #000000;
-            --border-thick: 2px solid var(--border-main); /* Borda afinada para melhor leitura */
+            --accent-green: #10b981;
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 8px; /* Cantos levemente arredondados */
         }
 
-        /* TEMA ESCURO */
+        /* TEMA ESCURO (DARK MODE SUAVE) */
         [data-theme="dark"] {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --bg-alt: #2c2c2c;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --border-main: #444444;
-            --accent-red: #ff3355;
-            --shadow-main: #000000;
+            --bg-main: #111827;
+            --bg-card: #1f2937;
+            --bg-alt: #374151;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-main: #374151;
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
         body { 
@@ -45,123 +44,141 @@
             background-color: var(--bg-main); 
             color: var(--text-main); 
             margin: 0; padding: 0; 
-            background-image: radial-gradient(var(--border-main) 1px, transparent 1px); 
-            background-size: 20px 20px; 
             transition: background-color 0.3s, color 0.3s;
         }
         
-        .navbar { background-color: #000000; color: #ffffff; padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--accent-red); }
+        .navbar { background-color: #000000; color: #ffffff; padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 4px solid var(--accent-red); box-shadow: var(--shadow-soft); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
         
         .nav-buttons { position: absolute; right: 2rem; display: flex; gap: 10px; }
-        .btn-nav { background-color: transparent; color: #ffffff; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 800; border: 2px solid #ffffff; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+        .btn-nav { background-color: transparent; color: #ffffff; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 800; border: 1px solid #ffffff; border-radius: var(--radius); text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
         .btn-nav:hover { background-color: #ffffff; color: #000000; }
         #btnGerarPDF { display: none; }
 
-        .tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
-        .tab-btn { flex: 1; text-align: center; background-color: var(--bg-card); color: var(--text-main); border: var(--border-thick); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--shadow-main); transition: all 0.1s; text-transform: uppercase; }
-        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--shadow-main); }
-        .tab-active { background-color: var(--text-main); color: var(--bg-main); box-shadow: 4px 4px 0px var(--accent-red); transform: translate(2px, 2px); pointer-events: none; }
+        .tab-menu { display: flex; gap: 0.5rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
+        .tab-btn { flex: 1; text-align: center; background-color: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-main); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; padding: 1rem; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+        .tab-btn:hover { background-color: var(--bg-alt); color: var(--text-main); }
+        .tab-active { background-color: var(--accent-red); color: #ffffff; border-color: var(--accent-red); pointer-events: none; }
 
         .container { max-width: 1200px; margin: 3rem auto; padding: 0 1rem; }
         
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .dash-card { background: var(--bg-card); border: var(--border-thick); padding: 1.5rem; box-shadow: 4px 4px 0px var(--shadow-main); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 900; }
-        .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--accent-red); }
+        /* CARDS E PAINÉIS */
+        .card, .dash-card, .pedido-card, .modal-box { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border-main); 
+            border-radius: var(--radius); 
+            box-shadow: var(--shadow-soft); 
+        }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .dash-card { padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; }
+        .dash-card span { font-size: 2rem; font-weight: 900; color: var(--text-main); }
         .dash-card.green-text span { color: var(--accent-green); }
 
-        .card { background: var(--bg-card); border: var(--border-thick); padding: 2rem; box-shadow: 6px 6px 0px var(--shadow-main); margin-bottom: 3rem; overflow-x: auto; }
-        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .card { padding: 2rem; margin-bottom: 3rem; overflow-x: auto; }
+        .card-title { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); }
         
-        .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--bg-alt); padding: 1rem; border: var(--border-thick); }
+        .filtros-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; background: var(--bg-alt); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-main); }
         .botoes-filtro { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .btn-filtro { background: var(--bg-card); color: var(--text-main); border: var(--border-thick); font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1.2rem; cursor: pointer; text-transform: uppercase; }
-        .btn-filtro.ativo { background: var(--text-main); color: var(--bg-main); }
+        .btn-filtro { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-main); border-radius: 4px; font-weight: 800; font-size: 0.75rem; padding: 0.6rem 1.2rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s;}
+        .btn-filtro:hover { border-color: var(--text-main); color: var(--text-main); }
+        .btn-filtro.ativo { background: var(--text-main); color: var(--bg-main); border-color: var(--text-main); }
 
-        .form-section { border-bottom: 2px dashed var(--border-main); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .form-section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--accent-red); }
+        .form-section { border-bottom: 1px solid var(--border-main); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .form-section-title { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--text-muted); }
         .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-grid > * { flex: 1; min-width: 180px; }
         
-        input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--text-main); border: var(--border-thick); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--bg-main); text-transform: uppercase; }
-        input:focus, select:focus { border-color: var(--accent-red); box-shadow: 4px 4px 0px var(--accent-red); }
-        ::placeholder { color: var(--text-muted); font-weight: 500; text-transform: none; }
+        /* INPUTS ESTILO MODERNO */
+        input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: var(--text-main); border: 1px solid var(--border-main); border-radius: 6px; outline: none; box-sizing: border-box; background-color: var(--bg-main); transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1); }
+        ::placeholder { color: var(--text-muted); font-weight: 500; }
         
-        button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
-        .btn-add { background-color: var(--bg-card); color: var(--text-main); border: var(--border-thick); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--shadow-main); }
-        .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--shadow-main); }
-        .btn-primary { background-color: var(--text-main); color: var(--bg-main); border: var(--border-thick); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--accent-red); }
-        .btn-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--accent-red); }
+        button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s; text-transform: uppercase; border: none; }
+        .btn-add { background-color: var(--bg-alt); color: var(--text-main); border: 1px dashed var(--border-main); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; }
+        .btn-add:hover { background-color: var(--border-main); }
+        .btn-primary { background-color: var(--accent-red); color: #ffffff; padding: 1.2rem; font-size: 1rem; width: 100%; margin-top: 1rem; box-shadow: var(--shadow-soft); }
+        .btn-primary:hover { background-color: #b00020; }
         
-        #carrinho-container { background-color: var(--bg-alt); border: var(--border-thick); padding: 1rem; margin-bottom: 1.5rem; display: none; }
-        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-main); padding: 0.5rem 0; font-size: 0.85rem; font-weight: 700; }
-        .btn-remove-item { background: var(--accent-red); color: white; border: none; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+        #carrinho-container { background-color: var(--bg-alt); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem; display: none; }
+        .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-main); padding: 0.8rem 0; font-size: 0.85rem; font-weight: 600; }
+        .carrinho-item:last-child { border-bottom: none; }
+        .btn-remove-item { background: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 0.3rem 0.6rem; font-size: 0.7rem; border-radius: 4px; }
+        .btn-remove-item:hover { background: var(--accent-red); color: white; }
 
         /* GRID DE PEDIDOS NA FILA */
-        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-        .pedido-card { background: var(--bg-card); border: var(--border-thick); box-shadow: 5px 5px 0px var(--shadow-main); display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .pedido-card { display: flex; flex-direction: column; justify-content: space-between; height: 100%; overflow: hidden; }
         
-        .pedido-header { background: var(--bg-alt); border-bottom: var(--border-thick); padding: 1.2rem; display: flex; flex-direction: column; gap: 10px; }
+        .pedido-header { background: var(--bg-alt); border-bottom: 1px solid var(--border-main); padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; }
         .header-linha-1 { display: flex; justify-content: space-between; align-items: center; }
-        .pedido-id { font-size: 1.5rem; font-weight: 900; font-style: italic; }
-        .pedido-data { font-size: 0.75rem; color: var(--text-main); font-weight: 800; border: 1px solid var(--border-main); padding: 4px 8px; background: var(--bg-main); }
+        .pedido-id { font-size: 1.4rem; font-weight: 900; color: var(--text-main); }
+        .pedido-data { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; background: var(--bg-card); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-main); }
         .header-linha-2 { display: flex; gap: 8px; }
 
         .pedido-body { padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; }
         .pedido-cliente { display: flex; flex-direction: column; gap: 4px; }
-        .cliente-nome { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; }
-        .cliente-zap { font-weight: 700; color: var(--text-muted); font-size: 0.85rem; }
-        .cliente-financas { margin-top: 5px; font-size: 0.9rem; font-weight: 900; color: var(--text-main); }
+        .cliente-nome { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; color: var(--text-main); }
+        .cliente-zap { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; }
+        .cliente-financas { margin-top: 5px; font-size: 0.95rem; font-weight: 800; color: var(--accent-green); }
         
         /* BOTÃO DE OCULTAR PEÇAS */
-        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--bg-alt); border: 2px dashed var(--border-main); padding: 10px 12px; font-size: 0.85rem; font-weight: 900; cursor: pointer; margin-top: 5px; transition: all 0.2s; }
-        .toggle-itens-btn:hover { background: var(--text-main); color: var(--bg-main); }
+        .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); border: 1px solid var(--border-main); border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; margin-top: 10px; color: var(--text-main); transition: background 0.2s; }
+        .toggle-itens-btn:hover { background: var(--border-main); }
         
-        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-        .item-tag-compacto { background: var(--bg-main); border: var(--border-thick); border-left: 5px solid var(--accent-red); padding: 10px; font-size: 0.85rem; }
-        .item-tag-topo { display: flex; justify-content: space-between; font-weight: 900; font-size: 0.95rem; margin-bottom: 5px; }
-        .item-tag-cor-tam { font-weight: 700; color: var(--text-muted); margin-bottom: 5px; }
-        .item-tag-estampa { color: var(--accent-red); font-weight: 900; text-transform: uppercase; }
+        .pedido-itens-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .item-tag-compacto { background: var(--bg-card); border: 1px solid var(--border-main); border-left: 4px solid var(--accent-red); border-radius: 4px; padding: 10px; font-size: 0.85rem; }
+        .item-tag-topo { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 5px; color: var(--text-main); }
+        .item-tag-cor-tam { font-weight: 600; color: var(--text-muted); margin-bottom: 5px; font-size: 0.8rem; }
+        .item-tag-estampa { color: var(--accent-red); font-weight: 800; text-transform: uppercase; font-size: 0.8rem;}
         
-        .pedido-footer { display: flex; border-top: var(--border-thick); }
-        .pedido-footer button { flex: 1; padding: 1rem; font-size: 1.2rem; border: none; border-right: var(--border-thick); box-shadow: none; display: flex; justify-content: center; align-items: center; background: var(--bg-card); color: var(--text-main); }
+        .pedido-footer { display: flex; border-top: 1px solid var(--border-main); background: var(--bg-alt); }
+        .pedido-footer button { flex: 1; padding: 1rem; font-size: 1.2rem; background: transparent; color: var(--text-muted); border-radius: 0; border-right: 1px solid var(--border-main); }
         .pedido-footer button:last-child { border-right: none; }
-        .pedido-footer button:hover { background: var(--text-main); color: var(--bg-main); }
-        .btn-card-del:hover { background: var(--accent-red) !important; color: white !important; }
+        .pedido-footer button:hover { background: var(--border-main); color: var(--text-main); }
+        .btn-card-del:hover { color: var(--accent-red) !important; }
 
-        .select-status { flex: 2; padding: 0.5rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; border: var(--border-thick); box-shadow: 2px 2px 0px var(--shadow-main); cursor: pointer; color: #000; }
-        .status-pedido-feito { background-color: var(--bg-main); color: var(--text-main); border: 2px dashed var(--border-main); box-shadow: none; }
-        .status-aguardando { background-color: #ffbe0b; }
-        .status-estampa-pronta { background-color: #3a86ff; color: #ffffff; }
-        .status-pedido-enviado { background-color: #8338ec; color: #ffffff; }
-        .status-pedido-entregue { background-color: var(--accent-green); }
+        /* LABELS E STATUS COM CORES MAIS MODERNAS */
+        .select-status { flex: 2; padding: 0.6rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; border: none; cursor: pointer; color: #fff; }
+        .status-pedido-feito { background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-main); }
+        .status-aguardando { background-color: #f59e0b; color: #fff; }
+        .status-estampa-pronta { background-color: #3b82f6; color: #fff; }
+        .status-pedido-enviado { background-color: #8b5cf6; color: #fff; }
+        .status-pedido-entregue { background-color: var(--accent-green); color: #fff; }
 
-        .btn-pgto { flex: 1; padding: 0.5rem; font-size: 0.75rem; font-weight: 900; border: var(--border-thick); cursor: pointer; box-shadow: 2px 2px 0px var(--shadow-main); text-transform: uppercase; }
-        .pgto-pendente { background-color: var(--bg-main); color: var(--accent-red); }
-        .pgto-pago { background-color: var(--text-main); color: var(--accent-green); }
+        .btn-pgto { flex: 1; padding: 0.6rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; cursor: pointer; }
+        .pgto-pendente { background-color: #fee2e2; color: var(--accent-red); }
+        .pgto-pago { background-color: #d1fae5; color: var(--accent-green); }
 
         /* TABELAS */
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-weight: 500; }
-        th, td { padding: 1.2rem; text-align: left; border-bottom: var(--border-thick); vertical-align: middle; }
-        th { font-weight: 900; color: var(--text-main); text-transform: uppercase; border-top: var(--border-thick); border-bottom: 3px solid var(--border-main); }
-        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--bg-main); border: var(--border-thick); color: var(--text-main); font-weight: 900; cursor: pointer; }
-        .btn-excluir { background-color: var(--accent-red); color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 1.2rem; text-align: left; border-bottom: 1px solid var(--border-main); }
+        th { font-weight: 800; color: var(--text-muted); font-size: 0.8rem; }
+        .btn-icone { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: #fee2e2; color: var(--accent-red); border-radius: 4px; cursor: pointer; transition: 0.2s;}
+        .btn-icone:hover { background-color: var(--accent-red); color: white; }
 
-        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--accent-red); font-weight: 800; text-transform: uppercase; }
+        #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--accent-red); font-weight: 800; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
-        .modal-box { background: var(--bg-card); border: var(--border-thick); padding: 2.5rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--accent-red); position: relative; margin: auto; }
-        .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--bg-main); border: var(--border-thick); font-weight: 900; cursor: pointer; padding: 0.4rem 1rem; color: var(--accent-red); font-size: 1.2rem; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(4px); overflow-y: auto; padding: 2rem 0; }
+        .modal-box { padding: 2.5rem; width: 95%; max-width: 900px; position: relative; margin: auto; }
+        .btn-close-modal { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-alt); color: var(--text-muted); padding: 0.5rem 0.8rem; font-size: 1rem; }
+        .btn-close-modal:hover { background: #fee2e2; color: var(--accent-red); }
         
-        .item-edit-wrapper { border: 2px dashed var(--border-main); padding: 20px; margin-bottom: 15px; background: var(--bg-alt); position: relative; }
-        .btn-remove-peca { position: absolute; top: 10px; right: 10px; background: var(--accent-red); color: white; border: var(--border-thick); padding: 0.4rem 0.8rem; cursor: pointer; font-weight: 900; font-size: 0.8rem; z-index: 2; }
+        .item-edit-wrapper { border: 1px solid var(--border-main); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; background: var(--bg-main); position: relative; }
+        .btn-remove-peca { position: absolute; top: 15px; right: 15px; background: transparent; color: var(--accent-red); font-size: 0.8rem; padding: 0.4rem; border: 1px solid var(--accent-red); border-radius: 4px; }
         
+        /* BOTÕES DO MODAL PDF */
+        .grid-pdf-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+        .btn-pdf-opcao { background: var(--bg-main); border: 1px solid var(--border-main); color: var(--text-main); padding: 1.2rem; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-pdf-opcao:hover { background: var(--bg-alt); border-color: var(--text-main); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+
         @media (max-width: 600px) {
             .navbar h1 { font-size: 1.5rem; } .nav-buttons { position: relative; right: 0; margin-top: 15px; justify-content: center; width: 100%; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
-            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .dashboard-grid { grid-template-columns: 1fr; }
             .grid-pedidos { grid-template-columns: 1fr; }
             .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 15px; }
+            .grid-pdf-opcoes { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -171,7 +188,7 @@
     <h1>WALLER CLOTHING</h1>
     <div class="nav-buttons">
         <button class="btn-nav" id="btnThemeToggle" onclick="toggleTheme()">🌙 ESCURO</button>
-        <button class="btn-nav" id="btnGerarPDF" onclick="gerarPDF()">📄 PDF</button>
+        <button class="btn-nav" id="btnGerarPDF" onclick="abrirModalPDF()">📄 GERAR PDF</button>
     </div>
 </nav>
 
@@ -192,7 +209,7 @@
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
             </div>
             <div class="form-grid">
-                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)" readonly style="background-color: #fee2e2; color: #d90429; font-weight: 900;">
+                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL (Calculado auto)" readonly style="background-color: #fee2e2; color: #d90429; font-weight: 900; border-color: #fca5a5;">
                 <select id="metodoPagamento">
                     <option value="PIX">PIX</option>
                     <option value="CARTÃO">CARTÃO</option>
@@ -235,7 +252,15 @@
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
         <div class="dash-card"><h3>Fila de Estamparia</h3><span id="dashFilaEstampa">0</span></div>
         <div class="dash-card"><h3>Envios Pendentes</h3><span id="dashEnviar">0</span></div>
-        <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
+        <div class="dash-card green-text">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                <h3>Faturamento</h3>
+                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:4px; font-weight:800; cursor:pointer;">
+                    <option value="ALL">Carregando...</option>
+                </select>
+            </div>
+            <span id="dashFaturamento">R$ 0,00</span>
+        </div>
     </div>
 
     <h2 class="card-title" style="margin-top: 1rem;">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
@@ -260,7 +285,7 @@
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 2;">
             </div>
-            <button type="submit" class="btn-add" style="background-color: var(--text-main); color: var(--bg-main);">+ CADASTRAR</button>
+            <button type="submit" class="btn-primary" style="margin-top:0;">+ CADASTRAR</button>
         </form>
     </div>
     <div class="card">
@@ -290,21 +315,39 @@
         <div class="form-section-title" style="font-size: 1rem;">PEÇAS DO PEDIDO</div>
         <div id="editItensContainer"></div>
         <button type="button" class="btn-add" onclick="adicionarItemEdicao()" style="margin-bottom: 2rem; padding: 1rem;">+ ADICIONAR PEÇA</button>
-        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
+        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()" style="margin-top:0;">SALVAR ALTERAÇÕES</button>
+    </div>
+</div>
+
+<div id="modalPDF" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIO</h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">Selecione qual demanda você quer exportar em PDF (visual otimizado):</p>
+        
+        <div class="grid-pdf-opcoes">
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; background: var(--accent-red); color: white; border-color: var(--accent-red);">📄 FILA COMPLETA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('ESTAMPA PRONTA')">📦 PRONTO / ENVIAR</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO ENVIADO')">🚚 ENVIADO</button>
+            
+            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; background: var(--accent-green); color: white; border-color: var(--accent-green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+        </div>
     </div>
 </div>
 
 <script>
     // ==========================================
-    // MODO ESCURO (DARK MODE) LOGIC
+    // MODO ESCURO (DARK MODE SUAVE)
     // ==========================================
     function applyTheme(theme) {
         if (theme === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
-            document.getElementById('btnThemeToggle').innerText = '☀️ CLARO';
+            document.getElementById('btnThemeToggle').innerText = '☀️ MODO CLARO';
         } else {
             document.documentElement.removeAttribute('data-theme');
-            document.getElementById('btnThemeToggle').innerText = '🌙 ESCURO';
+            document.getElementById('btnThemeToggle').innerText = '🌙 MODO ESCURO';
         }
     }
 
@@ -314,8 +357,6 @@
         localStorage.setItem('waller_theme', newTheme);
         applyTheme(newTheme);
     }
-
-    // Carregar preferência salva
     const savedTheme = localStorage.getItem('waller_theme') || 'light';
     applyTheme(savedTheme);
 
@@ -460,8 +501,11 @@
             let valFormat = formatCurrency(peca.valorUnitario);
             document.getElementById('listaCarrinho').innerHTML += `
                 <div class="carrinho-item">
-                    <span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} (${peca.tamanho}) - [${peca.codigoEstampa}] ${peca.nomeEstampa} - <strong>${valFormat} un</strong></span>
-                    <button class="btn-remove-item" onclick="removerDoCarrinho(${index})">X</button>
+                    <span><strong>${peca.quantidade}x</strong> ${peca.tipoPeca} (${peca.tamanho}) - [${peca.codigoEstampa}] ${peca.nomeEstampa}</span>
+                    <div>
+                        <span style="color:var(--accent-red); margin-right: 15px;">${valFormat} un</span>
+                        <button class="btn-remove-item" onclick="removerDoCarrinho(${index})">X</button>
+                    </div>
                 </div>`;
         });
         document.getElementById('valorTotal').value = formatCurrency(somaCarrinho);
@@ -500,8 +544,10 @@
         document.getElementById('carregando').style.display = 'none'; 
         todosPedidos = []; 
 
-        let metricas = { pedMes: 0, filaEstampa: 0, paraEnviar: 0, faturamento: 0 };
+        let metricas = { pedMes: 0, filaEstampa: 0, paraEnviar: 0 };
+        let mesesUnicos = new Set();
         let mesAtual = new Date().getMonth();
+        let anoAtual = new Date().getFullYear();
 
         querySnapshot.forEach((doc) => {
             let pedido = doc.data(); pedido.id = doc.id; 
@@ -517,11 +563,14 @@
             
             let dataObj = pedido.dataCriacao ? pedido.dataCriacao.toDate() : new Date();
             pedido.dataFormatada = dataObj.toLocaleDateString('pt-BR');
+            pedido.dataMesAno = `${String(dataObj.getMonth() + 1).padStart(2, '0')}/${dataObj.getFullYear()}`;
 
-            if(dataObj.getMonth() === mesAtual) {
-                metricas.pedMes++;
-                if(pedido.statusPagamento === 'PAGO') metricas.faturamento += parseFloat(pedido.valorTotal);
-            }
+            // Coleta os meses para o filtro de faturamento
+            if (pedido.statusPagamento === 'PAGO') { mesesUnicos.add(pedido.dataMesAno); }
+
+            // Lógica do Card de Pedidos no Mês (Mês e Ano atuais)
+            if(dataObj.getMonth() === mesAtual && dataObj.getFullYear() === anoAtual) { metricas.pedMes++; }
+            
             if(currentStatus === 'AGUARDANDO ESTAMPA') { pedido.itens.forEach(i => metricas.filaEstampa += parseInt(i.quantidade)); }
             if(currentStatus === 'ESTAMPA PRONTA') metricas.paraEnviar++;
 
@@ -531,10 +580,54 @@
         document.getElementById('dashPedidosMes').innerText = metricas.pedMes;
         document.getElementById('dashFilaEstampa').innerText = metricas.filaEstampa;
         document.getElementById('dashEnviar').innerText = metricas.paraEnviar;
-        document.getElementById('dashFaturamento').innerText = formatCurrency(metricas.faturamento);
 
+        // Monta o Select de Faturamento Mensal
+        atualizarSelectFaturamento(mesesUnicos);
+        
         aplicarFiltros(); 
     });
+
+    // ==========================================
+    // LÓGICA INFALÍVEL DE FATURAMENTO
+    // ==========================================
+    function atualizarSelectFaturamento(mesesUnicos) {
+        const select = document.getElementById('selectFaturamentoMes');
+        const valorAnterior = select.value;
+        select.innerHTML = '';
+        
+        let arrayMeses = Array.from(mesesUnicos);
+        // Ordena para os mais recentes primeiro
+        arrayMeses.sort((a, b) => {
+            let [mA, aA] = a.split('/'); let [mB, aB] = b.split('/');
+            return new Date(aB, mB - 1) - new Date(aA, mA - 1);
+        });
+
+        if (arrayMeses.length === 0) {
+            select.innerHTML = '<option value="">Sem dados</option>';
+        } else {
+            arrayMeses.forEach(mes => {
+                let op = document.createElement('option');
+                op.value = mes; op.innerText = mes;
+                select.appendChild(op);
+            });
+            // Mantém a seleção anterior ou seleciona o mais recente
+            if(valorAnterior !== 'ALL' && arrayMeses.includes(valorAnterior)) { select.value = valorAnterior; } 
+            else { select.value = arrayMeses[0]; }
+        }
+        calcularFaturamentoMensal();
+    }
+
+    function calcularFaturamentoMensal() {
+        const mesSelecionado = document.getElementById('selectFaturamentoMes').value;
+        let soma = 0;
+        
+        todosPedidos.forEach(p => {
+            if (p.statusPagamento === 'PAGO' && p.dataMesAno === mesSelecionado) {
+                soma += parseFloat(p.valorTotal);
+            }
+        });
+        document.getElementById('dashFaturamento').innerText = formatCurrency(soma);
+    }
 
     function setFiltroBtn(tipo) {
         filtroStatusAtivo = tipo;
@@ -560,7 +653,7 @@
         });
 
         if(pedidosFiltrados.length === 0){
-            container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; font-weight:bold; color:var(--text-muted);">Nenhum pedido encontrado.</div>`;
+            container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 2rem; font-weight:bold; color:var(--text-muted); border: 1px dashed var(--border-main); border-radius: 8px;">Nenhum pedido encontrado.</div>`;
             return;
         }
 
@@ -586,7 +679,7 @@
                 </div>
             `).join('');
             
-            let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa} - ${formatCurrency(i.valorUnitario)} un`).join('\n');
+            let itensWhats = pedido.itens.map(i => `- ${i.quantidade}x ${i.tipoPeca} ${i.cor} (Tam: ${i.tamanho}) | [${i.codigoEstampa}] ${i.nomeEstampa}`).join('\n');
             let mensagemWhats = "";
             if (pedido.statusAtualizado === 'PEDIDO FEITO') {
                 mensagemWhats = `Salve ${pedido.nome}! O seu pedido #${pedido.numeroPedido} foi recebido com sucesso pela Waller. 💀🔥\n\n*Resumo do Pedido:*\n${itensWhats}\n\n*Valor Total:* ${valorFormatado}\n*Pagamento:* ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento})\n\nLogo menos avisaremos sobre a produção!`;
@@ -635,7 +728,7 @@
                         <button title="Avisar WhatsApp" style="width:100%;">💬</button>
                     </a>
                     <button onclick="abrirModalEdicao('${pedido.id}')" title="Editar" style="flex:1;">✏️</button>
-                    <button class="btn-card-del" onclick="excluirPedido('${pedido.id}')" title="Excluir" style="flex:1; color: var(--accent-red);">❌</button>
+                    <button class="btn-card-del" onclick="excluirPedido('${pedido.id}')" title="Excluir" style="flex:1;">❌</button>
                 </div>
             `;
             container.appendChild(card);
@@ -677,7 +770,7 @@
         return `
         <div class="item-edit-wrapper">
             <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
-            <div class="form-grid" style="margin-bottom: 10px; padding-right: 120px;">
+            <div class="form-grid" style="margin-bottom: 10px; padding-right: 100px;">
                 <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
                 <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
             </div>
@@ -747,34 +840,52 @@
     }
 
     // ==========================================
-    // GERADOR DE PDF 
+    // GERADOR DE PDF (LAYOUT PROFISSIONAL)
     // ==========================================
-    function gerarPDF() {
+    function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
+    function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
+
+    // Função de design do cabeçalho do PDF
+    function desenharCabecalhoPDF(doc, titulo) {
+        doc.setFillColor(217, 4, 41); // Vermelho Waller
+        doc.rect(0, 0, 210, 25, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+        doc.text("WALLER CLOTHING", 14, 12);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
+        doc.text(titulo, 14, 18);
+        
+        let dataHoje = new Date().toLocaleDateString('pt-BR');
+        doc.text(`Gerado em: ${dataHoje}`, 160, 18);
+    }
+
+    // PDF de Produção (Agrupado por Peças)
+    function gerarPDFProducao(opcao) {
+        let statusSelecionados = opcao === 'TODOS' 
+            ? ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE']
+            : [opcao];
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("WALLER CLOTHING - RELATORIO COMPLETO", 14, 15);
-        doc.setFontSize(9); doc.setFont("helvetica", "normal"); 
-        let dataHoje = new Date().toLocaleDateString('pt-BR'); doc.text("Documento gerado em: " + dataHoje, 14, 21);
+        
+        let subTitulo = opcao === 'TODOS' ? "ORDEM DE PRODUÇÃO COMPLETA" : `FILA: ${opcao}`;
+        desenharCabecalhoPDF(doc, subTitulo);
 
-        const statusList = ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE'];
-        let currentY = 30; let encontrouPedidos = false;
+        let currentY = 35; let encontrouPedidos = false;
 
-        statusList.forEach(status => {
+        statusSelecionados.forEach(status => {
             const pendentes = todosPedidos.filter(p => p.statusAtualizado === status);
             if (pendentes.length > 0) {
                 encontrouPedidos = true;
-                doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(217, 4, 41); 
-                doc.text(`> STATUS: ${status}`, 14, currentY); currentY += 5; 
+                doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(0, 0, 0); 
+                doc.text(`STATUS: ${status}`, 14, currentY); currentY += 5; 
 
                 let totalPecasBloco = 0; 
                 const contagem = {};
                 pendentes.forEach(pedido => {
                     pedido.itens.forEach(item => {
-                        let cod = item.codigoEstampa || "-";
-                        let nom = item.nomeEstampa || "Desconhecido";
-                        let peca = item.tipoPeca || "OVERSIZED";
-                        let qtd = parseInt(item.quantidade) || 1; 
-                        totalPecasBloco += qtd; 
+                        let cod = item.codigoEstampa || "-"; let nom = item.nomeEstampa || "Desconhecido"; let peca = item.tipoPeca || "OVERSIZED";
+                        let qtd = parseInt(item.quantidade) || 1; totalPecasBloco += qtd; 
                         const chave = `${cod} | ${nom} | ${peca} | ${item.cor} | ${item.tamanho}`;
                         if(!contagem[chave]) contagem[chave] = 0;
                         contagem[chave] += qtd; 
@@ -782,8 +893,7 @@
                 });
 
                 const dadosTabela = Object.keys(contagem).map(chave => {
-                    const [codigo, nome, peca, cor, tamanho] = chave.split(' | ');
-                    return [codigo, nome, peca, cor, tamanho, contagem[chave]]; 
+                    const [codigo, nome, peca, cor, tamanho] = chave.split(' | '); return [codigo, nome, peca, cor, tamanho, contagem[chave]]; 
                 });
 
                 dadosTabela.sort((a, b) => {
@@ -794,17 +904,69 @@
 
                 doc.autoTable({
                     startY: currentY, head: [['Cód', 'Estampa', 'Peça', 'Cor', 'Tam', 'Qtd']], body: dadosTabela, 
-                    foot: [[ { content: 'TOTAL DE PEÇAS:', colSpan: 5, styles: { halign: 'right', fillColor: [217, 4, 41], textColor: [255,255,255] } }, { content: totalPecasBloco.toString(), styles: { halign: 'center', fillColor: [217, 4, 41], textColor: [255,255,255] } } ]],
-                    theme: 'grid', headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' }, styles: { font: 'helvetica', fontSize: 9 },
-                    columnStyles: { 0: { cellWidth: 15 }, 4: { cellWidth: 15, halign: 'center' }, 5: { cellWidth: 15, halign: 'center', fontStyle: 'bold' } }
+                    foot: [[ { content: 'TOTAL DE PEÇAS:', colSpan: 5, styles: { halign: 'right', fillColor: [240, 240, 240], textColor: [0,0,0] } }, { content: totalPecasBloco.toString(), styles: { halign: 'center', fillColor: [217, 4, 41], textColor: [255,255,255] } } ]],
+                    theme: 'striped', headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], fontStyle: 'bold' }, styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
+                    columnStyles: { 0: { cellWidth: 20 }, 4: { cellWidth: 20, halign: 'center' }, 5: { cellWidth: 15, halign: 'center', fontStyle: 'bold' } }
                 });
                 currentY = doc.lastAutoTable.finalY + 15; 
                 if(currentY > 270) { doc.addPage(); currentY = 20; }
             }
         });
 
-        if(!encontrouPedidos) { alert("Nenhum pedido encontrado!"); return; }
-        doc.save(`relatorio_waller_${dataHoje.replace(/\//g, '-')}.pdf`);
+        if(!encontrouPedidos) { alert(`Nenhum pedido encontrado com status: ${opcao}`); return; }
+        
+        let dataNome = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        let sufixoNome = opcao === 'TODOS' ? 'completo' : opcao.toLowerCase().replace(/ /g, '_');
+        doc.save(`waller_producao_${sufixoNome}_${dataNome}.pdf`);
+        fecharModalPDF();
+    }
+
+    // PDF de Faturamento Mensal
+    function gerarPDFFaturamento() {
+        const mesSelecionado = document.getElementById('selectFaturamentoMes').value;
+        if(!mesSelecionado || mesSelecionado === 'ALL') { alert("Não há dados de faturamento para gerar relatório."); return; }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        desenharCabecalhoPDF(doc, `RELATÓRIO FINANCEIRO - MÊS: ${mesSelecionado}`);
+
+        let pedidosPagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mesSelecionado);
+        
+        if(pedidosPagos.length === 0) { alert("Nenhum pedido pago neste mês!"); return; }
+
+        let somaTotal = 0;
+        const dadosTabela = pedidosPagos.map(p => {
+            somaTotal += parseFloat(p.valorTotal);
+            return [
+                `#${p.numeroPedido}`,
+                p.dataFormatada,
+                p.nome,
+                p.metodoPagamento || '-',
+                formatCurrency(p.valorTotal)
+            ];
+        });
+
+        doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
+        doc.text("RESUMO DE VENDAS CONCLUÍDAS", 14, 35);
+
+        doc.autoTable({
+            startY: 40, 
+            head: [['Pedido', 'Data', 'Cliente', 'Método', 'Valor (R$)']], 
+            body: dadosTabela, 
+            foot: [[ 
+                { content: 'TOTAL FATURADO NO MÊS:', colSpan: 4, styles: { halign: 'right', fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' } }, 
+                { content: formatCurrency(somaTotal), styles: { halign: 'right', fillColor: [16, 185, 129], textColor: [255,255,255], fontStyle: 'bold' } } 
+            ]],
+            theme: 'striped', 
+            headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], fontStyle: 'bold' }, 
+            styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
+            columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 25 }, 3: { cellWidth: 30 }, 4: { halign: 'right', fontStyle: 'bold', cellWidth: 35 } }
+        });
+
+        let dataNome = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        doc.save(`waller_faturamento_${mesSelecionado.replace('/', '-')}_em_${dataNome}.pdf`);
+        fecharModalPDF();
     }
 </script>
 
