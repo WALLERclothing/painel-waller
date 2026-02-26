@@ -30,14 +30,14 @@
         /* DARK MODE TOM SOBRE TOM SUAVE */
         [data-theme="dark"] {
             color-scheme: dark;
-            --black: #cccccc;        /* Texto cinza claro, sem estourar o branco */
-            --white: #1c1c1c;        /* Fundo dos painéis chumbo escuro */
-            --gray: #2a2a2a;         /* Fundo de elementos secundários */
-            --border-color: #3a3a3a; /* Bordas suaves */
-            --red: #a83232;          /* Vermelho mais apagado e terroso */
-            --green: #3b7a57;        /* Verde militar mais calmo */
+            --black: #cccccc;        
+            --white: #1c1c1c;        
+            --gray: #2a2a2a;         
+            --border-color: #3a3a3a; 
+            --red: #a83232;          
+            --green: #3b7a57;        
             --text-muted: #888888;
-            --bg-body: #121212;      /* Fundo da tela base */
+            --bg-body: #121212;      
             --bg-dots: #222222;
         }
 
@@ -96,14 +96,18 @@
         
         .pedido-card { background: var(--white); border: var(--border-thick); display: flex; flex-direction: column; justify-content: space-between; cursor: grab; position: relative; }
         .pedido-card:active { cursor: grabbing; opacity: 0.8; }
-        .checkbox-bulk { position: absolute; top: 10px; right: 10px; transform: scale(1.5); cursor: pointer; }
         
-        .pedido-header { background: var(--gray); border-bottom: var(--border-thick); padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        /* NOVO ESTILO DO CHECKBOX (Discreto e alinhado) */
+        .checkbox-bulk { cursor: pointer; width: 16px; height: 16px; margin: 0; accent-color: var(--red); }
+        
+        .pedido-header { background: var(--gray); border-bottom: var(--border-thick); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .header-linha-1 { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .id-container { display: flex; align-items: center; gap: 8px; }
         .pedido-id { font-size: 1.1rem; font-weight: 900; font-style: italic; color: var(--black); }
-        .pedido-data { font-size: 0.7rem; color: var(--red); font-weight: 800; border: 1px solid var(--red); padding: 2px 4px; background: var(--white); display: inline-block; width: fit-content; }
+        .pedido-data { font-size: 0.7rem; color: var(--red); font-weight: 800; border: 1px solid var(--red); padding: 2px 4px; background: var(--white); }
 
         .pedido-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; color: var(--black); }
-        .cliente-nome { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; padding-right: 25px; }
+        .cliente-nome { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; }
         .cliente-financas { font-size: 0.85rem; font-weight: 900; color: var(--green); }
         
         .toggle-itens-btn { display: flex; justify-content: space-between; align-items: center; background: var(--gray); border: 1px dashed var(--border-color); padding: 6px 8px; font-size: 0.75rem; font-weight: 900; cursor: pointer; transition: all 0.2s; color: var(--black); }
@@ -116,7 +120,7 @@
         .pedido-footer button:last-child { border-right: none; }
         .pedido-footer button:hover { background: var(--black); color: var(--white); }
 
-        .btn-pgto { padding: 0.3rem 0.5rem; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); cursor: pointer; text-transform: uppercase; margin-top: 5px; width: 100%; }
+        .btn-pgto { padding: 0.3rem 0.5rem; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); cursor: pointer; text-transform: uppercase; width: 100%; }
         .pgto-pendente { background-color: var(--white); color: var(--red); }
         .pgto-pago { background-color: var(--black); color: var(--green); }
 
@@ -276,7 +280,7 @@
         <form onsubmit="salvarNovaEstampa(event)">
             <input type="hidden" id="editEstampaCodigoOriginal" value="">
             <div class="form-grid">
-                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL)" required style="flex: 0.5;">
+                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
             </div>
             <div class="form-grid">
@@ -360,12 +364,12 @@
         <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
         <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIOS</h2>
         <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--black);">📄 O.S. FILA COMPLETA</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red); color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
         </div>
     </div>
 </div>
@@ -736,7 +740,7 @@
     }
 
     // ==========================================
-    // KANBAN LOGIC & RENDER (AGORA APARECE!)
+    // KANBAN LOGIC & RENDER (ALINHADO E DISCRETO)
     // ==========================================
     function renderizarKanban() {
         let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
@@ -747,11 +751,17 @@
             let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
             let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:var(--text-muted); font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
             
+            // Checkbox agora fica alinhado com o ID na header-linha-1
             let cardHtml = `
             <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="drag(event)">
-                <input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()">
                 <div class="pedido-header">
-                    <div class="header-linha-1"><span class="pedido-id">#${p.numeroPedido}</span> <span class="pedido-data">${p.dataFormatada}</span></div>
+                    <div class="header-linha-1">
+                        <div class="id-container">
+                            <input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()" title="Selecionar pedido">
+                            <span class="pedido-id">#${p.numeroPedido}</span>
+                        </div>
+                        <span class="pedido-data">${p.dataFormatada}</span>
+                    </div>
                     ${btnPgto}
                 </div>
                 <div class="pedido-body">
