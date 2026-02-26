@@ -718,16 +718,43 @@
     // GERADOR DE PDF 
     // ==========================================
     function gerarPDF() {
+        const opcao = prompt(
+            "Qual relatório você quer gerar? Digite o número:\n\n" +
+            "1 - TODOS (Completo)\n" +
+            "2 - PEDIDO FEITO\n" +
+            "3 - AGUARDANDO ESTAMPA (Fila Estamparia)\n" +
+            "4 - ESTAMPA PRONTA\n" +
+            "5 - PEDIDO ENVIADO\n" +
+            "6 - PEDIDO ENTREGUE"
+        );
+
+        if (!opcao) return; // Se clicar em cancelar, para a função
+
+        let statusSelecionados = [];
+        switch(opcao) {
+            case '1': statusSelecionados = ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE']; break;
+            case '2': statusSelecionados = ['PEDIDO FEITO']; break;
+            case '3': statusSelecionados = ['AGUARDANDO ESTAMPA']; break;
+            case '4': statusSelecionados = ['ESTAMPA PRONTA']; break;
+            case '5': statusSelecionados = ['PEDIDO ENVIADO']; break;
+            case '6': statusSelecionados = ['PEDIDO ENTREGUE']; break;
+            default: alert("Opção inválida!"); return;
+        }
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("WALLER CLOTHING - RELATORIO COMPLETO", 14, 15);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
+        
+        // Atualiza o título do PDF baseado na escolha
+        let titulo = opcao === '1' ? "RELATORIO COMPLETO" : `RELATORIO - ${statusSelecionados[0]}`;
+        doc.text(`WALLER CLOTHING - ${titulo}`, 14, 15);
+        
         doc.setFontSize(9); doc.setFont("helvetica", "normal"); 
         let dataHoje = new Date().toLocaleDateString('pt-BR'); doc.text("Documento gerado em: " + dataHoje, 14, 21);
 
-        const statusList = ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA', 'ESTAMPA PRONTA', 'PEDIDO ENVIADO', 'PEDIDO ENTREGUE'];
         let currentY = 30; let encontrouPedidos = false;
 
-        statusList.forEach(status => {
+        statusSelecionados.forEach(status => {
             const pendentes = todosPedidos.filter(p => p.statusAtualizado === status);
             if (pendentes.length > 0) {
                 encontrouPedidos = true;
@@ -771,10 +798,14 @@
             }
         });
 
-        if(!encontrouPedidos) { alert("Nenhum pedido encontrado!"); return; }
-        doc.save(`relatorio_waller_${dataHoje.replace(/\//g, '-')}.pdf`);
+        if(!encontrouPedidos) { alert("Nenhum pedido encontrado para esta demanda!"); return; }
+        
+        // Define o nome do arquivo dinamicamente com base na opção escolhida
+        let sufixoNome = opcao === '1' ? 'completo' : statusSelecionados[0].toLowerCase().replace(/ /g, '_');
+        doc.save(`relatorio_waller_${sufixoNome}_${dataHoje.replace(/\//g, '-')}.pdf`);
     }
 </script>
 
 </body>
 </html>
+
