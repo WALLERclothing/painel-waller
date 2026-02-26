@@ -16,7 +16,7 @@
     <style>
         /* === VARIÁVEIS DE COR SUAVES (CLARO / ESCURO) === */
         :root {
-            --bg-main: #f3f4f6; /* Cinza bem clarinho, descansa os olhos */
+            --bg-main: #f3f4f6;
             --bg-card: #ffffff;
             --bg-alt: #f9fafb;
             --text-main: #111827;
@@ -25,7 +25,7 @@
             --accent-red: #d90429;
             --accent-green: #10b981;
             --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius: 8px; /* Cantos levemente arredondados */
+            --radius: 8px;
         }
 
         /* TEMA ESCURO (DARK MODE SUAVE) */
@@ -53,7 +53,6 @@
         .nav-buttons { position: absolute; right: 2rem; display: flex; gap: 10px; }
         .btn-nav { background-color: transparent; color: #ffffff; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 800; border: 1px solid #ffffff; border-radius: var(--radius); text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
         .btn-nav:hover { background-color: #ffffff; color: #000000; }
-        #btnGerarPDF { display: none; }
 
         .tab-menu { display: flex; gap: 0.5rem; max-width: 1200px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
         .tab-btn { flex: 1; text-align: center; background-color: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-main); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; padding: 1rem; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
@@ -94,12 +93,15 @@
         input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: var(--text-main); border: 1px solid var(--border-main); border-radius: 6px; outline: none; box-sizing: border-box; background-color: var(--bg-main); transition: border-color 0.2s; }
         input:focus, select:focus { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1); }
         ::placeholder { color: var(--text-muted); font-weight: 500; }
+        input:disabled { opacity: 0.6; cursor: not-allowed; }
         
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s; text-transform: uppercase; border: none; }
         .btn-add { background-color: var(--bg-alt); color: var(--text-main); border: 1px dashed var(--border-main); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; }
         .btn-add:hover { background-color: var(--border-main); }
         .btn-primary { background-color: var(--accent-red); color: #ffffff; padding: 1.2rem; font-size: 1rem; width: 100%; margin-top: 1rem; box-shadow: var(--shadow-soft); }
         .btn-primary:hover { background-color: #b00020; }
+        .btn-cancel { background-color: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-main); padding: 1.2rem; font-size: 1rem; width: 100%; margin-top: 1rem; }
+        .btn-cancel:hover { background-color: var(--border-main); }
         
         #carrinho-container { background-color: var(--bg-alt); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.5rem; display: none; }
         .carrinho-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-main); padding: 0.8rem 0; font-size: 0.85rem; font-weight: 600; }
@@ -155,8 +157,10 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { padding: 1.2rem; text-align: left; border-bottom: 1px solid var(--border-main); }
         th { font-weight: 800; color: var(--text-muted); font-size: 0.8rem; }
-        .btn-icone { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: #fee2e2; color: var(--accent-red); border-radius: 4px; cursor: pointer; transition: 0.2s;}
-        .btn-icone:hover { background-color: var(--accent-red); color: white; }
+        .btn-icone { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: var(--bg-alt); color: var(--text-main); border: 1px solid var(--border-main); border-radius: 4px; cursor: pointer; transition: 0.2s;}
+        .btn-icone:hover { background-color: var(--text-main); color: var(--bg-main); }
+        .btn-excluir { background-color: #fee2e2; color: var(--accent-red); border-color: #fca5a5; }
+        .btn-excluir:hover { background-color: var(--accent-red); color: white; border-color: var(--accent-red); }
 
         #carregando, #carregandoEstampas { font-size: 0.85rem; color: var(--accent-red); font-weight: 800; }
 
@@ -179,6 +183,7 @@
             .grid-pedidos { grid-template-columns: 1fr; }
             .item-edit-wrapper .btn-remove-peca { position: relative; top: 0; right: 0; width: 100%; margin-bottom: 15px; }
             .grid-pdf-opcoes { grid-template-columns: 1fr; }
+            .form-grid-estampas { flex-direction: column; }
         }
     </style>
 </head>
@@ -279,19 +284,24 @@
 
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title">Cadastrar Estampa</h2>
+        <h2 class="card-title" id="tituloCardEstampa">Cadastrar Estampa</h2>
         <form onsubmit="salvarNovaEstampa(event)">
-            <div class="form-grid">
+            <input type="hidden" id="editEstampaCodigoOriginal" value="">
+            <div class="form-grid form-grid-estampas">
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
-                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 2;">
+                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
+                <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
             </div>
-            <button type="submit" class="btn-primary" style="margin-top:0;">+ CADASTRAR</button>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ CADASTRAR ESTAMPA</button>
+                <button type="button" id="btnCancelarEstampa" class="btn-cancel" style="margin-top:0; flex: 1; display: none;" onclick="cancelarEdicaoEstampa()">CANCELAR EDIÇÃO</button>
+            </div>
         </form>
     </div>
     <div class="card">
         <h2 class="card-title">Estampas Salvas <span id="carregandoEstampas">Lendo...</span></h2>
         <table>
-            <thead><tr><th style="width: 20%;">Código</th><th style="width: 70%;">Nome da Estampa</th><th style="width: 10%;">Ações</th></tr></thead>
+            <thead><tr><th style="width: 15%;">Código</th><th style="width: 55%;">Nome da Estampa</th><th style="width: 15%;">Estoque</th><th style="width: 15%;">Ações</th></tr></thead>
             <tbody id="listaEstampas"></tbody>
         </table>
     </div>
@@ -433,7 +443,7 @@
     const db = firebase.firestore();
 
     // ==========================================
-    // CATÁLOGO DE ESTAMPAS 
+    // CATÁLOGO DE ESTAMPAS (COM ESTOQUE E EDIÇÃO)
     // ==========================================
     let catalogoEstampas = {}; 
     db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
@@ -442,18 +452,64 @@
         catalogoEstampas = {}; 
         querySnapshot.forEach((doc) => {
             let estampa = doc.data();
+            let estoque = estampa.estoque || 0;
             catalogoEstampas[estampa.codigo] = estampa.nome;
-            document.getElementById('listaEstampas').innerHTML += `<tr><td><strong>${estampa.codigo}</strong></td><td>${estampa.nome}</td><td><button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')">X</button></td></tr>`;
+            
+            document.getElementById('listaEstampas').innerHTML += `
+            <tr>
+                <td><strong>${estampa.codigo}</strong></td>
+                <td>${estampa.nome}</td>
+                <td><strong>${estoque}</strong> unid.</td>
+                <td style="display:flex; gap: 5px;">
+                    <button type="button" class="btn-icone" onclick="prepararEdicaoEstampa('${estampa.codigo}', '${estampa.nome.replace(/'/g, "\\'")}', ${estoque})" title="Editar Estampa">✏️</button>
+                    <button type="button" class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')" title="Excluir">X</button>
+                </td>
+            </tr>`;
         });
     });
+
+    function prepararEdicaoEstampa(codigo, nome, estoque) {
+        document.getElementById('cadCodigoEstampa').value = codigo;
+        document.getElementById('cadCodigoEstampa').disabled = true; // Bloqueia alterar o código
+        document.getElementById('cadNomeEstampa').value = nome;
+        document.getElementById('cadEstoque').value = estoque;
+        document.getElementById('editEstampaCodigoOriginal').value = codigo;
+        
+        document.getElementById('tituloCardEstampa').innerText = 'Editar Estampa';
+        document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR ESTAMPA';
+        document.getElementById('btnCancelarEstampa').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicaoEstampa() {
+        document.getElementById('cadCodigoEstampa').value = '';
+        document.getElementById('cadCodigoEstampa').disabled = false;
+        document.getElementById('cadNomeEstampa').value = '';
+        document.getElementById('cadEstoque').value = '0';
+        document.getElementById('editEstampaCodigoOriginal').value = '';
+        
+        document.getElementById('tituloCardEstampa').innerText = 'Cadastrar Estampa';
+        document.getElementById('btnSalvarEstampa').innerText = '+ CADASTRAR ESTAMPA';
+        document.getElementById('btnCancelarEstampa').style.display = 'none';
+    }
 
     function salvarNovaEstampa(e) {
         e.preventDefault();
         let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
         let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
-        db.collection("estampas").doc(cod).set({ codigo: cod, nome: nom })
-        .then(() => { document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadCodigoEstampa').focus(); });
+        let est = parseInt(document.getElementById('cadEstoque').value) || 0;
+        let editCod = document.getElementById('editEstampaCodigoOriginal').value;
+
+        // Se estiver editando, usa o código original como ID do banco
+        let docId = editCod ? editCod : cod;
+
+        db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, estoque: est }, { merge: true })
+        .then(() => { 
+            cancelarEdicaoEstampa();
+            document.getElementById('cadCodigoEstampa').focus(); 
+        });
     }
+
     function excluirEstampa(idCodigo) { if(confirm(`Apagar estampa ${idCodigo}?`)) db.collection("estampas").doc(idCodigo).delete(); }
 
     document.getElementById('codigoEstampa').addEventListener('input', function(e) {
@@ -596,7 +652,6 @@
         select.innerHTML = '';
         
         let arrayMeses = Array.from(mesesUnicos);
-        // Ordena para os mais recentes primeiro
         arrayMeses.sort((a, b) => {
             let [mA, aA] = a.split('/'); let [mB, aB] = b.split('/');
             return new Date(aB, mB - 1) - new Date(aA, mA - 1);
@@ -610,7 +665,6 @@
                 op.value = mes; op.innerText = mes;
                 select.appendChild(op);
             });
-            // Mantém a seleção anterior ou seleciona o mais recente
             if(valorAnterior !== 'ALL' && arrayMeses.includes(valorAnterior)) { select.value = valorAnterior; } 
             else { select.value = arrayMeses[0]; }
         }
@@ -690,6 +744,8 @@
 
             let card = document.createElement('div');
             card.className = 'pedido-card';
+            
+            // O botão da sanfona agora vem com a setinha para baixo e o painel começa escondido (display: none)
             card.innerHTML = `
                 <div class="pedido-header">
                     <div class="header-linha-1">
@@ -716,10 +772,10 @@
                     
                     <div class="toggle-itens-btn" onclick="toggleItens('${pedido.id}')">
                         <span>📦 PEÇAS DO PEDIDO (${pedido.itens.length})</span>
-                        <span id="seta-${pedido.id}">▲</span>
+                        <span id="seta-${pedido.id}">▼</span>
                     </div>
 
-                    <div class="pedido-itens-lista" id="itens-${pedido.id}" style="display: flex;">
+                    <div class="pedido-itens-lista" id="itens-${pedido.id}" style="display: none;">
                         ${htmlItens}
                     </div>
                 </div>
