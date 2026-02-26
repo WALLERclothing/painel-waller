@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waller Clothing | Mega Painel</title>
+    <title>Waller Clothing | Painel</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,123 +12,105 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        /* === ESTILO BRUTALISTA DEEP DARK === */
+        /* === VOLTANDO À ESTÉTICA BRUTALISTA ORIGINAL COM TONS ESCUROS === */
         :root {
-            color-scheme: light;
-            --black: #000000;
+            --black: #111111;
             --white: #ffffff;
-            --gray: #f4f4f4;
-            --border-color: #000000;
-            --border-thick: 3px solid var(--border-color);
             --red: #d90429;
             --green: #06d6a0;
-            --text-main: #000000;
-            --bg-body: #ffffff;
-            --bg-card: #ffffff;
+            --gray: #f4f4f4;
+            --border-thick: 3px solid var(--black);
         }
 
         [data-theme="dark"] {
-            color-scheme: dark;
-            --black: #ffffff;        
-            --white: #0d0d0d;        /* Preto Profundo */
-            --gray: #151515;         /* Chumbo Escuro */
-            --border-color: #252525; /* Bordas foscas */
-            --red: #ff002b;          
+            --black: #eeeeee;        
+            --white: #1a1a1a;        
+            --gray: #252525;         
+            --red: #ff3355;
             --green: #00f5a0;
-            --text-main: #e0e0e0;    /* Texto claro mas não ofuscante */
-            --bg-body: #080808;      /* Fundo total */
         }
 
-        body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; transition: 0.2s; }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--white); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(var(--gray) 2px, transparent 1px); background-size: 20px 20px; transition: 0.2s; }
         
         .navbar { background-color: #000; color: #fff; padding: 1.5rem 2rem; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 5px solid var(--red); }
         .navbar h1 { margin: 0; font-size: 2.2rem; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; }
         .nav-actions { position: absolute; right: 2rem; display: flex; gap: 10px; }
-        .btn-nav { background-color: transparent; color: #fff; padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid #fff; text-transform: uppercase; cursor: pointer; transition: 0.1s; }
-        .btn-nav:hover { background-color: #fff; color: #000; }
+        .btn-nav { background-color: transparent; color: #fff; padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; border: 2px solid #fff; text-transform: uppercase; cursor: pointer; }
 
         .tab-menu { display: flex; gap: 1rem; max-width: 1400px; margin: 2rem auto -1rem auto; padding: 0 1rem; flex-wrap: wrap; }
-        .tab-btn { flex: 1; text-align: center; background-color: var(--white); color: var(--black); border: var(--border-thick); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--border-color); transition: all 0.1s; text-transform: uppercase; }
-        .tab-btn:hover { background-color: var(--gray); color: var(--black); }
-        .tab-active { background-color: var(--black); color: var(--bg-body); box-shadow: 4px 4px 0px var(--red); pointer-events: none; }
+        .tab-btn { flex: 1; text-align: center; background-color: var(--white); color: var(--black); border: var(--border-thick); padding: 0.8rem 1rem; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 4px 4px 0px var(--black); transition: all 0.1s; text-transform: uppercase; }
+        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
+        .tab-active { background-color: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); pointer-events: none; }
 
         .container { max-width: 1400px; margin: 3rem auto; padding: 0 1rem; }
         
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .dash-card { background: var(--gray); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; font-weight: 900; opacity: 0.7; }
+        .dash-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .dash-card h3 { margin: 0 0 0.5rem 0; font-size: 0.8rem; text-transform: uppercase; font-weight: 900; }
         .dash-card span { font-size: 2rem; font-weight: 900; font-style: italic; color: var(--red); }
 
-        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--border-color); margin-bottom: 3rem; overflow-x: auto; }
-        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .card { background: var(--white); border: var(--border-thick); padding: 2rem; box-shadow: 8px 8px 0px var(--black); margin-bottom: 3rem; }
+        .card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; text-transform: uppercase; margin-bottom: 1.5rem; color: var(--black); }
         
-        .form-section { border-bottom: 2px dashed var(--border-color); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .form-section-title { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; color: var(--red); }
+        .form-section { border-bottom: 2px dashed var(--black); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
         .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         
-        input, select, textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: var(--border-thick); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--gray); color: var(--black); text-transform: uppercase; }
-        input:focus, select:focus, textarea:focus { border-color: var(--red); }
-        ::placeholder { color: #555; }
+        input, select, textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: var(--border-thick); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
+        input:focus, select:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
 
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: 0.1s; text-transform: uppercase; }
-        .btn-primary { background-color: var(--black); color: var(--bg-body); border: var(--border-thick); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--red); }
+        .btn-primary { background-color: var(--black); color: var(--white); border: var(--border-thick); padding: 1.2rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; box-shadow: 5px 5px 0px var(--red); }
         .btn-primary:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
         
-        /* KANBAN (GRID ESTÁTICO) */
-        .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; align-items: flex-start; }
-        .kanban-col { background: var(--white); border: var(--border-thick); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: 5px 5px 0px var(--border-color); }
-        .kanban-header { font-size: 1rem; font-weight: 900; text-align: center; border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+        /* KANBAN ORIGINAL (SCROLL HORIZONTAL) */
+        .kanban-board { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1.5rem; }
+        .kanban-col { background: var(--gray); border: var(--border-thick); padding: 1rem; min-width: 320px; flex: 0 0 320px; display: flex; flex-direction: column; gap: 1rem; box-shadow: 6px 6px 0px var(--black); }
+        .kanban-header { font-size: 1.1rem; font-weight: 900; text-align: center; border-bottom: 2px solid var(--black); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
         
-        .pedido-card { background: var(--gray); border: var(--border-thick); position: relative; cursor: grab; }
-        .pedido-header { padding: 10px; border-bottom: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 5px; }
-        .header-top { display: flex; justify-content: space-between; align-items: center; }
-        .checkbox-container { display: flex; align-items: center; gap: 5px; }
+        .pedido-card { background: var(--white); border: 2px solid var(--black); position: relative; cursor: grab; }
+        .pedido-header { padding: 10px; background: var(--gray); border-bottom: 2px solid var(--black); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .id-container { display: flex; align-items: center; gap: 8px; font-weight: 900; font-style: italic; }
         .checkbox-bulk { width: 18px; height: 18px; cursor: pointer; accent-color: var(--red); }
-        .pedido-id { font-weight: 900; font-size: 1.1rem; font-style: italic; }
-        .pedido-data { font-size: 0.65rem; border: 1px solid var(--red); color: var(--red); padding: 1px 4px; font-weight: 800; }
+        .pedido-data { font-size: 0.7rem; color: var(--red); font-weight: 800; border: 1px solid var(--red); padding: 2px 4px; background: #fff; }
 
         .pedido-body { padding: 10px; font-size: 0.85rem; }
-        .cliente-info { font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .pedido-valor { color: var(--green); font-weight: 900; font-size: 0.9rem; }
+        .pedido-valor { color: var(--green); font-weight: 900; }
 
-        .toggle-itens-btn { background: var(--white); border: 2px dashed var(--border-color); padding: 5px; font-size: 0.7rem; font-weight: 900; text-align: center; cursor: pointer; margin-top: 10px; }
-        .pedido-itens-lista { display: none; padding: 5px 0; flex-direction: column; gap: 4px; }
-        .item-tag { background: var(--white); border-left: 4px solid var(--red); padding: 5px; font-size: 0.7rem; font-weight: 700; border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+        .toggle-itens-btn { background: var(--gray); border: 2px dashed var(--black); padding: 6px; font-size: 0.75rem; font-weight: 900; text-align: center; cursor: pointer; margin-top: 10px; }
+        .pedido-itens-lista { display: none; flex-direction: column; gap: 5px; margin-top: 5px; }
+        .item-tag { background: var(--white); border-left: 4px solid var(--red); padding: 6px; font-size: 0.75rem; border-top: 1px solid var(--black); border-right: 1px solid var(--black); border-bottom: 1px solid var(--black); }
 
-        .pedido-footer { display: flex; border-top: var(--border-thick); }
-        .pedido-footer button { flex: 1; padding: 8px; font-size: 0.9rem; background: var(--gray); color: var(--black); border: none; border-right: 1px solid var(--border-color); }
+        .pedido-footer { display: flex; border-top: 2px solid var(--black); }
+        .pedido-footer button { flex: 1; padding: 8px; background: var(--white); color: var(--black); border: none; border-right: 1px solid var(--black); font-weight: 800; }
         .pedido-footer button:last-child { border-right: none; }
         .pedido-footer button:hover { background: var(--black); color: var(--white); }
 
-        .btn-pgto { font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); cursor: pointer; padding: 4px; width: 100%; margin-top: 5px; }
+        .btn-pgto { font-size: 0.7rem; font-weight: 900; border: 2px solid var(--black); cursor: pointer; padding: 4px; width: 100%; box-shadow: 2px 2px 0px var(--black); }
         .pgto-pago { background: var(--black); color: var(--green); }
         .pgto-pend { background: var(--white); color: var(--red); }
 
         /* CRM & CATALOGO */
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { text-transform: uppercase; font-weight: 900; border-bottom: var(--border-thick); }
-        .btn-icone { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: var(--gray); border: 2px solid var(--border-color); color: var(--black); cursor: pointer; text-decoration: none; font-weight: 900; }
-        
-        .badge-soldout { background: var(--red); color: #fff; padding: 2px 6px; font-size: 0.6rem; font-weight: 900; margin-left: 5px; border: 1px solid #000; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--black); }
+        th { text-transform: uppercase; font-weight: 900; border-top: var(--border-thick); }
+        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; background: var(--white); border: 2px solid var(--black); color: var(--black); cursor: pointer; font-weight: 900; transition: 0.1s; box-shadow: 2px 2px 0px #000; }
+        .btn-icone:hover { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #000; }
 
-        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
-        .brutal-toast { background: var(--black); color: var(--white); border: 3px solid var(--red); padding: 1rem; font-weight: 900; text-transform: uppercase; margin-top: 10px; box-shadow: 5px 5px 0px var(--red); }
-
-        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: 0.3s; box-shadow: 10px 10px 0px #000; }
+        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: 0.3s; box-shadow: 8px 8px 0px var(--black); }
         #bulk-action-bar.show { bottom: 20px; }
 
-        @media (max-width: 1000px) { .kanban-board { display: flex; overflow-x: auto; } .kanban-col { min-width: 300px; } }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
+        .modal-box { background: var(--white); border: var(--border-thick); padding: 2rem; width: 95%; max-width: 900px; box-shadow: 8px 8px 0px var(--red); position: relative; margin: auto; }
+        .btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: var(--white); border: 2px solid var(--black); font-weight: 900; cursor: pointer; padding: 0.3rem 0.8rem; color: var(--red); }
     </style>
 </head>
 <body data-theme="dark">
 
-<div class="toast-container" id="toastContainer"></div>
-
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
-        <button class="btn-nav" onclick="toggleTheme()">🌓 ALTERAR TEMA</button>
+        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
         <button class="btn-nav" onclick="abrirModalPDF()">📄 RELATÓRIOS</button>
     </div>
 </nav>
@@ -150,13 +132,13 @@
             </div>
             <div class="form-grid">
                 <input type="text" id="cep" placeholder="CEP" onblur="buscarCEP(this.value)">
-                <input type="text" id="endereco" placeholder="ENDEREÇO" style="flex: 2;">
+                <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
                 <input type="text" id="valorFrete" class="moeda" placeholder="FRETE" oninput="atualizarTelaCarrinho()">
             </div>
             <div class="form-grid">
                 <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option></select>
                 <select id="statusPagamento"><option value="PENDENTE">⏳ PENDENTE</option><option value="PAGO">💰 PAGO</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL" readonly style="color:var(--red);">
+                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL" readonly style="background-color: var(--gray); font-weight: 900; color: var(--red);">
             </div>
         </div>
         <div class="form-section" style="border:none;">
@@ -168,7 +150,7 @@
             </div>
             <button class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA</button>
         </div>
-        <div id="carrinho-container">
+        <div id="carrinho-container" style="padding:1rem; margin-bottom:1rem; border:2px solid var(--black);">
             <div id="listaCarrinho"></div>
         </div>
         <button class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
@@ -179,7 +161,7 @@
     <div class="dashboard-grid">
         <div class="dash-card"><h3>PEDIDOS (MÊS)</h3><span id="dashPedidosMes">0</span></div>
         <div class="dash-card"><h3>FATURAMENTO</h3>
-            <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="padding:2px; font-size:0.7rem; margin-top:5px;"></select>
+            <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="padding:2px; font-size:0.7rem;"></select>
             <span id="dashFaturamento">R$ 0,00</span>
         </div>
     </div>
@@ -193,7 +175,7 @@
             <div id="col-AGUARDANDO-ESTAMPA" style="min-height:200px;"></div>
         </div>
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'ESTAMPA PRONTA')">
-            <div class="kanban-header">📦 PRONTO / ENVIO</div>
+            <div class="kanban-header">📦 PRONTO ENVIO</div>
             <div id="col-ESTAMPA-PRONTA" style="min-height:200px;"></div>
         </div>
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO ENVIADO')">
@@ -205,15 +187,15 @@
 
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title">Estoque Catálogo</h2>
+        <h2 class="card-title">Catálogo</h2>
         <form onsubmit="salvarNovaEstampa(event)" class="form-grid">
             <input type="text" id="cadCodigoEstampa" placeholder="CÓD" required>
             <input type="text" id="cadNomeEstampa" placeholder="NOME" required style="flex:2;">
             <input type="number" id="cadEstoque" placeholder="ESTOQUE" required>
-            <button type="submit" class="btn-icone" style="width:100%; height:auto;">SALVAR</button>
+            <button type="submit" class="btn-add" style="width:auto; padding:0 2rem;">SALVAR</button>
         </form>
         <table style="margin-top:2rem;">
-            <thead><tr><th>CÓD</th><th>ESTAMPA</th><th>ESTOQUE</th><th>AÇÕES</th></tr></thead>
+            <thead><tr><th>CÓD</th><th>NOME</th><th>ESTOQUE</th><th>AÇÕES</th></tr></thead>
             <tbody id="listaEstampas"></tbody>
         </table>
     </div>
@@ -221,9 +203,9 @@
 
 <div id="aba-clientes" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title">Fichas CRM</h2>
+        <h2 class="card-title">CRM Clientes</h2>
         <table>
-            <thead><tr><th>CLIENTE</th><th>PEDIDOS</th><th>TOTAL</th><th>AÇÕES</th></tr></thead>
+            <thead><tr><th>CLIENTE</th><th>PEDIDOS</th><th>TOTAL GASTO</th><th>AÇÃO</th></tr></thead>
             <tbody id="listaClientesCRM"></tbody>
         </table>
     </div>
@@ -232,24 +214,16 @@
 <div id="modalPDF" class="modal-overlay">
     <div class="modal-box" style="max-width:500px;">
         <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
-        <h2 class="card-title">RELATÓRIOS</h2>
-        <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')">ORDEM COMPLETA</button>
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()">ETIQUETAS ENVIO</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1/-1;">PDF FINANCEIRO MÊS</button>
-        </div>
+        <h2 class="card-title">Relatórios</h2>
+        <button class="btn-primary" onclick="gerarPDFProducao('TODOS')">ORDEM DE PRODUÇÃO</button>
+        <button class="btn-primary" onclick="gerarPDFFaturamento()" style="background:var(--green); color:#000;">FATURAMENTO MENSAL</button>
     </div>
 </div>
 
 <div id="bulk-action-bar">
-    <strong id="bulk-count">0</strong> SELECIONADOS 
-    <select id="bulk-status-select" style="width:auto; margin:0 10px;">
-        <option value="AGUARDANDO ESTAMPA">FILA ESTAMPA</option>
-        <option value="ESTAMPA PRONTA">PRONTO ENVIO</option>
-        <option value="PEDIDO ENVIADO">ENVIADO</option>
-    </select>
-    <button onclick="executarBulkUpdate()" style="background:var(--black); color:var(--bg-body); padding:5px 15px;">OK</button>
-    <button onclick="limparBulk()" style="color:var(--red); padding:5px;">X</button>
+    <strong id="bulk-count">0</strong> SELECIONADOS
+    <button onclick="executarBulkUpdate()" style="background:var(--black); color:#fff; padding:5px 15px; margin-left:10px; border:2px solid #000;">ENVIADO</button>
+    <button onclick="limparBulk()" style="color:var(--red); padding:5px; margin-left:5px;">X</button>
 </div>
 
 <script>
@@ -260,20 +234,16 @@
 
     // TEMA
     function toggleTheme() {
-        const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', theme);
+        const t = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', t);
+        localStorage.setItem('waller_theme', t);
     }
-
-    function showToast(msg) {
-        const t = document.createElement('div'); t.className='brutal-toast'; t.innerText=msg;
-        document.getElementById('toastContainer').appendChild(t);
-        setTimeout(()=>t.remove(), 3000);
-    }
+    document.body.setAttribute('data-theme', localStorage.getItem('waller_theme') || 'dark');
 
     // UTILITARIOS
     function formatCurrency(n) { return "R$ " + (parseFloat(n)||0).toFixed(2).replace(".",","); }
     function unmaskCurrency(v) { return parseFloat(v.toString().replace(/[^\d,]/g,'').replace(',','.')) || 0; }
-
+    
     document.addEventListener('input', e => {
         if(e.target.classList.contains('moeda')) {
             let val = e.target.value.replace(/\D/g,"");
@@ -309,59 +279,36 @@
         snap.forEach(doc => {
             const e = doc.data(); catalogo[e.codigo] = e;
             dl.innerHTML += `<option value="${e.codigo}">${e.nome}</option>`;
-            list.innerHTML += `<tr><td>${e.codigo}</td><td>${e.nome} ${e.estoque<=0?'<span class="badge-soldout">SOLD OUT</span>':''}</td>
-                <td><button onclick="ajustarEstoque('${doc.id}',-1)">-</button> <strong>${e.estoque}</strong> <button onclick="ajustarEstoque('${doc.id}',1)">+</button></td>
-                <td><button onclick="excluirEstampa('${doc.id}')">X</button></td></tr>`;
+            list.innerHTML += `<tr><td>${e.codigo}</td><td>${e.nome}</td><td>${e.estoque}</td><td><button class="btn-icone" onclick="db.collection('estampas').doc('${doc.id}').delete()">X</button></td></tr>`;
         });
     });
-
-    function ajustarEstoque(id, v) { db.collection("estampas").doc(id).update({ estoque: firebase.firestore.FieldValue.increment(v)}); }
     function autocompletarEstampa(v) { if(catalogo[v]) document.getElementById('nomeEstampa').value = catalogo[v].nome; }
     function salvarNovaEstampa(e) {
         e.preventDefault();
         const c = document.getElementById('cadCodigoEstampa').value.toUpperCase();
-        const n = document.getElementById('cadNomeEstampa').value.toUpperCase();
-        const s = parseInt(document.getElementById('cadEstoque').value);
-        db.collection("estampas").doc(c).set({ codigo:c, nome:n, estoque:s });
+        db.collection("estampas").doc(c).set({ codigo:c, nome:document.getElementById('cadNomeEstampa').value.toUpperCase(), estoque:parseInt(document.getElementById('cadEstoque').value) });
     }
 
     // PEDIDOS
     let carrinho = [];
     function adicionarAoCarrinho() {
-        const c = document.getElementById('codigoEstampa').value;
-        const n = document.getElementById('nomeEstampa').value;
-        const q = parseInt(document.getElementById('quantidade').value);
+        const c = document.getElementById('codigoEstampa').value; const n = document.getElementById('nomeEstampa').value;
         if(!c || !n) return;
-        carrinho.push({ codigo:c, nome:n, qtd:q, valor: 75 }); // Valor base exemplo
+        carrinho.push({ codigo:c, nome:n, qtd:parseInt(document.getElementById('quantidade').value), valor: 75 });
         atualizarTelaCarrinho();
     }
-
     function atualizarTelaCarrinho() {
-        const cont = document.getElementById('listaCarrinho'); cont.innerHTML = '';
         let total = unmaskCurrency(document.getElementById('valorFrete').value);
-        carrinho.forEach((i, idx) => {
+        document.getElementById('listaCarrinho').innerHTML = carrinho.map((i,idx) => {
             total += (i.qtd * i.valor);
-            cont.innerHTML += `<div class="carrinho-item">${i.qtd}x ${i.nome} - [${i.codigo}] <button onclick="carrinho.splice(${idx},1);atualizarTelaCarrinho()">X</button></div>`;
-        });
+            return `<div>${i.qtd}x ${i.nome} <button onclick="carrinho.splice(${idx},1);atualizarTelaCarrinho()">X</button></div>`;
+        }).join('');
         document.getElementById('valorTotal').value = formatCurrency(total);
-        document.getElementById('carrinho-container').style.display = carrinho.length ? 'block':'none';
     }
-
     async function salvarPedidoCompleto() {
-        const num = Math.floor(1000+Math.random()*9000);
-        const p = {
-            numeroPedido: num,
-            nome: document.getElementById('nome').value.toUpperCase(),
-            whatsapp: document.getElementById('whatsapp').value,
-            valorTotal: unmaskCurrency(document.getElementById('valorTotal').value),
-            status: 'PEDIDO FEITO',
-            statusPagamento: document.getElementById('statusPagamento').value,
-            itens: carrinho,
-            dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
-        };
+        const p = { numeroPedido: Math.floor(1000+Math.random()*9000), nome: document.getElementById('nome').value.toUpperCase(), whatsapp: document.getElementById('whatsapp').value, valorTotal: unmaskCurrency(document.getElementById('valorTotal').value), status: 'PEDIDO FEITO', statusPagamento: document.getElementById('statusPagamento').value, itens: carrinho, dataCriacao: firebase.firestore.FieldValue.serverTimestamp() };
         await db.collection("pedidos").add(p);
-        carrinho = []; atualizarTelaCarrinho();
-        showToast("PEDIDO SALVO!");
+        carrinho = []; atualizarTelaCarrinho(); alert("SALVO!");
     }
 
     // KANBAN
@@ -370,80 +317,55 @@
         todosPedidos = [];
         let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
         let meses = new Set();
-        
         snap.forEach(doc => {
             const p = doc.data(); p.id = doc.id;
-            const status = (p.status || 'PEDIDO FEITO').toUpperCase().replace('PRONTA / ESTAMPADA','ESTAMPA PRONTA');
+            const status = (p.status || 'PEDIDO FEITO').toUpperCase();
             const data = p.dataCriacao ? p.dataCriacao.toDate() : new Date();
             const mesAno = `${data.getMonth()+1}/${data.getFullYear()}`;
             meses.add(mesAno);
-            
             let html = `
             <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="ev => ev.dataTransfer.setData('text', '${p.id}')">
                 <div class="pedido-header">
                     <div class="header-top">
-                        <div class="checkbox-container"><input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()"> <span class="pedido-id">#${p.numeroPedido}</span></div>
+                        <div class="id-container"><input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()"> #${p.numeroPedido}</div>
                         <span class="pedido-data">${data.toLocaleDateString()}</span>
                     </div>
                     <button class="btn-pgto ${p.statusPagamento==='PAGO'?'pgto-pago':'pgto-pend'}" onclick="db.collection('pedidos').doc('${p.id}').update({statusPagamento:'${p.statusPagamento==='PAGO'?'PENDENTE':'PAGO'}'})">${p.statusPagamento}</button>
                 </div>
                 <div class="pedido-body">
-                    <div class="cliente-info">${p.nome}</div>
-                    <div class="pedido-valor">${formatCurrency(p.valorTotal)}</div>
+                    <strong>${p.nome}</strong><br><span class="pedido-valor">${formatCurrency(p.valorTotal)}</span>
                     <div class="toggle-itens-btn" onclick="toggleItens('${p.id}')">PEÇAS ▼</div>
                     <div class="pedido-itens-lista" id="itens-${p.id}">${p.itens.map(i=>`<div class="item-tag">${i.qtd}x ${i.nome}</div>`).join('')}</div>
                 </div>
-                <div class="pedido-footer">
-                    <button onclick="excluirPedido('${p.id}')">❌</button>
-                </div>
+                <div class="pedido-footer"><button onclick="if(confirm('Apagar?'))db.collection('pedidos').doc('${p.id}').delete()">❌</button></div>
             </div>`;
             if(cols[status] !== undefined) cols[status] += html;
             todosPedidos.push({...p, statusAtualizado: status, dataMesAno: mesAno});
         });
-
         Object.keys(cols).forEach(k => document.getElementById('col-'+k.replace(/ /g,'-')).innerHTML = cols[k]);
+        document.getElementById('dashPedidosMes').innerText = todosPedidos.length;
         const sel = document.getElementById('selectFaturamentoMes'); sel.innerHTML = '';
         meses.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
         calcularFaturamentoMensal();
     });
 
-    function toggleItens(id) { 
-        const el = document.getElementById('itens-'+id);
-        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-    }
-
+    function toggleItens(id) { const el = document.getElementById('itens-'+id); el.style.display = el.style.display === 'flex' ? 'none' : 'flex'; }
     function allowDrop(e) { e.preventDefault(); }
-    function drop(e, s) { 
-        e.preventDefault(); 
-        const id = e.dataTransfer.getData("text");
-        db.collection("pedidos").doc(id).update({ status: s });
-    }
-
+    function drop(e, s) { e.preventDefault(); db.collection("pedidos").doc(e.dataTransfer.getData("text")).update({ status: s }); }
     function calcularFaturamentoMensal() {
         const m = document.getElementById('selectFaturamentoMes').value;
         let total = 0;
         todosPedidos.forEach(p => { if(p.dataMesAno === m && p.statusPagamento === 'PAGO') total += p.valorTotal; });
         document.getElementById('dashFaturamento').innerText = formatCurrency(total);
     }
-
-    // BULK
-    function checkBulk() {
-        const n = document.querySelectorAll('.checkbox-bulk:checked').length;
-        document.getElementById('bulk-count').innerText = n;
-        document.getElementById('bulk-action-bar').classList.toggle('show', n > 0);
-    }
-    function limparBulk() { document.querySelectorAll('.checkbox-bulk').forEach(c => c.checked=false); checkBulk(); }
+    function checkBulk() { document.getElementById('bulk-action-bar').classList.toggle('show', document.querySelectorAll('.checkbox-bulk:checked').length > 0); }
     function executarBulkUpdate() {
-        const s = document.getElementById('bulk-status-select').value;
         const batch = db.batch();
-        document.querySelectorAll('.checkbox-bulk:checked').forEach(c => batch.update(db.collection("pedidos").doc(c.value), { status: s }));
-        batch.commit().then(() => { showToast("LOTES ATUALIZADOS!"); limparBulk(); });
+        document.querySelectorAll('.checkbox-bulk:checked').forEach(c => batch.update(db.collection("pedidos").doc(c.value), { status: 'PEDIDO ENVIADO' }));
+        batch.commit().then(() => { alert("ENVIADOS!"); location.reload(); });
     }
-
-    // MODAIS PDF
     function abrirModalPDF() { document.getElementById('modalPDF').style.display='flex'; }
     function fecharModalPDF() { document.getElementById('modalPDF').style.display='none'; }
-    function excluirPedido(id) { if(confirm("Apagar?")) db.collection("pedidos").doc(id).delete(); }
 </script>
 </body>
 </html>
