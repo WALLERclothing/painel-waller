@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <style>
-        /* === ESTILO BRUTALISTA ORIGINAL + DARK MODE === */
+        /* === ESTILO BRUTALISTA ORIGINAL + DARK MODE SUAVIZADO === */
         :root {
             --black: #000000;
             --white: #ffffff;
@@ -23,11 +23,14 @@
             --border-thick: 3px solid var(--border-color);
         }
 
+        /* Dark mode com contraste reduzido (confortável para a visão) */
         [data-theme="dark"] {
-            --black: #ffffff;
-            --white: #0a0a0a;
-            --gray: #1a1a1a;
-            --border-color: #ffffff;
+            --black: #d4d4d4;       /* Texto e botões num cinza muito claro, não branco puro */
+            --white: #181818;       /* Fundo dos cards num cinza chumbo escuro */
+            --gray: #222222;        /* Fundo da página e áreas secundárias */
+            --border-color: #555555; /* Bordas menos agressivas */
+            --red: #e63946;         /* Vermelho ligeiramente mais suave */
+            --green: #2a9d8f;
         }
 
         body { font-family: 'Montserrat', sans-serif; background-color: var(--white); color: var(--black); margin: 0; padding: 0; background-image: radial-gradient(var(--gray) 2px, transparent 1px); background-size: 20px 20px; transition: 0.2s; }
@@ -62,8 +65,8 @@
         
         input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--border-color); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
         input:focus, select:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
-        ::placeholder { color: #a3a3a3; font-weight: 500; text-transform: none; }
-        input:disabled { background-color: var(--gray); cursor: not-allowed; }
+        ::placeholder { color: #888; font-weight: 500; text-transform: none; }
+        input:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
         
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
         .btn-add { background-color: var(--white); color: var(--black); border: 2px solid var(--border-color); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--border-color); }
@@ -78,7 +81,7 @@
         /* KANBAN E CARDS */
         .kanban-board { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
         .kanban-col { background: var(--gray); border: var(--border-thick); padding: 1rem; min-width: 320px; flex: 1; display: flex; flex-direction: column; gap: 1rem; box-shadow: 6px 6px 0px var(--border-color); }
-        .kanban-header { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--black); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+        .kanban-header { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
         
         .pedido-card { background: var(--white); border: 2px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; cursor: grab; position: relative; }
         .pedido-card:active { cursor: grabbing; opacity: 0.8; }
@@ -112,7 +115,7 @@
         th { font-weight: 900; text-transform: uppercase; border-top: 2px solid var(--border-color); border-bottom: 3px solid var(--border-color); }
         .btn-icone { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: var(--white); border: 2px solid var(--border-color); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s;}
         .btn-icone:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0px var(--border-color); }
-        .badge-soldout { background: var(--red); color: white; padding: 3px 6px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); }
+        .badge-soldout { background: var(--red); color: white; padding: 3px 6px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); box-shadow: 2px 2px 0px var(--border-color); }
 
         /* TOAST BRUTALISTA */
         .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
@@ -120,7 +123,7 @@
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
         /* BARRA DE AÇÃO EM MASSA (BULK) */
-        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); box-shadow: 8px 8px 0px var(--black); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: bottom 0.3s; }
+        #bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--white); border: var(--border-thick); box-shadow: 8px 8px 0px var(--border-color); padding: 1rem 2rem; display: flex; gap: 15px; align-items: center; z-index: 1000; transition: bottom 0.3s; }
         #bulk-action-bar.show { bottom: 20px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(3px); overflow-y: auto; padding: 2rem 0; }
@@ -147,7 +150,7 @@
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
-        <button class="btn-nav" onclick="toggleTheme()">🌙 ESCURO</button>
+        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
         <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF / ETIQUETAS</button>
     </div>
 </nav>
@@ -182,7 +185,7 @@
                 <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
                 <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
                 <select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="background-color: #fee2e2; color: var(--red); font-weight: 900;">
+                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="background-color: var(--gray); color: var(--red); font-weight: 900;">
             </div>
         </div>
         
@@ -219,7 +222,7 @@
         <div class="dash-card green-text">
             <div style="display:flex; justify-content:space-between; width:100%;">
                 <h3>Faturamento</h3>
-                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black);">
+                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem; border: 2px solid var(--border-color); box-shadow: 2px 2px 0px var(--border-color);">
                     <option value="ALL">...</option>
                 </select>
             </div>
@@ -288,7 +291,7 @@
         <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
         <input type="hidden" id="editId">
         <div class="form-grid" style="margin-bottom: 1rem;"><input type="text" id="editNome" placeholder="NOME"><input type="text" id="editWhatsapp" placeholder="WHATSAPP"></div>
-        <div class="form-grid" style="margin-bottom: 2rem;"><input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" readonly style="color: var(--red); background: #fee2e2;"><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
+        <div class="form-grid" style="margin-bottom: 2rem;"><input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" readonly style="color: var(--red); background: var(--gray);"><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
         <div class="form-section-title">PEÇAS DO PEDIDO</div>
         <div id="editItensContainer"></div>
         <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
@@ -304,7 +307,7 @@
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; background: var(--red); color: white; border-color: var(--black);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
+            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; background: var(--red); color: white; border-color: var(--border-color);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; background: var(--green); color: var(--black);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
         </div>
     </div>
@@ -345,7 +348,7 @@
     }
 
     // ==========================================
-    // UTILITÁRIOS
+    // UTILITÁRIOS E PREENCHIMENTO AUTOMÁTICO DE CEP E FRETE
     // ==========================================
     function unmaskCurrency(value) {
         if (!value) return 0; if (typeof value === 'number') return value;
@@ -367,6 +370,7 @@
     }
     document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
 
+    // Nova função buscarCEP com Cálculo de Frete Baseado no Estado (UF)
     async function buscarCEP(cep) {
         let cleanCep = cep.replace(/\D/g, '');
         if(cleanCep.length === 8) {
@@ -374,9 +378,27 @@
                 let res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
                 let data = await res.json();
                 if(!data.erro) {
+                    // Preenche o endereço
                     document.getElementById('endereco').value = `${data.logradouro}, Bairro: ${data.bairro} - ${data.localidade}/${data.uf}`;
                     document.getElementById('numeroEnd').focus();
-                    showToast("CEP Encontrado!", false);
+                    
+                    // ========================================================
+                    // TABELA DE VALORES DE FRETE AUTOMÁTICO (Edite os valores aqui)
+                    // ========================================================
+                    const tabelaFrete = {
+                        'SP': 15.00,
+                        'RJ': 20.00, 'MG': 20.00, 'ES': 20.00,
+                        'PR': 25.00, 'SC': 25.00, 'RS': 25.00,
+                        'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00
+                    };
+                    
+                    // Se não estiver mapeado acima, usa valor padrão (ex: 35 reais)
+                    let valorCalculado = tabelaFrete[data.uf] || 35.00;
+                    
+                    document.getElementById('valorFrete').value = formatCurrency(valorCalculado);
+                    atualizarTelaCarrinho(); // Recalcula o total somando com o frete
+
+                    showToast("CEP Encontrado e Frete Calculado!", false);
                 } else { showToast("CEP Inválido", true); }
             } catch(e) { showToast("Erro ao buscar CEP", true); }
         }
@@ -667,19 +689,80 @@
     }
 
     // ==========================================
-    // LÓGICA DE FATURAMENTO
+    // EDIÇÃO DE PEDIDOS
     // ==========================================
-    function atualizarSelectFaturamento(mesesUnicos) {
-        const select = document.getElementById('selectFaturamentoMes'); const valAnt = select.value; select.innerHTML = '';
-        let arrayMeses = Array.from(mesesUnicos).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aB,mB-1)-new Date(aA,mA-1); });
-        if(!arrayMeses.length) select.innerHTML='<option value="">-</option>';
-        else { arrayMeses.forEach(m => select.innerHTML+=`<option value="${m}">${m}</option>`); select.value = arrayMeses.includes(valAnt)?valAnt:arrayMeses[0]; }
-        calcularFaturamentoMensal();
+    function abrirModalEdicao(id) {
+        const p = todosPedidos.find(x => x.id === id); if(!p) return;
+        document.getElementById('editId').value = p.id;
+        document.getElementById('tituloEditPedido').innerText = "#" + p.numeroPedido;
+        document.getElementById('editNome').value = p.nome || '';
+        document.getElementById('editWhatsapp').value = p.whatsapp || '';
+        document.getElementById('editValorTotal').value = formatCurrency(p.valorTotal || 0);
+        if(p.metodoPagamento) document.getElementById('editMetodoPagamento').value = p.metodoPagamento;
+        
+        let container = document.getElementById('editItensContainer'); container.innerHTML = '';
+        p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
+        
+        document.getElementById('modalEdicao').style.display = 'flex';
+        recalcularSomaEdicao(); 
     }
-    function calcularFaturamentoMensal() {
-        let mes = document.getElementById('selectFaturamentoMes').value; let soma = 0;
-        todosPedidos.forEach(p => { if(p.statusPagamento==='PAGO' && p.dataMesAno===mes) soma += parseFloat(p.valorTotal); });
-        document.getElementById('dashFaturamento').innerText = formatCurrency(soma);
+
+    function gerarHtmlLinhaEdicao(item) {
+        const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
+        return `
+        <div class="item-edit-wrapper">
+            <button type="button" class="btn-remove-peca" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
+            <div class="form-grid" style="margin-bottom: 10px; padding-right: 100px;">
+                <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
+                <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
+            </div>
+            <div class="form-grid">
+                <select class="edit-tip"><option value="OVERSIZED" ${t==='OVERSIZED'?'selected':''}>OVERSIZED</option><option value="MOLETOM" ${t==='MOLETOM'?'selected':''}>MOLETOM</option><option value="REGATA" ${t==='REGATA'?'selected':''}>REGATA</option><option value="CAMISETA TRADICIONAL" ${t==='CAMISETA TRADICIONAL'?'selected':''}>CAM. TRADICIONAL</option></select>
+                <select class="edit-tam"><option value="P" ${tam==='P'?'selected':''}>P</option><option value="M" ${tam==='M'?'selected':''}>M</option><option value="G" ${tam==='G'?'selected':''}>G</option><option value="GG" ${tam==='GG'?'selected':''}>GG</option><option value="XG" ${tam==='XG'?'selected':''}>XG</option></select>
+                <select class="edit-cor"><option value="PRETA" ${c==='PRETA'?'selected':''}>PRETA</option><option value="BRANCA" ${c==='BRANCA'?'selected':''}>BRANCA</option><option value="MESCLA" ${c==='MESCLA'?'selected':''}>MESCLA</option><option value="OFF-WHITE" ${c==='OFF-WHITE'?'selected':''}>OFF-WHITE</option></select>
+                <input type="text" class="edit-valor moeda" value="${formatCurrency(item.valorUnitario)}" placeholder="R$ UN" style="flex: 0.5;">
+                <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" min="1" style="flex: 0.3;">
+            </div>
+        </div>`;
+    }
+
+    function recalcularSomaEdicao() {
+        let soma = 0;
+        document.querySelectorAll('.item-edit-wrapper').forEach(row => {
+            let v = unmaskCurrency(row.querySelector('.edit-valor').value);
+            let q = parseInt(row.querySelector('.edit-qtd').value) || 1;
+            soma += (v * q);
+        });
+        document.getElementById('editValorTotal').value = formatCurrency(soma);
+    }
+    
+    function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
+    
+    function salvarAlteracoesEdicao() {
+        const id = document.getElementById('editId').value;
+        let itens = [];
+        document.querySelectorAll('.item-edit-wrapper').forEach(row => {
+            itens.push({
+                codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(),
+                nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
+                tipoPeca: row.querySelector('.edit-tip').value,
+                tamanho: row.querySelector('.edit-tam').value,
+                cor: row.querySelector('.edit-cor').value,
+                valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value),
+                quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
+            });
+        });
+        if(itens.length === 0) { showToast("Precisa de pelo menos 1 peça.", true); return; }
+
+        let valorTotalCalculado = unmaskCurrency(document.getElementById('editValorTotal').value);
+
+        db.collection("pedidos").doc(id).update({
+            nome: document.getElementById('editNome').value.toUpperCase(),
+            whatsapp: document.getElementById('editWhatsapp').value,
+            valorTotal: valorTotalCalculado,
+            metodoPagamento: document.getElementById('editMetodoPagamento').value,
+            itens: itens 
+        }).then(() => { fecharModalEdicao(); showToast("Pedido Editado!"); });
     }
 
     // ==========================================
