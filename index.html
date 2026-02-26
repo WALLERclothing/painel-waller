@@ -25,11 +25,11 @@
 
         /* Dark mode com contraste reduzido (confortável para a visão) */
         [data-theme="dark"] {
-            --black: #d4d4d4;       /* Texto e botões num cinza muito claro, não branco puro */
-            --white: #181818;       /* Fundo dos cards num cinza chumbo escuro */
-            --gray: #222222;        /* Fundo da página e áreas secundárias */
-            --border-color: #555555; /* Bordas menos agressivas */
-            --red: #e63946;         /* Vermelho ligeiramente mais suave */
+            --black: #d4d4d4;       
+            --white: #181818;       
+            --gray: #222222;        
+            --border-color: #555555; 
+            --red: #e63946;         
             --green: #2a9d8f;
         }
 
@@ -64,10 +64,12 @@
         .form-grid > * { flex: 1; min-width: 180px; }
         
         input, select { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--border-color); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
-        input:focus, select:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
+        input:focus, select:focus, textarea:focus { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
         ::placeholder { color: #888; font-weight: 500; text-transform: none; }
         input:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
         
+        textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: 2px solid var(--border-color); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); resize: vertical; min-height: 100px; }
+
         button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; border-radius: 0; transition: all 0.1s; text-transform: uppercase; }
         .btn-add { background-color: var(--white); color: var(--black); border: 2px solid var(--border-color); padding: 0.8rem 1rem; font-size: 0.9rem; width: 100%; box-shadow: 3px 3px 0px var(--border-color); }
         .btn-add:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); }
@@ -109,13 +111,15 @@
         .pgto-pendente { background-color: var(--white); color: var(--red); }
         .pgto-pago { background-color: var(--black); color: var(--green); }
 
-        /* TABELAS */
+        /* TABELAS E SELOS */
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; }
         th, td { padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color); vertical-align: middle; }
         th { font-weight: 900; text-transform: uppercase; border-top: 2px solid var(--border-color); border-bottom: 3px solid var(--border-color); }
-        .btn-icone { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; background-color: var(--white); border: 2px solid var(--border-color); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s;}
+        .btn-icone { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; background-color: var(--white); border: 2px solid var(--border-color); color: var(--black); font-weight: 900; cursor: pointer; transition: 0.1s; text-decoration: none;}
         .btn-icone:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0px var(--border-color); }
-        .badge-soldout { background: var(--red); color: white; padding: 3px 6px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--border-color); box-shadow: 2px 2px 0px var(--border-color); }
+        
+        /* NOVO LAYOUT DO SOLD OUT (Brutalista e Bonito) */
+        .badge-soldout { background: var(--red); color: white; padding: 3px 6px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--black); box-shadow: 2px 2px 0px var(--black); display: inline-block; margin-left: 8px; letter-spacing: 1px; vertical-align: middle; }
 
         /* TOAST BRUTALISTA */
         .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
@@ -230,22 +234,26 @@
         </div>
     </div>
 
+    <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NO KANBAN (NOME, ZAP OU NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
+    </div>
+
     <div class="kanban-board">
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO FEITO')">
             <div class="kanban-header">📥 PEDIDO FEITO</div>
-            <div id="col-PEDIDO-FEITO" style="min-height: 100px;"></div>
+            <div id="col-PEDIDO-FEITO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
         </div>
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'AGUARDANDO ESTAMPA')">
             <div class="kanban-header">👕 FILA ESTAMPA</div>
-            <div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px;"></div>
+            <div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
         </div>
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'ESTAMPA PRONTA')">
             <div class="kanban-header">📦 PRONTO / ENVIAR</div>
-            <div id="col-ESTAMPA-PRONTA" style="min-height: 100px;"></div>
+            <div id="col-ESTAMPA-PRONTA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
         </div>
         <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO ENVIADO')">
             <div class="kanban-header">🚚 ENVIADO</div>
-            <div id="col-PEDIDO-ENVIADO" style="min-height: 100px;"></div>
+            <div id="col-PEDIDO-ENVIADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
         </div>
     </div>
 </div>
@@ -279,9 +287,38 @@
     <div class="card">
         <h2 class="card-title">Top Clientes da Waller</h2>
         <table>
-            <thead><tr><th>Nome</th><th>WhatsApp</th><th>Qtd Pedidos</th><th>Total Gasto</th><th>Ação</th></tr></thead>
+            <thead><tr><th>Nome</th><th>WhatsApp</th><th>Pedidos</th><th>Gasto</th><th>Ação</th></tr></thead>
             <tbody id="listaClientesCRM"></tbody>
         </table>
+    </div>
+</div>
+
+<div id="modalFichaCliente" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
+        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
+        
+        <div style="background:var(--gray); padding:1rem; border:2px dashed var(--border-color); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong style="font-size:1.2rem;" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
+            <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
+        </div>
+
+        <div class="form-grid">
+            <input type="text" id="fichaNome" placeholder="NOME COMPLETO" style="flex:2;">
+            <input type="text" id="fichaWhatsapp" placeholder="WHATSAPP" disabled style="flex:1;">
+        </div>
+        <div class="form-grid">
+            <input type="text" id="fichaInsta" placeholder="@INSTAGRAM" style="flex:1;">
+            <input type="text" id="fichaDataNasc" placeholder="DATA NASCIMENTO (DD/MM/AAAA)" style="flex:1;">
+        </div>
+        <div class="form-grid">
+            <input type="text" id="fichaCEP" placeholder="CEP" style="flex:0.5;">
+            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:2;">
+        </div>
+        
+        <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Estilo, tamanhos que costuma usar, reclamações, VIP, etc)"></textarea>
+        
+        <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
     </div>
 </div>
 
@@ -348,7 +385,7 @@
     }
 
     // ==========================================
-    // UTILITÁRIOS E PREENCHIMENTO AUTOMÁTICO DE CEP E FRETE
+    // UTILITÁRIOS E FRETE
     // ==========================================
     function unmaskCurrency(value) {
         if (!value) return 0; if (typeof value === 'number') return value;
@@ -370,7 +407,6 @@
     }
     document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
 
-    // Nova função buscarCEP com Cálculo de Frete Baseado no Estado (UF)
     async function buscarCEP(cep) {
         let cleanCep = cep.replace(/\D/g, '');
         if(cleanCep.length === 8) {
@@ -378,26 +414,14 @@
                 let res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
                 let data = await res.json();
                 if(!data.erro) {
-                    // Preenche o endereço
                     document.getElementById('endereco').value = `${data.logradouro}, Bairro: ${data.bairro} - ${data.localidade}/${data.uf}`;
                     document.getElementById('numeroEnd').focus();
                     
-                    // ========================================================
-                    // TABELA DE VALORES DE FRETE AUTOMÁTICO (Edite os valores aqui)
-                    // ========================================================
-                    const tabelaFrete = {
-                        'SP': 15.00,
-                        'RJ': 20.00, 'MG': 20.00, 'ES': 20.00,
-                        'PR': 25.00, 'SC': 25.00, 'RS': 25.00,
-                        'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00
-                    };
-                    
-                    // Se não estiver mapeado acima, usa valor padrão (ex: 35 reais)
+                    const tabelaFrete = { 'SP': 15.00, 'RJ': 20.00, 'MG': 20.00, 'ES': 20.00, 'PR': 25.00, 'SC': 25.00, 'RS': 25.00, 'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00 };
                     let valorCalculado = tabelaFrete[data.uf] || 35.00;
                     
                     document.getElementById('valorFrete').value = formatCurrency(valorCalculado);
-                    atualizarTelaCarrinho(); // Recalcula o total somando com o frete
-
+                    atualizarTelaCarrinho(); 
                     showToast("CEP Encontrado e Frete Calculado!", false);
                 } else { showToast("CEP Inválido", true); }
             } catch(e) { showToast("Erro ao buscar CEP", true); }
@@ -437,19 +461,17 @@
             let est = doc.data(); let estoque = est.estoque || 0;
             catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque };
             
-            // Popula Autocomplete
             datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
             
-            // Popula Tabela
-            let badgeSoldOut = estoque <= 0 ? `<br><span class="badge-soldout">SOLD OUT</span>` : '';
+            let badgeSoldOut = estoque <= 0 ? `<span class="badge-soldout">SOLD OUT</span>` : '';
             document.getElementById('listaEstampas').innerHTML += `
             <tr>
                 <td><strong>${est.codigo}</strong></td>
                 <td>${est.nome} ${badgeSoldOut}</td>
                 <td style="color:${estoque <= 0 ? 'var(--red)' : 'inherit'}; font-weight:900;">${estoque} un</td>
-                <td>
+                <td style="display:flex; gap:5px;">
                     <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque})">✏️</button>
-                    <button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')">X</button>
+                    <button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
                 </td>
             </tr>`;
         });
@@ -477,13 +499,75 @@
         document.getElementById('cadNomeEstampa').value = n; document.getElementById('cadEstoque').value = e;
         document.getElementById('editEstampaCodigoOriginal').value = c;
         document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR'; document.getElementById('btnCancelarEstampa').style.display = 'block';
-        window.scrollTo({ top: 0 });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function cancelarEdicaoEstampa() {
         document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
         document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadEstoque').value = '0';
         document.getElementById('editEstampaCodigoOriginal').value = '';
         document.getElementById('btnSalvarEstampa').innerText = '+ CADASTRAR'; document.getElementById('btnCancelarEstampa').style.display = 'none';
+    }
+
+    // ==========================================
+    // CRM: DADOS DE CLIENTES (FICHA)
+    // ==========================================
+    let clientesCadastrados = {};
+    db.collection("clientes").onSnapshot(snap => {
+        clientesCadastrados = {};
+        snap.forEach(doc => clientesCadastrados[doc.id] = doc.data());
+        if(Object.keys(mapaClientes).length > 0) renderizarCRM(); // Recarrega CRM se atualizar ficha
+    });
+
+    let mapaClientes = {}; // Guarda compras
+    function verificarClienteFiel() {
+        let w = document.getElementById('whatsapp').value.trim();
+        if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
+            document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
+            // Autopreenchimento pra poupar tempo
+            if(clientesCadastrados[w] && !document.getElementById('nome').value) {
+                 document.getElementById('nome').value = clientesCadastrados[w].nome || '';
+                 document.getElementById('cep').value = clientesCadastrados[w].cep || '';
+                 document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
+            }
+        } else { 
+            document.getElementById('alertaClienteFiel').style.display = 'none'; 
+        }
+    }
+
+    function abrirFichaCliente(whatsapp) {
+        let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0 };
+        let perfil = clientesCadastrados[whatsapp] || {};
+
+        document.getElementById('fichaWhatsapp').value = whatsapp;
+        document.getElementById('fichaNome').value = perfil.nome || dadosCompra.nome || '';
+        document.getElementById('fichaInsta').value = perfil.insta || '';
+        document.getElementById('fichaDataNasc').value = perfil.dataNasc || '';
+        document.getElementById('fichaCEP').value = perfil.cep || dadosCompra.cep || '';
+        document.getElementById('fichaEndereco').value = perfil.endereco || dadosCompra.endereco || '';
+        document.getElementById('fichaObs').value = perfil.obs || '';
+        
+        document.getElementById('fichaQtdPedidos').innerText = dadosCompra.qtd;
+        document.getElementById('fichaTotalGasto').innerText = formatCurrency(dadosCompra.totalGasto);
+        
+        document.getElementById('modalFichaCliente').style.display = 'flex';
+    }
+
+    function fecharFichaCliente() { document.getElementById('modalFichaCliente').style.display = 'none'; }
+
+    function salvarFichaCliente() {
+        let w = document.getElementById('fichaWhatsapp').value;
+        db.collection("clientes").doc(w).set({
+            whatsapp: w,
+            nome: document.getElementById('fichaNome').value.toUpperCase(),
+            insta: document.getElementById('fichaInsta').value,
+            dataNasc: document.getElementById('fichaDataNasc').value,
+            cep: document.getElementById('fichaCEP').value,
+            endereco: document.getElementById('fichaEndereco').value,
+            obs: document.getElementById('fichaObs').value
+        }, {merge: true}).then(() => {
+            showToast("Ficha do Cliente Salva!");
+            fecharFichaCliente();
+        });
     }
 
     // ==========================================
@@ -541,7 +625,9 @@
                 itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // ABATER ESTOQUE AUTO
+            // ABATER ESTOQUE E SALVAR CLIENTE BASICO
+            db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end }, { merge: true });
+
             carrinhoTemporario.forEach(item => {
                 if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
                     db.collection("estampas").doc(item.codigoEstampa).update({ estoque: firebase.firestore.FieldValue.increment(-item.quantidade) });
@@ -551,22 +637,13 @@
             document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
             carrinhoTemporario = []; atualizarTelaCarrinho();
             document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO";
-            showToast(`PEDIDO #${numGerado} SALVO! ESTOQUE ATUALIZADO.`);
+            showToast(`PEDIDO #${numGerado} SALVO!`);
         } catch (e) { showToast("Erro ao salvar", true); }
     }
 
-    // ==========================================
-    // CRM & CLIENTE FIEL
-    // ==========================================
-    let mapaClientes = {};
-    function verificarClienteFiel() {
-        let w = document.getElementById('whatsapp').value.trim();
-        if(w.length > 10 && mapaClientes[w]) { document.getElementById('alertaClienteFiel').style.display = 'inline-block'; } 
-        else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
-    }
 
     // ==========================================
-    // LISTENER PRINCIPAL DE PEDIDOS & KANBAN
+    // LISTENER DE PEDIDOS E KANBAN
     // ==========================================
     db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
         todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
@@ -583,14 +660,13 @@
             if(p.statusPagamento === 'PAGO') meses.add(p.dataMesAno);
             if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
-            // CRM Aggregate
+            // Extração para CRM
             if(p.whatsapp) {
-                if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0 };
+                if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco };
                 mapaClientes[p.whatsapp].qtd++;
                 if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
             }
 
-            // Best Sellers
             if(p.itens && p.statusPagamento === 'PAGO') {
                 p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); });
             }
@@ -611,21 +687,39 @@
     }
 
     function renderizarCRM() {
-        let crmList = Object.entries(mapaClientes).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
-        document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => `<tr><td><strong>${c[1].nome}</strong></td><td>${c[0]}</td><td>${c[1].qtd}</td><td style="color:var(--green); font-weight:900;">${formatCurrency(c[1].totalGasto)}</td><td><a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone">💬</a></td></tr>`).join('');
+        let combinados = {};
+        Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
+        Object.keys(clientesCadastrados).forEach(w => {
+            if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0 };
+            combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
+        });
+
+        let crmList = Object.entries(combinados).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
+        document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => `
+            <tr>
+                <td><strong>${c[1].nome}</strong></td>
+                <td>${c[0]}</td>
+                <td>${c[1].qtd}</td>
+                <td style="color:var(--green); font-weight:900;">${formatCurrency(c[1].totalGasto)}</td>
+                <td style="display:flex; gap:5px;">
+                    <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="text-decoration:none;">💬</a>
+                    <button class="btn-icone" onclick="abrirFichaCliente('${c[0]}')" title="Abrir Ficha">👤</button>
+                </td>
+            </tr>
+        `).join('');
     }
 
     // ==========================================
-    // KANBAN LOGIC & RENDER
+    // KANBAN LOGIC & RENDER (AGORA APARECE!)
     // ==========================================
     function renderizarKanban() {
         let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
         
         todosPedidos.forEach(p => {
-            if(!cols[p.statusAtualizado] && p.statusAtualizado !== 'PEDIDO ENTREGUE') return; // Ignora entregues no board para limpar
+            if(cols[p.statusAtualizado] === undefined) return; // Ignora se não estiver nessas 4 fases (ex: Entregue)
             
             let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
-            let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div class="item-tag-estampa">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
+            let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:#555; font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
             
             let cardHtml = `
             <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="drag(event)">
@@ -645,12 +739,25 @@
                     <button onclick="excluirPedido('${p.id}')" title="Excluir" style="color:var(--red);">❌</button>
                 </div>
             </div>`;
-            if(cols[p.statusAtualizado] !== undefined) cols[p.statusAtualizado] += cardHtml;
+            cols[p.statusAtualizado] += cardHtml;
         });
 
+        // Joga o HTML nos containers das colunas
         Object.keys(cols).forEach(k => {
-            let el = document.getElementById('col-'+k.replace(/ /g,'-'));
+            let el = document.getElementById('col-' + k.replace(/ /g,'-'));
             if(el) el.innerHTML = cols[k];
+        });
+    }
+
+    // Filtra o Kanban dinamicamente digitando na barra
+    function filtrarKanban() {
+        let termo = document.getElementById('inputBusca').value.toUpperCase();
+        document.querySelectorAll('.pedido-card').forEach(card => {
+            if(card.innerText.toUpperCase().includes(termo)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
         });
     }
 
@@ -659,13 +766,12 @@
     function drop(ev, novoStatus) {
         ev.preventDefault();
         let id = ev.dataTransfer.getData("text");
-        mudarStatusLogistica(id, novoStatus);
-        showToast("STATUS ATUALIZADO!");
+        db.collection("pedidos").doc(id).update({ status: novoStatus });
+        showToast("MOVIDO COM SUCESSO!");
     }
 
-    function mudarStatusLogistica(id, status) { db.collection("pedidos").doc(id).update({ status: status }); }
     function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
-    function excluirPedido(id) { if (confirm("Deletar pedido?")) db.collection("pedidos").doc(id).delete(); }
+    function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
 
     // ==========================================
     // BULK UPDATE (Ação em Massa)
@@ -677,19 +783,31 @@
         document.getElementById('bulk-count').innerText = selecionados.length;
         if(selecionados.length > 0) bar.classList.add('show'); else bar.classList.remove('show');
     }
-    function limparBulk() {
-        document.querySelectorAll('.checkbox-bulk').forEach(cb => cb.checked = false);
-        checkBulk();
-    }
+    function limparBulk() { document.querySelectorAll('.checkbox-bulk').forEach(cb => cb.checked = false); checkBulk(); }
     function executarBulkUpdate() {
-        let status = document.getElementById('bulk-status-select').value;
-        let batch = db.batch();
+        let status = document.getElementById('bulk-status-select').value; let batch = db.batch();
         selecionados.forEach(id => { batch.update(db.collection("pedidos").doc(id), { status: status }); });
         batch.commit().then(() => { showToast(`${selecionados.length} PEDIDOS ATUALIZADOS!`); limparBulk(); });
     }
 
     // ==========================================
-    // EDIÇÃO DE PEDIDOS
+    // LÓGICA DE FATURAMENTO
+    // ==========================================
+    function atualizarSelectFaturamento(mesesUnicos) {
+        const select = document.getElementById('selectFaturamentoMes'); const valAnt = select.value; select.innerHTML = '';
+        let arrayMeses = Array.from(mesesUnicos).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aB,mB-1)-new Date(aA,mA-1); });
+        if(!arrayMeses.length) select.innerHTML='<option value="">-</option>';
+        else { arrayMeses.forEach(m => select.innerHTML+=`<option value="${m}">${m}</option>`); select.value = arrayMeses.includes(valAnt)?valAnt:arrayMeses[0]; }
+        calcularFaturamentoMensal();
+    }
+    function calcularFaturamentoMensal() {
+        let mes = document.getElementById('selectFaturamentoMes').value; let soma = 0;
+        todosPedidos.forEach(p => { if(p.statusPagamento==='PAGO' && p.dataMesAno===mes) soma += parseFloat(p.valorTotal); });
+        document.getElementById('dashFaturamento').innerText = formatCurrency(soma);
+    }
+
+    // ==========================================
+    // EDIÇÃO RÁPIDA DE PEDIDO
     // ==========================================
     function abrirModalEdicao(id) {
         const p = todosPedidos.find(x => x.id === id); if(!p) return;
@@ -702,7 +820,6 @@
         
         let container = document.getElementById('editItensContainer'); container.innerHTML = '';
         p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
-        
         document.getElementById('modalEdicao').style.display = 'flex';
         recalcularSomaEdicao(); 
     }
@@ -727,41 +844,26 @@
     }
 
     function recalcularSomaEdicao() {
-        let soma = 0;
-        document.querySelectorAll('.item-edit-wrapper').forEach(row => {
-            let v = unmaskCurrency(row.querySelector('.edit-valor').value);
-            let q = parseInt(row.querySelector('.edit-qtd').value) || 1;
-            soma += (v * q);
-        });
-        document.getElementById('editValorTotal').value = formatCurrency(soma);
+        let soma = 0; document.querySelectorAll('.item-edit-wrapper').forEach(row => {
+            soma += (unmaskCurrency(row.querySelector('.edit-valor').value) * (parseInt(row.querySelector('.edit-qtd').value) || 1));
+        }); document.getElementById('editValorTotal').value = formatCurrency(soma);
     }
     
     function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
     
     function salvarAlteracoesEdicao() {
-        const id = document.getElementById('editId').value;
-        let itens = [];
+        const id = document.getElementById('editId').value; let itens = [];
         document.querySelectorAll('.item-edit-wrapper').forEach(row => {
             itens.push({
-                codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(),
-                nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
-                tipoPeca: row.querySelector('.edit-tip').value,
-                tamanho: row.querySelector('.edit-tam').value,
-                cor: row.querySelector('.edit-cor').value,
-                valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value),
-                quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
+                codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(), nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
+                tipoPeca: row.querySelector('.edit-tip').value, tamanho: row.querySelector('.edit-tam').value, cor: row.querySelector('.edit-cor').value,
+                valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value), quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
             });
         });
         if(itens.length === 0) { showToast("Precisa de pelo menos 1 peça.", true); return; }
-
-        let valorTotalCalculado = unmaskCurrency(document.getElementById('editValorTotal').value);
-
         db.collection("pedidos").doc(id).update({
-            nome: document.getElementById('editNome').value.toUpperCase(),
-            whatsapp: document.getElementById('editWhatsapp').value,
-            valorTotal: valorTotalCalculado,
-            metodoPagamento: document.getElementById('editMetodoPagamento').value,
-            itens: itens 
+            nome: document.getElementById('editNome').value.toUpperCase(), whatsapp: document.getElementById('editWhatsapp').value,
+            valorTotal: unmaskCurrency(document.getElementById('editValorTotal').value), metodoPagamento: document.getElementById('editMetodoPagamento').value, itens: itens 
         }).then(() => { fecharModalEdicao(); showToast("Pedido Editado!"); });
     }
 
