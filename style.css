@@ -1,3 +1,5 @@
+
+@@ -113,37 +113,61 @@ button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointe
  /* TABELAS E SELOS */
  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; color: var(--black); }
  th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
@@ -62,4 +64,3 @@
      .navbar h1 { font-size: 1.5rem; } .nav-actions { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
      .dashboard-grid { grid-template-columns: 1fr 1fr; }
  }
-
