@@ -1,8 +1,3 @@
-diff --git a/script.js b/script.js
-index fe4dbb90ae8a0ff80fd3ff6a27adcc1a6771d423..412d528bd174272e16f14ac39b34d862eba3d66f 100644
---- a/script.js
-+++ b/script.js
-@@ -1,564 +1,689 @@
 -// ==========================================
 -// THEME & TOASTS
 -// ==========================================
@@ -1256,3 +1251,4 @@ index fe4dbb90ae8a0ff80fd3ff6a27adcc1a6771d423..412d528bd174272e16f14ac39b34d862
 +    doc.autoTable({ startY: 35, head: [['Pedido', 'Data', 'Cliente', 'Pgto', 'Valor']], body: rows, foot: [[ { content: 'TOTAL:', colSpan: 4, styles: { halign: 'right'} }, { content: formatCurrency(soma), styles: { halign: 'right', fillColor: [6,214,160], textColor:[0,0,0] } } ]], theme: 'grid', headStyles: { fillColor: [0,0,0] } });
 +    doc.save(`waller_faturamento_${mes.replace('/','-')}.pdf`); fecharModalPDF();
 +}
+
