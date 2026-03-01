@@ -137,6 +137,18 @@ th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick
 .btn-pdf-opcao { background: var(--gray); border: var(--border-thick); padding: 1rem; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; color: var(--black); transition: all 0.1s; box-shadow: 3px 3px 0px var(--border-color); }
 .btn-pdf-opcao:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border-color); background: var(--black); color: var(--bg-body); }
 
+
+.ficha-kpis { display:grid; grid-template-columns: repeat(4, minmax(120px,1fr)); gap:0.75rem; margin-bottom:1rem; }
+.ficha-kpi { background:var(--gray); border:var(--border-thick); padding:0.7rem; }
+.ficha-kpi strong { display:block; font-size:1rem; color:var(--black); }
+.ficha-kpi span { display:block; margin-top:0.2rem; font-size:0.68rem; font-weight:900; color:var(--text-muted); text-transform:uppercase; }
+#fichaTotalGasto { color:var(--green); }
+#fichaTicketMedio { color:var(--red); }
+.ficha-historico-box { margin-top:1rem; }
+.ficha-historico-lista { border:var(--border-thick); max-height:170px; overflow-y:auto; }
+.ficha-historico-item { display:flex; justify-content:space-between; gap:0.5rem; padding:0.55rem 0.7rem; border-bottom:1px solid var(--border-color); font-size:0.78rem; align-items:center; }
+.ficha-historico-item:last-child { border-bottom:none; }
+.ficha-historico-item span { font-size:0.65rem; font-weight:900; color:var(--text-muted); }
 .label-fiel { color: var(--green); font-size: 0.75rem; font-weight: 900; text-transform: uppercase; padding: 2px 6px; display: none; border: 2px solid var(--green); }
 
 @media (max-width: 1100px) {
@@ -146,4 +158,5 @@ th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick
 @media (max-width: 768px) {
     .navbar h1 { font-size: 1.5rem; } .nav-actions { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
+    .ficha-kpis { grid-template-columns: 1fr 1fr; }
 }

@@ -172,9 +172,11 @@
         <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
         <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
         
-        <div style="background:var(--gray); padding:1rem; border:var(--border-thick); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-            <div><strong style="font-size:1.2rem; color:var(--black);" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
-            <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
+        <div class="ficha-kpis">
+            <div class="ficha-kpi"><strong id="fichaQtdPedidos">0</strong><span>Pedidos</span></div>
+            <div class="ficha-kpi"><strong id="fichaTotalGasto">R$ 0,00</strong><span>Total Gasto</span></div>
+            <div class="ficha-kpi"><strong id="fichaTicketMedio">R$ 0,00</strong><span>Ticket Médio</span></div>
+            <div class="ficha-kpi"><strong id="fichaUltimaCompra">-</strong><span>Última Compra</span></div>
         </div>
 
         <div class="form-grid">
@@ -182,15 +184,28 @@
             <input type="text" id="fichaWhatsapp" placeholder="WHATSAPP" disabled style="flex:1;">
         </div>
         <div class="form-grid">
+            <input type="email" id="fichaEmail" placeholder="E-MAIL" style="flex:1; text-transform:none;">
             <input type="text" id="fichaInsta" placeholder="@INSTAGRAM" style="flex:1;">
             <input type="text" id="fichaDataNasc" placeholder="DATA NASCIMENTO (DD/MM/AAAA)" style="flex:1;">
         </div>
         <div class="form-grid">
             <input type="text" id="fichaCEP" placeholder="CEP" style="flex:0.5;">
-            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:2;">
+            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:1.8;">
+            <input type="text" id="fichaCidade" placeholder="CIDADE" style="flex:1;">
+            <input type="text" id="fichaUF" placeholder="UF" maxlength="2" style="flex:0.3;">
+        </div>
+        <div class="form-grid">
+            <input type="text" id="fichaTamanhoPref" placeholder="TAMANHO PREFERIDO" style="flex:1;">
+            <input type="text" id="fichaCorPref" placeholder="COR PREFERIDA" style="flex:1;">
+            <input type="text" id="fichaUltimoContato" placeholder="ÚLTIMO CONTATO (DD/MM/AAAA)" style="flex:1;">
         </div>
         
         <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Tamanhos preferidos, estilo, reclamações, etc)"></textarea>
+
+        <div class="ficha-historico-box">
+            <div class="form-section-title" style="margin-bottom:0.6rem;">Histórico Recente</div>
+            <div id="fichaHistoricoPedidos" class="ficha-historico-lista">Sem pedidos para este cliente.</div>
+        </div>
         
         <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
     </div>
