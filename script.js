@@ -27,6 +27,7 @@ function unmaskCurrency(value) {
     return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 }
 function formatCurrency(num) { return "R$ " + (parseFloat(num) || 0).toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
+function formatDateBR(dateObj) { return dateObj ? new Date(dateObj).toLocaleDateString('pt-BR') : '-'; }
 
 document.addEventListener('input', function(e) {
     if(e.target.classList.contains('moeda') && !e.target.readOnly) {
@@ -41,6 +42,7 @@ function aplicarMascaraTelefone(e) {
     if(v.length <= 2) e.target.value = v; else if(v.length <= 6) e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
 }
 document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
+document.getElementById('whatsapp').addEventListener('input', function() { if(this.value.trim().length > 10) verificarClienteFiel(); });
 
 async function buscarCEP(cep) {
     let cleanCep = cep.replace(/\D/g, '');
@@ -171,33 +173,85 @@ db.collection("clientes").onSnapshot(snap => {
 });
 
 let mapaClientes = {}; 
+
+function normalizarTelefone(v) { return (v || '').replace(/\D/g, ''); }
+
+function buscarClientePorWhatsapp(whatsappDigitado) {
+    if(!whatsappDigitado) return { perfil: null, compras: null };
+    if(clientesCadastrados[whatsappDigitado] || mapaClientes[whatsappDigitado]) {
+        return { perfil: clientesCadastrados[whatsappDigitado] || null, compras: mapaClientes[whatsappDigitado] || null };
+    }
+
+    let alvo = normalizarTelefone(whatsappDigitado);
+    let chavePerfil = Object.keys(clientesCadastrados).find(k => normalizarTelefone(k) === alvo);
+    let chaveCompras = Object.keys(mapaClientes).find(k => normalizarTelefone(k) === alvo);
+
+    return {
+        perfil: chavePerfil ? clientesCadastrados[chavePerfil] : null,
+        compras: chaveCompras ? mapaClientes[chaveCompras] : null
+    };
+}
+
+function preencherDadosClienteNoLancamento(perfil = {}, compras = {}) {
+    const enderecoCompleto = perfil.endereco || compras.endereco || '';
+    let enderecoBase = enderecoCompleto;
+    let numero = '';
+
+    if(enderecoCompleto.includes(',')) {
+        let partes = enderecoCompleto.split(',');
+        let ultimaParte = (partes.pop() || '').trim();
+        if(/^\d+[A-Za-z-]*$/.test(ultimaParte)) {
+            numero = ultimaParte;
+            enderecoBase = partes.join(',').trim();
+        }
+    }
+
+    document.getElementById('nome').value = perfil.nome || compras.nome || '';
+    document.getElementById('cep').value = perfil.cep || compras.cep || '';
+    document.getElementById('endereco').value = enderecoBase || enderecoCompleto;
+    document.getElementById('numeroEnd').value = numero;
+}
+
 function verificarClienteFiel() {
     let w = document.getElementById('whatsapp').value.trim();
-    if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
-        document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
-        if(clientesCadastrados[w] && !document.getElementById('nome').value) {
-             document.getElementById('nome').value = clientesCadastrados[w].nome || '';
-             document.getElementById('cep').value = clientesCadastrados[w].cep || '';
-             document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
-        }
-    } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
+    let achado = buscarClientePorWhatsapp(w);
+    let existeCliente = !!(achado.perfil || achado.compras);
+
+    if(w.length > 10 && existeCliente) { 
+        document.getElementById('alertaClienteFiel').style.display = 'inline-block';
+        preencherDadosClienteNoLancamento(achado.perfil || {}, achado.compras || {});
+    } else {
+        document.getElementById('alertaClienteFiel').style.display = 'none';
+    }
 }
 
 function abrirFichaCliente(whatsapp) {
-    let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0 };
+    let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0, ultimaCompra: null, pedidos: [] };
     let perfil = clientesCadastrados[whatsapp] || {};
+    let ticketMedio = dadosCompra.qtd > 0 ? (dadosCompra.totalGasto / dadosCompra.qtd) : 0;
 
     document.getElementById('fichaWhatsapp').value = whatsapp;
     document.getElementById('fichaNome').value = perfil.nome || dadosCompra.nome || '';
+    document.getElementById('fichaEmail').value = perfil.email || '';
     document.getElementById('fichaInsta').value = perfil.insta || '';
     document.getElementById('fichaDataNasc').value = perfil.dataNasc || '';
     document.getElementById('fichaCEP').value = perfil.cep || dadosCompra.cep || '';
     document.getElementById('fichaEndereco').value = perfil.endereco || dadosCompra.endereco || '';
+    document.getElementById('fichaCidade').value = perfil.cidade || '';
+    document.getElementById('fichaUF').value = (perfil.uf || '').toUpperCase();
+    document.getElementById('fichaTamanhoPref').value = perfil.tamanhoPreferido || '';
+    document.getElementById('fichaCorPref').value = perfil.corPreferida || '';
+    document.getElementById('fichaUltimoContato').value = perfil.ultimoContato || '';
     document.getElementById('fichaObs').value = perfil.obs || '';
-    
+
     document.getElementById('fichaQtdPedidos').innerText = dadosCompra.qtd;
     document.getElementById('fichaTotalGasto').innerText = formatCurrency(dadosCompra.totalGasto);
-    
+    document.getElementById('fichaTicketMedio').innerText = formatCurrency(ticketMedio);
+    document.getElementById('fichaUltimaCompra').innerText = formatDateBR(dadosCompra.ultimaCompra);
+    document.getElementById('fichaHistoricoPedidos').innerHTML = (dadosCompra.pedidos || []).slice(0, 5).map(p =>
+        `<div class="ficha-historico-item"><strong>#${p.numeroPedido}</strong> ${formatDateBR(p.data)} • ${formatCurrency(p.valor)} <span>${p.status}</span></div>`
+    ).join('') || 'Sem pedidos para este cliente.';
+
     document.getElementById('modalFichaCliente').style.display = 'flex';
 }
 
@@ -207,8 +261,12 @@ function salvarFichaCliente() {
     let w = document.getElementById('fichaWhatsapp').value;
     db.collection("clientes").doc(w).set({
         whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(),
+        email: document.getElementById('fichaEmail').value.trim().toLowerCase(),
         insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value,
         cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
+        cidade: document.getElementById('fichaCidade').value, uf: document.getElementById('fichaUF').value.toUpperCase(),
+        tamanhoPreferido: document.getElementById('fichaTamanhoPref').value, corPreferida: document.getElementById('fichaCorPref').value,
+        ultimoContato: document.getElementById('fichaUltimoContato').value,
         obs: document.getElementById('fichaObs').value
     }, {merge: true}).then(() => { showToast("Ficha do Cliente Salva!"); fecharFichaCliente(); });
 }
@@ -300,10 +358,11 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
 
         // CRM Aggregate com Última Compra
         if(p.whatsapp) {
-            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d };
+            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d, pedidos: [] };
             mapaClientes[p.whatsapp].qtd++;
             if(d > mapaClientes[p.whatsapp].ultimaCompra) mapaClientes[p.whatsapp].ultimaCompra = d;
             if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
+            mapaClientes[p.whatsapp].pedidos.push({ numeroPedido: p.numeroPedido, data: d, valor: p.valorTotal || 0, status: p.statusAtualizado });
         }
 
         if(p.itens && p.statusPagamento === 'PAGO') { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
@@ -326,7 +385,7 @@ function renderizarCRM() {
     let combinados = {};
     Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
     Object.keys(clientesCadastrados).forEach(w => {
-        if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null };
+        if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null, pedidos: [] };
         combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
     });
 
