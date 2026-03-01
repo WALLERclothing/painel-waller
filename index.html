@@ -17,22 +17,16 @@
  
  <div class="toast-container" id="toastContainer"></div>
  
--<nav class="navbar">
--    <h1>WALLER CLOTHING</h1>
--    <div class="nav-actions">
--        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
--        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
--    </div>
--</nav>
-+<nav class="navbar">
-+    <h1>WALLER CLOTHING</h1>
-+    <div class="nav-actions">
-+        <span id="statusOffline" class="offline-indicator online">🟢 ONLINE</span>
-+        <button class="btn-nav" id="btnSyncOffline" onclick="sincronizarFilaOffline()" style="display: none;">🔁 SINCRONIZAR FILA</button>
-+        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
-+        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
-+    </div>
-+</nav>
+
+<nav class="navbar">
+    <h1>WALLER CLOTHING</h1>
+    <div class="nav-actions">
+      <span id="statusOffline" class="offline-indicator online">🟢 ONLINE</span>
+       <button class="btn-nav" id="btnSyncOffline" onclick="sincronizarFilaOffline()" style="display: none;">🔁 SINCRONIZAR FILA</button>
+     <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
+      <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
+  </div>
+</nav>
  
  <div class="tab-menu">
      <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
