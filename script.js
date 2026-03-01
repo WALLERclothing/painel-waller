@@ -42,6 +42,7 @@ function aplicarMascaraTelefone(e) {
     if(v.length <= 2) e.target.value = v; else if(v.length <= 6) e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
 }
 document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
+document.getElementById('whatsapp').addEventListener('input', function() { if(this.value.trim().length > 10) verificarClienteFiel(); });
 
 async function buscarCEP(cep) {
     let cleanCep = cep.replace(/\D/g, '');
@@ -172,16 +173,56 @@ db.collection("clientes").onSnapshot(snap => {
 });
 
 let mapaClientes = {}; 
+
+function normalizarTelefone(v) { return (v || '').replace(/\D/g, ''); }
+
+function buscarClientePorWhatsapp(whatsappDigitado) {
+    if(!whatsappDigitado) return { perfil: null, compras: null };
+    if(clientesCadastrados[whatsappDigitado] || mapaClientes[whatsappDigitado]) {
+        return { perfil: clientesCadastrados[whatsappDigitado] || null, compras: mapaClientes[whatsappDigitado] || null };
+    }
+
+    let alvo = normalizarTelefone(whatsappDigitado);
+    let chavePerfil = Object.keys(clientesCadastrados).find(k => normalizarTelefone(k) === alvo);
+    let chaveCompras = Object.keys(mapaClientes).find(k => normalizarTelefone(k) === alvo);
+
+    return {
+        perfil: chavePerfil ? clientesCadastrados[chavePerfil] : null,
+        compras: chaveCompras ? mapaClientes[chaveCompras] : null
+    };
+}
+
+function preencherDadosClienteNoLancamento(perfil = {}, compras = {}) {
+    const enderecoCompleto = perfil.endereco || compras.endereco || '';
+    let enderecoBase = enderecoCompleto;
+    let numero = '';
+
+    if(enderecoCompleto.includes(',')) {
+        let partes = enderecoCompleto.split(',');
+        let ultimaParte = (partes.pop() || '').trim();
+        if(/^\d+[A-Za-z-]*$/.test(ultimaParte)) {
+            numero = ultimaParte;
+            enderecoBase = partes.join(',').trim();
+        }
+    }
+
+    document.getElementById('nome').value = perfil.nome || compras.nome || '';
+    document.getElementById('cep').value = perfil.cep || compras.cep || '';
+    document.getElementById('endereco').value = enderecoBase || enderecoCompleto;
+    document.getElementById('numeroEnd').value = numero;
+}
+
 function verificarClienteFiel() {
     let w = document.getElementById('whatsapp').value.trim();
-    if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
-        document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
-        if(clientesCadastrados[w] && !document.getElementById('nome').value) {
-             document.getElementById('nome').value = clientesCadastrados[w].nome || '';
-             document.getElementById('cep').value = clientesCadastrados[w].cep || '';
-             document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
-        }
-    } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
+    let achado = buscarClientePorWhatsapp(w);
+    let existeCliente = !!(achado.perfil || achado.compras);
+
+    if(w.length > 10 && existeCliente) { 
+        document.getElementById('alertaClienteFiel').style.display = 'inline-block';
+        preencherDadosClienteNoLancamento(achado.perfil || {}, achado.compras || {});
+    } else {
+        document.getElementById('alertaClienteFiel').style.display = 'none';
+    }
 }
 
 function abrirFichaCliente(whatsapp) {
