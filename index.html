@@ -1,241 +1,94 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waller Clothing | Mega Painel</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="toast-container" id="toastContainer"></div>
-
-<nav class="navbar">
-    <h1>WALLER CLOTHING</h1>
-    <div class="nav-actions">
-        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
-        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
-    </div>
-</nav>
-
-<div class="tab-menu">
-    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
-    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Kanban Produção</button>
-    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
-    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🤝 CRM Clientes</button>
-</div>
-
-<div id="aba-cadastro" class="container">
-    <div class="card">
-        <h2 class="card-title">Lançar Drop / Pedido</h2>
-        
-        <div class="form-section">
-            <div class="form-section-title">
-                1. Dados do Cliente e Financeiro 
-                <span id="alertaClienteFiel" class="label-fiel">⭐ CLIENTE FIEL</span>
-            </div>
-            <div class="form-grid">
-                <input type="text" id="whatsapp" placeholder="WHATSAPP (Buscar Histórico)" maxlength="15" onblur="verificarClienteFiel()">
-                <input type="text" id="nome" placeholder="NOME DO CLIENTE">
-            </div>
-            <div class="form-grid" style="margin-bottom: 0;">
-                <input type="text" id="cep" placeholder="CEP (Autopreencher)" maxlength="9" onblur="buscarCEP(this.value)">
-                <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
-                <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.5;">
-            </div>
-            
-            <div class="form-grid" style="margin-top: 1rem;">
-                <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
-                <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
-                <select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="color: var(--red); font-weight: 900; border-color: var(--red);">
-            </div>
-        </div>
-        
-        <div class="form-section" style="border-bottom: none;">
-            <div class="form-section-title">2. Adicionar Peças ao Pedido</div>
-            <div class="form-grid">
-                <input type="text" id="codigoEstampa" list="estampas-list" placeholder="BUSCAR CÓDIGO OU NOME DA ESTAMPA..." style="flex: 1;" oninput="autocompletarEstampa(this.value)">
-                <datalist id="estampas-list"></datalist>
-                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
-            </div>
-            <div class="form-grid">
-                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
-                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
-                <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
-                
-                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN (PEÇA)" style="flex: 0.5;">
-                <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
-            </div>
-            <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
-        </div>
-
-        <div id="carrinho-container">
-            <div class="form-section-title" style="margin-bottom: 0.5rem;">Resumo do Pedido:</div>
-            <div id="listaCarrinho"></div>
-        </div>
-        <button type="button" id="btnGerarOrdem" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
-    </div>
-</div>
-
-<div id="aba-producao" class="container" style="display: none;">
-    <div class="dashboard-grid">
-        <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
-        <div class="dash-card"><h3>Top 3 Estampas</h3><div id="dashBestSellers" class="best-sellers-list">Carregando...</div></div>
-        <div class="dash-card green-text">
-            <div style="display:flex; justify-content:space-between; width:100%;">
-                <h3>Faturamento</h3>
-                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem;">
-                    <option value="ALL">...</option>
-                </select>
-            </div>
-            <span id="dashFaturamento">R$ 0,00</span>
-        </div>
-    </div>
-
-    <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
-        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NO KANBAN (NOME, ZAP OU NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
-    </div>
-
-    <div class="kanban-board">
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO FEITO')">
-            <div class="kanban-header">📥 PEDIDO FEITO</div>
-            <div id="col-PEDIDO-FEITO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'AGUARDANDO ESTAMPA')">
-            <div class="kanban-header">👕 FILA ESTAMPA</div>
-            <div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'ESTAMPA PRONTA')">
-            <div class="kanban-header">📦 PRONTO / ENVIAR</div>
-            <div id="col-ESTAMPA-PRONTA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO ENVIADO')">
-            <div class="kanban-header">🚚 ENVIADO</div>
-            <div id="col-PEDIDO-ENVIADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-    </div>
-</div>
-
-<div id="aba-estampas" class="container" style="display: none;">
-    <div class="card">
-        <h2 class="card-title" id="tituloCardEstampa">Cadastrar / Editar Estampa</h2>
-        <form onsubmit="salvarNovaEstampa(event)">
-            <input type="hidden" id="editEstampaCodigoOriginal" value="">
-            <div class="form-grid">
-                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
-                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
-            </div>
-            <div class="form-grid">
-                <select id="cadCategoriaEstampa" style="flex:1;">
-                    <option value="CAMISETA">CAMISETA</option>
-                    <option value="MOLETOM">MOLETOM</option>
-                    <option value="ACESSÓRIO">ACESSÓRIO</option>
-                    <option value="OUTROS">OUTROS</option>
-                </select>
-                <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ SALVAR ESTAMPA</button>
-                <button type="button" id="btnCancelarEstampa" class="btn-add" style="margin-top:0; flex: 1; display: none;" onclick="cancelarEdicaoEstampa()">CANCELAR</button>
-            </div>
-        </form>
-    </div>
-    <div class="card">
-        <h2 class="card-title">Estampas e Estoque</h2>
-        <table>
-            <thead><tr><th style="width: 15%;">Código</th><th style="width: 45%;">Nome e Categoria</th><th style="width: 25%;">Estoque (Ajuste Rápido)</th><th style="width: 15%;">Ações</th></tr></thead>
-            <tbody id="listaEstampas"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="aba-clientes" class="container" style="display: none;">
-    <div class="card">
-        <h2 class="card-title">Top Clientes da Waller</h2>
-        <table>
-            <thead><tr><th>Cliente / Contato</th><th>Pedidos</th><th>Última Compra</th><th>Ticket Médio</th><th>Total Gasto</th><th>Ficha</th></tr></thead>
-            <tbody id="listaClientesCRM"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="modalFichaCliente" class="modal-overlay">
-    <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
-        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
-        
-        <div style="background:var(--gray); padding:1rem; border:var(--border-thick); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-            <div><strong style="font-size:1.2rem; color:var(--black);" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
-            <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
-        </div>
-
-        <div class="form-grid">
-            <input type="text" id="fichaNome" placeholder="NOME COMPLETO" style="flex:2;">
-            <input type="text" id="fichaWhatsapp" placeholder="WHATSAPP" disabled style="flex:1;">
-        </div>
-        <div class="form-grid">
-            <input type="text" id="fichaInsta" placeholder="@INSTAGRAM" style="flex:1;">
-            <input type="text" id="fichaDataNasc" placeholder="DATA NASCIMENTO (DD/MM/AAAA)" style="flex:1;">
-        </div>
-        <div class="form-grid">
-            <input type="text" id="fichaCEP" placeholder="CEP" style="flex:0.5;">
-            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:2;">
-        </div>
-        
-        <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Tamanhos preferidos, estilo, reclamações, etc)"></textarea>
-        
-        <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
-    </div>
-</div>
-
-<div id="modalEdicao" class="modal-overlay">
-    <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
-        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
-        <input type="hidden" id="editId">
-        <div class="form-grid" style="margin-bottom: 1rem;"><input type="text" id="editNome" placeholder="NOME"><input type="text" id="editWhatsapp" placeholder="WHATSAPP"></div>
-        <div class="form-grid" style="margin-bottom: 2rem;"><input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" readonly style="color: var(--red); background: var(--gray);"><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
-        <div class="form-section-title">PEÇAS DO PEDIDO</div>
-        <div id="editItensContainer"></div>
-        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
-    </div>
-</div>
-
-<div id="modalPDF" class="modal-overlay">
-    <div class="modal-box" style="max-width: 600px;">
-        <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
-        <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIOS</h2>
-        <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
-            
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red); color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
-        </div>
-    </div>
-</div>
-
-<div id="bulk-action-bar">
-    <strong style="font-size: 1.2rem; color: var(--red);"><span id="bulk-count">0</span> SELECIONADOS</strong>
-    <select id="bulk-status-select" style="width: auto;">
-        <option value="AGUARDANDO ESTAMPA">Mover p/ FILA ESTAMPA</option>
-        <option value="ESTAMPA PRONTA">Mover p/ PRONTO ENVIAR</option>
-        <option value="PEDIDO ENVIADO">Mover p/ ENVIADO</option>
-        <option value="PEDIDO ENTREGUE">Mover p/ ENTREGUE</option>
-    </select>
-    <button class="btn-add" style="width: auto; background: var(--black); color: var(--bg-body);" onclick="executarBulkUpdate()">APLICAR</button>
-    <button class="btn-add" style="width: auto; color: var(--red);" onclick="limparBulk()">CANCELAR</button>
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
+diff --git a/index.html b/index.html
+index 8d9e85925df99878b38ef9a2001a5d49d2ba4f91..5d08f8ae87a30b2d2d66136cd118b43992b57087 100644
+--- a/index.html
++++ b/index.html
+@@ -1,51 +1,53 @@
+ <!DOCTYPE html>
+ <html lang="pt-BR">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Waller Clothing | Mega Painel</title>
+     
+     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+     
+     <link rel="stylesheet" href="style.css">
+ </head>
+ <body>
+ 
+ <div class="toast-container" id="toastContainer"></div>
+ 
+-<nav class="navbar">
+-    <h1>WALLER CLOTHING</h1>
+-    <div class="nav-actions">
+-        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
+-        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
+-    </div>
+-</nav>
++<nav class="navbar">
++    <h1>WALLER CLOTHING</h1>
++    <div class="nav-actions">
++        <span id="statusOffline" class="offline-indicator online">🟢 ONLINE</span>
++        <button class="btn-nav" id="btnSyncOffline" onclick="sincronizarFilaOffline()" style="display: none;">🔁 SINCRONIZAR FILA</button>
++        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
++        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
++    </div>
++</nav>
+ 
+ <div class="tab-menu">
+     <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
+     <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Kanban Produção</button>
+     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
+     <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🤝 CRM Clientes</button>
+ </div>
+ 
+ <div id="aba-cadastro" class="container">
+     <div class="card">
+         <h2 class="card-title">Lançar Drop / Pedido</h2>
+         
+         <div class="form-section">
+             <div class="form-section-title">
+                 1. Dados do Cliente e Financeiro 
+                 <span id="alertaClienteFiel" class="label-fiel">⭐ CLIENTE FIEL</span>
+             </div>
+             <div class="form-grid">
+                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Buscar Histórico)" maxlength="15" onblur="verificarClienteFiel()">
+                 <input type="text" id="nome" placeholder="NOME DO CLIENTE">
+             </div>
+             <div class="form-grid" style="margin-bottom: 0;">
+                 <input type="text" id="cep" placeholder="CEP (Autopreencher)" maxlength="9" onblur="buscarCEP(this.value)">
+                 <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
+                 <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.5;">
+@@ -216,26 +218,26 @@
+         <div class="grid-pdf-opcoes">
+             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA</button>
+             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
+             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
+             
+             <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red); color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
+             <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+         </div>
+     </div>
+ </div>
+ 
+ <div id="bulk-action-bar">
+     <strong style="font-size: 1.2rem; color: var(--red);"><span id="bulk-count">0</span> SELECIONADOS</strong>
+     <select id="bulk-status-select" style="width: auto;">
+         <option value="AGUARDANDO ESTAMPA">Mover p/ FILA ESTAMPA</option>
+         <option value="ESTAMPA PRONTA">Mover p/ PRONTO ENVIAR</option>
+         <option value="PEDIDO ENVIADO">Mover p/ ENVIADO</option>
+         <option value="PEDIDO ENTREGUE">Mover p/ ENTREGUE</option>
+     </select>
+     <button class="btn-add" style="width: auto; background: var(--black); color: var(--bg-body);" onclick="executarBulkUpdate()">APLICAR</button>
+     <button class="btn-add" style="width: auto; color: var(--red);" onclick="limparBulk()">CANCELAR</button>
+ </div>
+ 
+ <script src="script.js"></script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
