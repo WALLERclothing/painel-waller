@@ -49,13 +49,8 @@
                 <input type="text" id="estado" placeholder="UF" maxlength="2">
             </div>
             <div class="form-grid cols-2">
-                <input type="text" id="endereco" placeholder="ENDEREÇO / RUA">
-                <input type="text" id="numeroEndereco" placeholder="NÚMERO">
-            </div>
-            <div class="form-grid cols-3">
-                <input type="text" id="complemento" placeholder="COMPLEMENTO">
+                <input type="text" id="endereco" placeholder="ENDEREÇO / RUA E NÚMERO">
                 <input type="text" id="referencia" placeholder="PONTO DE REFERÊNCIA">
-                <input type="text" id="frete" class="moeda" placeholder="FRETE">
             </div>
             <div class="form-grid cols-3">
                 <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL" readonly>
@@ -127,7 +122,6 @@
                 </div>
                 <div class="form-grid cols-2">
                     <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
-                    <input type="number" id="cadEstoque" placeholder="ESTOQUE" min="0" value="0">
                     <details class="sanfona-tipo">
                         <summary>Tipo padrão</summary>
                         <select id="cadTipoPadrao"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
@@ -173,16 +167,11 @@
             <div class="form-grid cols-4">
                 <input type="text" id="clienteDocumento" placeholder="CPF/CNPJ">
                 <input type="date" id="clienteAniversario" placeholder="ANIVERSÁRIO">
-                <input type="text" id="clienteCep" placeholder="CEP">
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
-            </div>
-            <div class="form-grid cols-4">
                 <input type="text" id="clienteEstado" placeholder="UF">
-                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO">
-                <input type="text" id="clienteNumeroEndereco" placeholder="NÚMERO">
-                <input type="text" id="clienteComplemento" placeholder="COMPLEMENTO">
             </div>
             <div class="form-grid cols-2">
+                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO">
                 <input type="text" id="clienteReferencia" placeholder="REFERÊNCIA">
             </div>
             <button type="submit" class="btn-primary">SALVAR CLIENTE</button>
@@ -204,10 +193,9 @@
         <h2 class="card-title">Editar Item do Catálogo</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
-            <div class="form-grid cols-3">
+            <div class="form-grid cols-2">
                 <input type="text" id="editCatalogoNome" placeholder="NOME DA ESTAMPA" required>
                 <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
-                <input type="number" id="editCatalogoEstoque" placeholder="ESTOQUE" min="0" required>
             </div>
             <details class="sanfona-tipo" open>
                 <summary>Tipo padrão</summary>
