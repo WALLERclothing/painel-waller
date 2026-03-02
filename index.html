@@ -66,8 +66,8 @@
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
             <div class="form-section-title">2. Adicionar peças ao pedido</div>
             <div class="form-grid cols-2">
-                <input type="text" id="codigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)">
-                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA (AUTOMÁTICO)">
+                <input type="text" id="codigoEstampa" placeholder="CÓDIGO DO PRODUTO">
+                <input type="text" id="nomeEstampa" placeholder="NOME DO PRODUTO (AUTOMÁTICO)">
             </div>
             <div class="form-grid cols-5">
                 <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
@@ -114,10 +114,10 @@
 <div id="aba-estampas" class="container" style="display: none;">
     <div class="card">
         <div class="catalog-header">
-            <h2 class="card-title">Catálogo / Estoque <span id="carregandoEstampas" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
+            <h2 class="card-title">Catálogo de Produtos <span id="carregandoEstampas" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
             <div class="cliente-head-actions">
                 <input type="text" id="filtroEstampas" placeholder="🔎 Buscar por código ou nome" oninput="filtrarCatalogo()">
-                <button class="btn-add btn-dark" onclick="abrirModalNovaEstampa()">+ Nova Estampa</button>
+                <button class="btn-add btn-dark" onclick="abrirModalNovaEstampa()">+ Novo Produto</button>
             </div>
         </div>
         <div id="catalogoEstampas" class="catalog-grid"></div>
@@ -147,11 +147,12 @@
                 <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP (Ex: 11999999999)" required>
                 <input type="text" id="clienteInstagram" placeholder="INSTAGRAM (OPCIONAL)">
             </div>
-            <div class="form-grid cols-4">
+            <div class="form-grid cols-5">
                 <input type="text" id="clienteDocumento" placeholder="CPF/CNPJ">
                 <input type="text" id="clienteCep" placeholder="CEP">
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
                 <input type="text" id="clienteEstado" placeholder="UF">
+                <input type="date" id="clienteAniversario" title="Data de Aniversário">
             </div>
             <div class="form-grid cols-3">
                 <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
@@ -214,8 +215,25 @@
             </div>
         </div>
         
+        <div class="form-section">
+            <div class="form-section-title">Adicionar Mais Itens</div>
+            <div class="form-grid cols-2">
+                <input type="text" id="editPedCodigoEstampa" placeholder="CÓDIGO DO PRODUTO" oninput="preencherEstampaPorCodigoEdicao()">
+                <input type="text" id="editPedNomeEstampa" placeholder="NOME DO PRODUTO">
+            </div>
+            <div class="form-grid cols-5">
+                <select id="editPedTipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
+                <select id="editPedTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
+                <select id="editPedCor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
+                <input type="text" id="editPedValorUnitario" class="moeda" placeholder="R$ UNITÁRIO">
+                <input type="number" id="editPedQuantidade" value="1" min="1">
+            </div>
+            <button type="button" class="btn-add" onclick="adicionarAoCarrinhoEdicaoInput()">+ ADICIONAR PEÇA AO PEDIDO</button>
+            <small id="mensagemAutoPreenchimentoEdicao" class="helper-text"></small>
+        </div>
+
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
-            <div class="form-section-title">Itens do Pedido</div>
+            <div class="form-section-title">Itens Deste Pedido</div>
             <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
         </div>
         <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
@@ -225,17 +243,17 @@
 <div id="modalNovaEstampa" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px;">
         <button class="btn-close-modal" onclick="fecharModalNovaEstampa()">X</button>
-        <h2 class="card-title">Cadastrar Estampa</h2>
+        <h2 class="card-title">Cadastrar Produto</h2>
         <form id="formNovaEstampa" onsubmit="salvarNovaEstampa(event)">
             <div class="form-grid cols-2">
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" required>
-                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required>
+                <input type="text" id="cadNomeEstampa" placeholder="NOME DO PRODUTO" required>
             </div>
             <div class="form-grid cols-3">
                 <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
                 <input type="number" id="cadEstoqueEstampa" placeholder="QTD ESTOQUE" required>
                 <select id="cadTipoPadrao">
-                    <option value="">TIPO PADRÃO (OPCIONAL)</option>
+                    <option value="">TIPO DO PRODUTO</option>
                     <option value="OVERSIZED">OVERSIZED</option>
                     <option value="MOLETOM">MOLETOM</option>
                     <option value="REGATA">REGATA</option>
@@ -250,16 +268,16 @@
 <div id="modalCatalogo" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px;">
         <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
-        <h2 class="card-title">Editar Item do Catálogo</h2>
+        <h2 class="card-title">Editar Produto do Catálogo</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
             <div class="form-grid cols-3">
-                <input type="text" id="editCatalogoNome" placeholder="NOME DA ESTAMPA" required>
+                <input type="text" id="editCatalogoNome" placeholder="NOME DO PRODUTO" required>
                 <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
                 <input type="number" id="editCatalogoEstoque" placeholder="QTD ESTOQUE" required>
             </div>
             <select id="editCatalogoTipo" style="margin-top: 10px;">
-                <option value="">TIPO PADRÃO (OPCIONAL)</option>
+                <option value="">TIPO DO PRODUTO</option>
                 <option value="OVERSIZED">OVERSIZED</option>
                 <option value="MOLETOM">MOLETOM</option>
                 <option value="REGATA">REGATA</option>
