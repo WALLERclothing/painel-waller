@@ -18,7 +18,7 @@ body {
     background: var(--bg);
     color: var(--text);
     margin: 0;
-    overflow-x: hidden; /* Evita vazamento lateral */
+    overflow-x: hidden;
     background-image: radial-gradient(#d1d5db 1px, transparent 1px);
     background-size: 18px 18px;
 }
@@ -63,6 +63,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .btn-dark { background: #111; color: #fff; }
 .btn-primary { width: 100%; background: #111; color: #fff; padding: .95rem; box-shadow: 4px 4px 0 var(--accent); }
 .btn-primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--accent); }
+.btn-delete { background: #fca5a5; color: #991b1b; }
 
 .helper-text.ok { color: #166534; }
 .helper-text.warn { color: #92400e; }
@@ -82,7 +83,6 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .btn-filtro { border: 2px solid #111; border-radius: 999px; padding: .5rem .8rem; background: #fff; font-weight: 800; cursor: pointer; }
 .btn-filtro.ativo { background: #111; color: #fff; }
 
-/* KANBAN BLINDADO PARA CABER NA TELA */
 .kanban-board { 
     display: grid; 
     grid-template-columns: repeat(5, minmax(0, 1fr)); 
@@ -99,8 +99,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 
 .pedido-card-v2 { background: #fff; border: 2px solid #111; border-radius: 10px; padding: .75rem; display: flex; flex-direction: column; gap: .35rem; }
 .pedido-card-v2 p { margin: 0; font-size: .8rem; }
-.pedido-header { display: flex; justify-content: space-between; gap: .5rem; align-items: center; }
-.pedido-badge { border-radius: 999px; font-size: .60rem; font-weight: 900; padding: .2rem .4rem; white-space: nowrap; }
+.pedido-header { display: flex; justify-content: space-between; gap: .3rem; align-items: flex-start; flex-wrap: wrap; }
+.pedido-badge { border-radius: 999px; font-size: .60rem; font-weight: 900; padding: .2rem .4rem; text-align: center; white-space: normal; line-height: 1.2; max-width: 100%; }
 .badge-default { background: #dbeafe; color: #1e3a8a; }
 .badge-pendente { background: #fff7ed; color: #9a3412; }
 .badge-estampa { background: #ede9fe; color: #5b21b6; }
@@ -112,17 +112,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .status-sanfona select { margin-top: .4rem; }
 .status-sanfona .btn-add { margin-top: .45rem; width: 100%; }
 
-/* BOTÕES DE AÇÃO DO KANBAN */
 .pedido-actions { display: flex; gap: .35rem; margin-top: .35rem; }
 .btn-whats, .catalog-edit, .catalog-delete { 
-    flex: 1; 
-    border-radius: 8px; 
-    padding: .45rem 0; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    cursor: pointer; 
-    text-decoration: none;
+    flex: 1; border-radius: 8px; padding: .45rem 0; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;
 }
 .catalog-edit { border: 1px solid #111; background: #fff; color: #111; }
 .catalog-delete { border: 1px solid #dc2626; background: #fff; color: #dc2626; }
@@ -155,9 +147,29 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .cliente-alerta { border-color: #f59e0b; box-shadow: 0 0 0 2px #f59e0b, 4px 4px 0 #f59e0b; }
 .niver-tag { display: inline-block; width: fit-content; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 800; font-size: .7rem; padding: .18rem .5rem; }
 
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2000; justify-content: center; align-items: flex-start; padding: 2rem 1rem; overflow-y: auto; }
-.modal-box { background: #fff; border: 3px solid #111; border-radius: 14px; width: min(960px, 100%); padding: 1.2rem; box-shadow: 8px 8px 0 var(--accent); position: relative; margin-bottom: 2rem; }
-.btn-close-modal { position: absolute; right: .8rem; top: .8rem; border: 2px solid #111; background: #fff; color: var(--accent); font-weight: 900; cursor: pointer; border-radius: 6px; padding: .25rem .55rem; }
+/* MODAIS CENTRALIZADOS */
+.modal-overlay { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,.75); 
+    z-index: 2000; 
+    justify-content: center; 
+    align-items: center; /* Centraliza verticalmente */
+    padding: 1rem; 
+}
+.modal-box { 
+    background: #fff; 
+    border: 3px solid #111; 
+    border-radius: 14px; 
+    width: min(960px, 100%); 
+    padding: 1.2rem; 
+    box-shadow: 8px 8px 0 var(--accent); 
+    position: relative; 
+    max-height: 90vh; /* Se for muito grande, cria barra de rolagem interna */
+    overflow-y: auto; 
+}
+.btn-close-modal { position: absolute; right: .8rem; top: .8rem; border: 2px solid #111; background: #fff; color: var(--accent); font-weight: 900; cursor: pointer; border-radius: 6px; padding: .25rem .55rem; z-index: 10; }
 .cliente-ficha-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
 .cliente-ficha-grid p { margin: 0; font-size: .86rem; }
 
