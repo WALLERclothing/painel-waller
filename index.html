@@ -35,7 +35,7 @@
             <div class="form-section-title">1. Dados completos do cliente</div>
             <div class="form-grid cols-3">
                 <input type="text" id="nome" placeholder="NOME COMPLETO DO CLIENTE">
-                <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
+                <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15" onblur="autoPreencherCliente()">
                 <input type="text" id="instagram" placeholder="INSTAGRAM (OPCIONAL)">
             </div>
             <div class="form-grid cols-4">
@@ -98,7 +98,7 @@
         <div class="dash-card"><h3>Envio Efetuado</h3><span id="dashEnviar">0</span></div>
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
-    <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
+    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com o banco...</span></h2>
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
         <div class="botoes-filtro">
@@ -112,43 +112,25 @@
 </div>
 
 <div id="aba-estampas" class="container" style="display: none;">
-    <div class="catalog-layout">
-        <div class="card">
-            <h2 class="card-title">Cadastrar Estampa</h2>
-            <form onsubmit="salvarNovaEstampa(event)">
-                <div class="form-grid cols-2">
-                    <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO" required>
-                    <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required>
-                </div>
-                <div class="form-grid cols-3">
-                    <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
-                    <input type="number" id="cadEstoqueEstampa" placeholder="QTD ESTOQUE" required>
-                    <details class="sanfona-tipo">
-                        <summary>Padrão</summary>
-                        <select id="cadTipoPadrao"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
-                    </details>
-                </div>
-                <button type="submit" class="btn-add btn-dark">+ CADASTRAR</button>
-            </form>
-        </div>
-
-        <div class="card">
-            <div class="catalog-header">
-                <h2 class="card-title">Catálogo / Estoque <span id="carregandoEstampas">Lendo...</span></h2>
+    <div class="card">
+        <div class="catalog-header">
+            <h2 class="card-title">Catálogo / Estoque <span id="carregandoEstampas" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
+            <div class="cliente-head-actions">
                 <input type="text" id="filtroEstampas" placeholder="🔎 Buscar por código ou nome" oninput="filtrarCatalogo()">
+                <button class="btn-add btn-dark" onclick="abrirModalNovaEstampa()">+ Nova Estampa</button>
             </div>
-            <div id="catalogoEstampas" class="catalog-grid"></div>
         </div>
+        <div id="catalogoEstampas" class="catalog-grid"></div>
     </div>
 </div>
 
 <div id="aba-clientes" class="container" style="display: none;">
     <div class="card">
         <div class="catalog-header">
-            <h2 class="card-title">Fichas de Clientes <span id="carregandoClientes">Lendo...</span></h2>
+            <h2 class="card-title">Fichas de Clientes <span id="carregandoClientes" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
             <div class="cliente-head-actions">
                 <input type="text" id="filtroClientes" placeholder="🔎 Buscar por nome, whatsapp, cidade ou documento" oninput="filtrarClientes()">
-                <button class="btn-add" onclick="abrirCadastroCliente()">+ Novo Cliente</button>
+                <button class="btn-add btn-dark" onclick="abrirCadastroCliente()">+ Novo Cliente</button>
             </div>
         </div>
         <div id="listaClientes" class="clientes-grid"></div>
@@ -240,8 +222,33 @@
     </div>
 </div>
 
+<div id="modalNovaEstampa" class="modal-overlay">
+    <div class="modal-box" style="max-width: 800px;">
+        <button class="btn-close-modal" onclick="fecharModalNovaEstampa()">X</button>
+        <h2 class="card-title">Cadastrar Estampa</h2>
+        <form id="formNovaEstampa" onsubmit="salvarNovaEstampa(event)">
+            <div class="form-grid cols-2">
+                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" required>
+                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required>
+            </div>
+            <div class="form-grid cols-3">
+                <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
+                <input type="number" id="cadEstoqueEstampa" placeholder="QTD ESTOQUE" required>
+                <select id="cadTipoPadrao">
+                    <option value="">TIPO PADRÃO (OPCIONAL)</option>
+                    <option value="OVERSIZED">OVERSIZED</option>
+                    <option value="MOLETOM">MOLETOM</option>
+                    <option value="REGATA">REGATA</option>
+                    <option value="ACESSÓRIO">ACESSÓRIO</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">CADASTRAR NO CATÁLOGO</button>
+        </form>
+    </div>
+</div>
+
 <div id="modalCatalogo" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 800px;">
         <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
         <h2 class="card-title">Editar Item do Catálogo</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
@@ -251,10 +258,13 @@
                 <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
                 <input type="number" id="editCatalogoEstoque" placeholder="QTD ESTOQUE" required>
             </div>
-            <details class="sanfona-tipo" open>
-                <summary>Tipo padrão</summary>
-                <select id="editCatalogoTipo"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
-            </details>
+            <select id="editCatalogoTipo" style="margin-top: 10px;">
+                <option value="">TIPO PADRÃO (OPCIONAL)</option>
+                <option value="OVERSIZED">OVERSIZED</option>
+                <option value="MOLETOM">MOLETOM</option>
+                <option value="REGATA">REGATA</option>
+                <option value="ACESSÓRIO">ACESSÓRIO</option>
+            </select>
             <button type="submit" class="btn-primary" style="margin-top: 1rem;">SALVAR ALTERAÇÕES</button>
         </form>
     </div>
