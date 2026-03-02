@@ -391,3 +391,123 @@ select:focus {
     .navbar h1 { font-size: 1.5rem; }
     .tab-menu { flex-direction: column; }
 }
+
+.filtros-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filtros-container #inputBusca {
+    flex: 1;
+    min-width: 260px;
+}
+
+.botoes-filtro {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.btn-filtro {
+    border: 2px solid #111827;
+    background: #fff;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+}
+
+.btn-filtro.ativo {
+    background: #111827;
+    color: #fff;
+}
+
+.pedido-card-v2 {
+    background: #fff;
+    border: 2px solid #111827;
+    border-radius: 14px;
+    box-shadow: 4px 4px 0 #111827;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.pedido-card-v2 p {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+.pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.2rem;
+}
+
+.pedido-badge {
+    font-size: 0.7rem;
+    font-weight: 900;
+    border-radius: 999px;
+    padding: 0.28rem 0.55rem;
+    white-space: nowrap;
+}
+
+.badge-default { background: #dbeafe; color: #1e3a8a; }
+.badge-pendente { background: #fff7ed; color: #9a3412; }
+.badge-estampa { background: #ede9fe; color: #5b21b6; }
+.badge-enviado { background: #dcfce7; color: #166534; }
+
+.catalog-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.catalog-tag {
+    background: #111827;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.22rem 0.5rem;
+}
+
+
+.catalog-price {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #065f46;
+}
+
+.catalog-type {
+    margin: 0;
+    color: #374151;
+    font-size: 0.8rem;
+}
+
+.catalog-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.catalog-edit {
+    flex: 1;
+    border: 1px solid #111827;
+    color: #111827;
+    background: #fff;
+    padding: 0.45rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.catalog-delete {
+    flex: 1;
+}
