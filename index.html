@@ -44,8 +44,9 @@
                 <input type="text" id="cidade" placeholder="CIDADE">
                 <input type="text" id="estado" placeholder="UF" maxlength="2">
             </div>
-            <div class="form-grid cols-2">
+            <div class="form-grid cols-3">
                 <input type="text" id="endereco" placeholder="ENDEREÇO / RUA E NÚMERO">
+                <input type="text" id="complemento" placeholder="COMPLEMENTO (Ex: Apto 32)">
                 <input type="text" id="referencia" placeholder="PONTO DE REFERÊNCIA">
             </div>
             <div class="form-grid cols-3">
@@ -83,7 +84,10 @@
             <div class="form-section-title">Resumo do pedido</div>
             <div id="listaCarrinho"></div>
         </div>
-        <button type="button" id="btnSalvarPedido" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+        <div class="form-grid cols-2" style="margin-top: 1rem;">
+            <button type="button" class="btn-primary btn-delete" style="box-shadow: 4px 4px 0 #dc2626;" onclick="limparLancarDrop()">LIXEIRA / LIMPAR TUDO</button>
+            <button type="button" id="btnSalvarPedido" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+        </div>
     </div>
 </div>
 
@@ -167,8 +171,9 @@
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
                 <input type="text" id="clienteEstado" placeholder="UF">
             </div>
-            <div class="form-grid cols-2">
+            <div class="form-grid cols-3">
                 <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
+                <input type="text" id="clienteComplemento" placeholder="COMPLEMENTO">
                 <input type="text" id="clienteReferencia" placeholder="PONTO DE REFERÊNCIA">
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR CLIENTE</button>
@@ -189,6 +194,49 @@
         <button class="btn-close-modal" onclick="fecharFichaPedido()">X</button>
         <h2 class="card-title" id="fichaPedidoTitulo">Detalhes do Pedido</h2>
         <div id="fichaPedidoConteudo"></div>
+    </div>
+</div>
+
+<div id="modalEditarPedidoCompleto" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharModalEditarPedido()">X</button>
+        <h2 class="card-title">Editar Pedido</h2>
+        <div class="form-section">
+            <div class="form-grid cols-3">
+                <input type="text" id="editPedNome" placeholder="NOME COMPLETO">
+                <input type="text" id="editPedWhatsapp" placeholder="WHATSAPP">
+                <input type="text" id="editPedInstagram" placeholder="INSTAGRAM">
+            </div>
+            <div class="form-grid cols-4">
+                <input type="text" id="editPedCpf" placeholder="CPF/CNPJ">
+                <input type="text" id="editPedCep" placeholder="CEP">
+                <input type="text" id="editPedCidade" placeholder="CIDADE">
+                <input type="text" id="editPedEstado" placeholder="UF">
+            </div>
+            <div class="form-grid cols-3">
+                <input type="text" id="editPedEndereco" placeholder="ENDEREÇO">
+                <input type="text" id="editPedComplemento" placeholder="COMPLEMENTO">
+                <input type="text" id="editPedReferencia" placeholder="REFERÊNCIA">
+            </div>
+            <div class="form-grid cols-3">
+                <input type="text" id="editPedValorTotal" class="moeda" placeholder="VALOR TOTAL" readonly>
+                <select id="editPedMetodo">
+                    <option value="PIX">PIX</option>
+                    <option value="CARTÃO">CARTÃO</option>
+                    <option value="DINHEIRO">DINHEIRO / BOLETO</option>
+                </select>
+                <select id="editPedStatusPagamento">
+                    <option value="PAGO">PAGO</option>
+                    <option value="PENDENTE">PENDENTE</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
+            <div class="form-section-title">Itens do Pedido</div>
+            <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
+        </div>
+        <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
     </div>
 </div>
 
