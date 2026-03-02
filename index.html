@@ -26,6 +26,7 @@
     <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
     <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Fila de Produção</button>
     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
+    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🧾 Fichas de Clientes</button>
 </div>
 
 <div id="aba-cadastro" class="container">
@@ -130,6 +131,17 @@
             </div>
             <div id="catalogoEstampas" class="catalog-grid"></div>
         </div>
+    </div>
+</div>
+
+
+<div id="aba-clientes" class="container" style="display: none;">
+    <div class="card">
+        <div class="catalog-header">
+            <h2 class="card-title">Fichas de Clientes <span id="carregandoClientes">Lendo...</span></h2>
+            <input type="text" id="filtroClientes" placeholder="🔎 Buscar por nome, whatsapp, cidade ou documento" oninput="filtrarClientes()">
+        </div>
+        <div id="listaClientes" class="clientes-grid"></div>
     </div>
 </div>
 

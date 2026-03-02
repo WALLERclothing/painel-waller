@@ -22,6 +22,7 @@ const db = firebase.firestore();
 let estampasCache = [];
 let carrinhoTemporario = [];
 let pedidosCache = [];
+let clientesCache = [];
 let filtroAtual = 'TODOS';
 
 function formatCurrency(num) {
@@ -61,10 +62,12 @@ function mudarAba(aba) {
     el('aba-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
     el('aba-producao').style.display = aba === 'producao' ? 'block' : 'none';
     el('aba-estampas').style.display = aba === 'estampas' ? 'block' : 'none';
+    el('aba-clientes').style.display = aba === 'clientes' ? 'block' : 'none';
 
     el('tabCadastroBtn').classList.toggle('tab-active', aba === 'cadastro');
     el('tabProducaoBtn').classList.toggle('tab-active', aba === 'producao');
     el('tabEstampasBtn').classList.toggle('tab-active', aba === 'estampas');
+    el('tabClientesBtn').classList.toggle('tab-active', aba === 'clientes');
 
     el('btnGerarPDF').style.display = aba === 'producao' ? 'block' : 'none';
 }
@@ -230,6 +233,77 @@ function filtrarCatalogo() {
     renderCatalogo(filtradas);
 }
 
+
+function extrairClientesDosPedidos(pedidos = []) {
+    const mapa = new Map();
+
+    pedidos.forEach((pedido) => {
+        const chave = upper(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
+        if (!chave) return;
+
+        const atual = mapa.get(chave) || {
+            nome: upper(pedido.nome),
+            whatsapp: upper(pedido.whatsapp),
+            instagram: upper(pedido.instagram),
+            documento: upper(pedido.documento),
+            cidade: upper(pedido.cidade),
+            estado: upper(pedido.estado),
+            endereco: upper(pedido.endereco),
+            referencia: upper(pedido.referencia),
+            cep: upper(pedido.cep),
+            totalPedidos: 0,
+            totalGasto: 0,
+            ultimaCompra: null
+        };
+
+        atual.totalPedidos += 1;
+        atual.totalGasto += Number(pedido.valorTotal) || 0;
+
+        const data = pedido.dataCriacao && (pedido.dataCriacao.toDate ? pedido.dataCriacao.toDate() : new Date(pedido.dataCriacao));
+        if (data && (!atual.ultimaCompra || data > atual.ultimaCompra)) atual.ultimaCompra = data;
+
+        mapa.set(chave, atual);
+    });
+
+    clientesCache = Array.from(mapa.values()).sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+function renderClientes(lista = clientesCache) {
+    const container = el('listaClientes');
+    container.innerHTML = '';
+
+    if (!lista.length) {
+        container.innerHTML = '<div class="catalog-empty">Nenhum cliente encontrado.</div>';
+        return;
+    }
+
+    lista.forEach((cliente) => {
+        container.innerHTML += `
+            <article class="cliente-card">
+                <h3>${cliente.nome || 'SEM NOME'}</h3>
+                <p><strong>Whatsapp:</strong> ${cliente.whatsapp || '-'}</p>
+                <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
+                <p><strong>Documento:</strong> ${cliente.documento || '-'}</p>
+                <p><strong>Cidade:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
+                <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `• ${cliente.referencia}` : ''}</p>
+                <div class="cliente-stats">
+                    <span>${cliente.totalPedidos} pedido(s)</span>
+                    <span>${formatCurrency(cliente.totalGasto)}</span>
+                    <span>Última compra: ${cliente.ultimaCompra ? cliente.ultimaCompra.toLocaleDateString('pt-BR') : '-'}</span>
+                </div>
+            </article>`;
+    });
+}
+
+function filtrarClientes() {
+    const busca = upper(el('filtroClientes').value);
+    const filtrados = clientesCache.filter((cliente) => {
+        const blob = `${cliente.nome} ${cliente.whatsapp} ${cliente.instagram} ${cliente.documento} ${cliente.cidade} ${cliente.estado} ${cliente.endereco}`;
+        return upper(blob).includes(busca);
+    });
+    renderClientes(filtrados);
+}
+
 function renderPedidosGrid(lista) {
     const container = el('gridPedidosContainer');
     container.innerHTML = '';
@@ -347,7 +421,10 @@ function carregarPedidosTempoReal() {
 
         atualizarDashboard(pedidosCache);
         aplicarFiltros();
+        extrairClientesDosPedidos(pedidosCache);
+        renderClientes();
         el('carregando').style.display = 'none';
+        el('carregandoClientes').style.display = 'none';
     }, (error) => {
         console.error(error);
         el('carregando').textContent = 'Erro ao sincronizar pedidos';

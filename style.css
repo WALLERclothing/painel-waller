@@ -511,3 +511,42 @@ select:focus {
 .catalog-delete {
     flex: 1;
 }
+
+.clientes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.cliente-card {
+    border: 2px solid #111827;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 4px 4px 0 #111827;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.cliente-card h3 {
+    margin: 0 0 0.2rem 0;
+    font-size: 1rem;
+}
+
+.cliente-card p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.cliente-stats {
+    margin-top: 0.4rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #9ca3af;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #0f172a;
+}
