@@ -9,15 +9,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<button class="fab-mobile" onclick="mudarAba('cadastro')">+</button>
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
         <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙 Tema escuro</button>
-        <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar Relatório</button>
+        <button class="btn-theme" onclick="abrirModalRelatorios()">🖨️ Relatórios</button>
     </div>
 </nav>
 
@@ -88,7 +90,7 @@
             <div id="listaCarrinho"></div>
         </div>
         <div class="form-grid cols-2" style="margin-top: 1rem;">
-            <button type="button" class="btn-primary btn-delete" style="box-shadow: 4px 4px 0 #dc2626;" onclick="limparLancarDrop()">LIXEIRA / LIMPAR TUDO</button>
+            <button type="button" class="btn-primary btn-delete" style="box-shadow: 4px 4px 0 #dc2626;" onclick="limparLancarDrop(true)">LIXEIRA / LIMPAR TUDO</button>
             <button type="button" id="btnSalvarPedido" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
         </div>
     </div>
@@ -102,14 +104,8 @@
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
     
-    <div class="card" style="margin-bottom: 1rem; padding: 1rem;">
-        <h3 class="form-section-title" style="margin-bottom: 10px;">Faturamento (Últimos 7 dias)</h3>
-        <div style="height: 180px; width: 100%;">
-            <canvas id="graficoFaturamento"></canvas>
-        </div>
-    </div>
-
-    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com o banco...</span></h2>
+    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando...</span></h2>
+    
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
         <div class="botoes-filtro">
@@ -119,7 +115,23 @@
             <button class="btn-filtro" id="filtro-envio" onclick="setFiltroBtn('EM ENVIO')">Em Envio</button>
         </div>
     </div>
-    <div class="kanban-board" id="gridPedidosContainer"></div>
+
+    <div id="bulkBar" class="bulk-bar" style="display:none;">
+        <div style="font-weight: 800;"><span id="bulkCount">0</span> pedido(s) selecionado(s)</div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            <select id="bulkStatusTarget" style="padding:0.3rem; border-radius:6px; font-size:0.8rem;">
+                <option value="AGUARDANDO PAGAMENTO">AGUARDANDO PAGAMENTO</option>
+                <option value="EM SEPARAÇÃO">EM SEPARAÇÃO</option>
+                <option value="ENVIO EFETUADO">ENVIO EFETUADO</option>
+                <option value="PEDIDO ENTREGUE">PEDIDO ENTREGUE</option>
+            </select>
+            <button class="btn-add btn-dark" style="padding:0.4rem 1rem;" onclick="avancarSelecionados()">Mover Selecionados</button>
+        </div>
+    </div>
+
+    <div class="kanban-board" id="gridPedidosContainer">
+        <div class="skeleton" style="width:100%;"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+    </div>
 </div>
 
 <div id="aba-estampas" class="container" style="display: none;">
@@ -148,6 +160,18 @@
     </div>
 </div>
 
+<div id="modalRelatorios" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px; text-align: center;">
+        <button class="btn-close-modal" onclick="fecharModalRelatorios()">X</button>
+        <h2 class="card-title">Relatórios PDF</h2>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:1.5rem;">
+            <button class="btn-primary" onclick="gerarPDFProducao()">Relatório: Fila de Produção</button>
+            <button class="btn-primary" style="background:#475569;" onclick="gerarPDFCatalogo()">Relatório: Catálogo e Estoque</button>
+            <button class="btn-primary" style="background:#166534;" onclick="gerarPDFClientes()">Relatório: Lista de Clientes VIP</button>
+        </div>
+    </div>
+</div>
+
 <div id="modalCliente" class="modal-overlay">
     <div class="modal-box">
         <button class="btn-close-modal" onclick="fecharCadastroCliente()">X</button>
@@ -169,6 +193,9 @@
                 <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
                 <input type="text" id="clienteComplemento" placeholder="COMPLEMENTO">
                 <input type="text" id="clienteReferencia" placeholder="PONTO DE REFERÊNCIA">
+            </div>
+            <div class="form-grid cols-1">
+                <textarea id="clienteNotas" placeholder="Notas internas privadas sobre este cliente..." rows="3" style="width:100%; border:2px solid #1f2937; border-radius:10px; padding:0.75rem; font-family:inherit;"></textarea>
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR CLIENTE</button>
         </form>
@@ -242,7 +269,7 @@
             <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
             <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: #d90429;">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
         </div>
-        <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO E ESTOQUE</button>
+        <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
     </div>
 </div>
 
@@ -282,7 +309,7 @@
 <div id="modalCatalogo" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px;">
         <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
-        <h2 class="card-title">Editar Produto do Catálogo</h2>
+        <h2 class="card-title">Editar Produto</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
             <div class="form-grid cols-2">
