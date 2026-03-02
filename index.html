@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waller Clothing | Painel</title>
-
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -161,9 +157,9 @@
         <h2 class="card-title">Novo/Editar Cliente</h2>
         <form id="formCliente" onsubmit="salvarCliente(event)">
             <div class="form-grid cols-3">
-                <input type="text" id="clienteNome" placeholder="NOME" required>
-                <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP" required>
-                <input type="text" id="clienteInstagram" placeholder="INSTAGRAM">
+                <input type="text" id="clienteNome" placeholder="NOME COMPLETO DO CLIENTE" required>
+                <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP (Ex: 11999999999)" required>
+                <input type="text" id="clienteInstagram" placeholder="INSTAGRAM (OPCIONAL)">
             </div>
             <div class="form-grid cols-4">
                 <input type="text" id="clienteDocumento" placeholder="CPF/CNPJ">
@@ -171,10 +167,9 @@
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
                 <input type="text" id="clienteEstado" placeholder="UF">
             </div>
-            <div class="form-grid cols-3">
-                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO">
-                <input type="text" id="clienteReferencia" placeholder="REFERÊNCIA">
-                <input type="date" id="clienteAniversario" title="Aniversário do cliente">
+            <div class="form-grid cols-2">
+                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
+                <input type="text" id="clienteReferencia" placeholder="PONTO DE REFERÊNCIA">
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR CLIENTE</button>
         </form>
@@ -184,4 +179,39 @@
 <div id="modalFichaCliente" class="modal-overlay">
     <div class="modal-box">
         <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
-        <h2 class="card-title" id="fichaClienteTitulo">Ficha
+        <h2 class="card-title" id="fichaClienteTitulo">Ficha do Cliente</h2>
+        <div id="fichaClienteConteudo"></div>
+    </div>
+</div>
+
+<div id="modalFichaPedido" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharFichaPedido()">X</button>
+        <h2 class="card-title" id="fichaPedidoTitulo">Detalhes do Pedido</h2>
+        <div id="fichaPedidoConteudo"></div>
+    </div>
+</div>
+
+<div id="modalCatalogo" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
+        <h2 class="card-title">Editar Item do Catálogo</h2>
+        <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
+            <input type="hidden" id="editCatalogoCodigo">
+            <div class="form-grid cols-3">
+                <input type="text" id="editCatalogoNome" placeholder="NOME DA ESTAMPA" required>
+                <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
+                <input type="number" id="editCatalogoEstoque" placeholder="QTD ESTOQUE" required>
+            </div>
+            <details class="sanfona-tipo" open>
+                <summary>Tipo padrão</summary>
+                <select id="editCatalogoTipo"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
+            </details>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">SALVAR ALTERAÇÕES</button>
+        </form>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
