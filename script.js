@@ -2,6 +2,8 @@
 :root { 
     --brand-red: #ef4444; 
     --brand-red-hover: #dc2626; 
+    --page-horizontal-padding: 30px;
+    --page-content-padding: 30px;
     --bg-main: #121212; 
     --bg-col: #1e1e1e; 
     --bg-card: #2d2d2d; 
@@ -38,10 +40,18 @@ body {
     overflow: hidden; 
     transition: background-color 0.3s; 
 }
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: 'Montserrat', sans-serif;
+}
 body.no-scroll { overflow: hidden !important; height: 100vh !important; touch-action: none; }
 
 /* CABEÇALHO E MENU */
-.top-bar { background-color: var(--bg-col); display: flex; align-items: center; justify-content: space-between; padding: 15px 30px; border-bottom: 1px solid var(--border-color); position: relative; z-index: 10; transition: background-color 0.3s; }
+.top-bar { background-color: var(--bg-col); display: flex; align-items: center; justify-content: space-between; padding: 15px var(--page-horizontal-padding); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10; transition: background-color 0.3s; }
 .top-bar-left { display: flex; align-items: center; gap: 15px; }
 .top-bar-logo { width: 45px; height: 45px; object-fit: contain; }
 .top-bar-brand-text { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
@@ -71,14 +81,14 @@ body.no-scroll { overflow: hidden !important; height: 100vh !important; touch-ac
 .filter-option input { accent-color: var(--brand-red); width: 16px; height: 16px; cursor: pointer;}
 
 /* WORKSPACES E QUADRO */
-.workspace-bar { background-color: var(--bg-col); padding: 12px 30px; display: flex; gap: 10px; border-bottom: 2px solid var(--brand-red); box-shadow: 0 4px 12px rgba(0,0,0,0.2); overflow-x: auto; scrollbar-width: none; align-items: center; transition: 0.3s; }
+.workspace-bar { background-color: var(--bg-col); padding: 12px var(--page-horizontal-padding); display: flex; gap: 10px; border-bottom: 2px solid var(--brand-red); box-shadow: 0 4px 12px rgba(0,0,0,0.2); overflow-x: auto; scrollbar-width: none; align-items: center; transition: 0.3s; }
 .workspace-bar::-webkit-scrollbar { display: none; }
 .ws-tab { background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; white-space: nowrap; display: flex; align-items: center; font-family: inherit; }
 .ws-tab:hover { border-color: #52525b; color: var(--text-main); } 
 .ws-tab.active { background: var(--brand-red); border-color: var(--brand-red); color: white; }
 .ws-add-btn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; font-family: inherit; }
 
-.board { display: flex; gap: 20px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; padding: 30px; height: calc(100vh - 140px); box-sizing: border-box; }
+.board { display: flex; gap: 20px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; padding: var(--page-content-padding); height: calc(100vh - 140px); box-sizing: border-box; }
 .column { background: var(--bg-col); width: 320px; min-width: 320px; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; transition: 0.3s; max-height: 100%; box-sizing: border-box; }
 .column-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-shrink: 0; }
 .column-header h3 { margin: 0; font-size: 16px; font-weight: 800; flex-grow: 1; outline: none; }
@@ -206,7 +216,7 @@ button { font-family: inherit; cursor: pointer; }
 .add-card-btn { background: none; border: none; color: var(--text-muted); padding-top: 12px; text-align: left; font-size: 13px; font-weight: 600; } 
 .add-card-btn:hover { color: var(--text-main); }
 
-.calendar-container { padding: 30px; display: none; flex-direction: column; gap: 20px; min-height: calc(100vh - 140px); }
+.calendar-container { padding: var(--page-content-padding); display: none; flex-direction: column; gap: 20px; min-height: calc(100vh - 140px); }
 .calendar-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-col); padding: 15px 25px; border-radius: 10px; border: 1px solid var(--border-color); }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
 .cal-day-header { text-align: center; font-weight: 800; color: var(--text-muted); font-size: 12px; text-transform: uppercase; padding-bottom: 10px; }
@@ -294,6 +304,11 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 @media (max-width: 768px) {
+    :root {
+        --page-horizontal-padding: 15px;
+        --page-content-padding: 15px;
+    }
+
     .top-bar-clock {
         margin-left: auto;
         padding-left: 0;
@@ -302,15 +317,15 @@ button { font-family: inherit; cursor: pointer; }
         align-items: center; 
     }
     
-    .top-bar { flex-direction: column; align-items: stretch; padding: 12px 15px; gap: 15px; }
+    .top-bar { flex-direction: column; align-items: stretch; padding: 12px var(--page-horizontal-padding); gap: 15px; }
     .top-bar-left { width: 100%; justify-content: flex-start; gap: 12px; }
     .top-bar-logo { width: 38px; height: 38px; }
     .top-bar-right { width: 100%; justify-content: space-between; gap: 10px; flex-wrap: wrap;}
     .search-input { max-width: 100% !important; flex-grow: 1; }
-    .workspace-bar { padding: 10px 15px; } 
-    .board { padding: 15px; } 
+    .workspace-bar { padding: 10px var(--page-horizontal-padding); } 
+    .board { padding: var(--page-content-padding); } 
     .column { width: 85vw; min-width: 85vw; }
-    .calendar-container { padding: 15px; } 
+    .calendar-container { padding: var(--page-content-padding); } 
     .calendar-grid { grid-template-columns: 1fr; gap: 5px; }
     .cal-day-header { display: none; } 
     .cal-cell { min-height: 80px; flex-direction: row; flex-wrap: wrap; }
