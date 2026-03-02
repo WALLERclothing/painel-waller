@@ -562,6 +562,21 @@
 
 <script>
 
+    const el = (id) => document.getElementById(id);
+    const STATUS_CLASS_MAP = {
+        'PEDIDO FEITO': 'status-pedido-feito',
+        'AGUARDANDO ESTAMPA': 'status-aguardando',
+        'ESTAMPA PRONTA': 'status-estampa-pronta',
+        'PEDIDO ENVIADO': 'status-pedido-enviado',
+        'PEDIDO ENTREGUE': 'status-pedido-entregue'
+    };
+
+    const FILTRO_BTN_MAP = {
+        TODOS: 'filtro-todos',
+        PENDENTE_PGTO: 'filtro-pendente',
+        'AGUARDANDO ESTAMPA': 'filtro-estampa'
+    };
+
     // ==========================================
 
     // FORMATAÇÃO E UTILITÁRIOS
@@ -646,9 +661,9 @@
 
     }
 
-    document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
+    el('whatsapp').addEventListener('input', aplicarMascaraTelefone);
 
-    document.getElementById('editWhatsapp').addEventListener('input', aplicarMascaraTelefone);
+    el('editWhatsapp').addEventListener('input', aplicarMascaraTelefone);
 
 
 
@@ -720,9 +735,9 @@
 
     db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
 
-        document.getElementById('carregandoEstampas').style.display = 'none';
+        el('carregandoEstampas').style.display = 'none';
 
-        document.getElementById('listaEstampas').innerHTML = '';
+        el('listaEstampas').innerHTML = '';
 
         catalogoEstampas = {}; 
 
@@ -732,7 +747,7 @@
 
             catalogoEstampas[estampa.codigo] = estampa.nome;
 
-            document.getElementById('listaEstampas').innerHTML += `<tr><td><strong>${estampa.codigo}</strong></td><td>${estampa.nome}</td><td><button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')">X</button></td></tr>`;
+            el('listaEstampas').innerHTML += `<tr><td><strong>${estampa.codigo}</strong></td><td>${estampa.nome}</td><td><button class="btn-icone btn-excluir" onclick="excluirEstampa('${doc.id}')">X</button></td></tr>`;
 
         });
 
@@ -744,13 +759,13 @@
 
         e.preventDefault();
 
-        let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
+        let cod = el('cadCodigoEstampa').value.toUpperCase().trim();
 
-        let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
+        let nom = el('cadNomeEstampa').value.toUpperCase().trim();
 
         db.collection("estampas").doc(cod).set({ codigo: cod, nome: nom })
 
-        .then(() => { document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadCodigoEstampa').focus(); });
+        .then(() => { el('cadCodigoEstampa').value = ''; el('cadNomeEstampa').value = ''; el('cadCodigoEstampa').focus(); });
 
     }
 
@@ -758,17 +773,17 @@
 
 
 
-    document.getElementById('codigoEstampa').addEventListener('input', function(e) {
+    el('codigoEstampa').addEventListener('input', function(e) {
 
         let cod = e.target.value.toUpperCase().trim();
 
-        if(catalogoEstampas[cod]) document.getElementById('nomeEstampa').value = catalogoEstampas[cod];
+        if(catalogoEstampas[cod]) el('nomeEstampa').value = catalogoEstampas[cod];
 
     });
 
     
 
-    document.getElementById('editItensContainer').addEventListener('input', function(e) {
+    el('editItensContainer').addEventListener('input', function(e) {
 
         if(e.target.classList.contains('edit-cod')) {
 
@@ -800,19 +815,19 @@
 
     function adicionarAoCarrinho() {
 
-        const cod = document.getElementById('codigoEstampa').value.toUpperCase().trim();
+        const cod = el('codigoEstampa').value.toUpperCase().trim();
 
-        const nom = document.getElementById('nomeEstampa').value.toUpperCase().trim();
+        const nom = el('nomeEstampa').value.toUpperCase().trim();
 
-        const tip = document.getElementById('tipoPeca').value;
+        const tip = el('tipoPeca').value;
 
-        const tam = document.getElementById('tamanho').value;
+        const tam = el('tamanho').value;
 
-        const cor = document.getElementById('cor').value;
+        const cor = el('cor').value;
 
-        const val = unmaskCurrency(document.getElementById('valorUnitario').value);
+        const val = unmaskCurrency(el('valorUnitario').value);
 
-        const qtd = document.getElementById('quantidade').value;
+        const qtd = el('quantidade').value;
 
 
 
@@ -824,7 +839,7 @@
 
         atualizarTelaCarrinho();
 
-        document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('codigoEstampa').focus();
+        el('codigoEstampa').value = ''; el('nomeEstampa').value = ''; el('codigoEstampa').focus();
 
     }
 
@@ -836,7 +851,7 @@
 
     function atualizarTelaCarrinho() {
 
-        let somaCarrinho = 0; document.getElementById('listaCarrinho').innerHTML = '';
+        let somaCarrinho = 0; el('listaCarrinho').innerHTML = '';
 
         carrinhoTemporario.forEach((peca, index) => {
 
@@ -844,7 +859,7 @@
 
             let valFormat = formatCurrency(peca.valorUnitario);
 
-            document.getElementById('listaCarrinho').innerHTML += `
+            el('listaCarrinho').innerHTML += `
 
                 <div class="carrinho-item">
 
@@ -856,9 +871,9 @@
 
         });
 
-        document.getElementById('valorTotal').value = formatCurrency(somaCarrinho);
+        el('valorTotal').value = formatCurrency(somaCarrinho);
 
-        document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
+        el('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 
     }
 
@@ -866,15 +881,15 @@
 
     async function salvarPedidoCompleto() {
 
-        let nome = document.getElementById('nome').value.toUpperCase();
+        let nome = el('nome').value.toUpperCase();
 
-        let whatsapp = document.getElementById('whatsapp').value;
+        let whatsapp = el('whatsapp').value;
 
-        let valorTotal = unmaskCurrency(document.getElementById('valorTotal').value);
+        let valorTotal = unmaskCurrency(el('valorTotal').value);
 
-        let metodo = document.getElementById('metodoPagamento').value;
+        let metodo = el('metodoPagamento').value;
 
-        let statusPgto = document.getElementById('statusPagamento').value;
+        let statusPgto = el('statusPagamento').value;
 
 
 
@@ -884,7 +899,7 @@
 
 
 
-        document.getElementById('carregando').style.display = 'inline'; document.getElementById('carregando').innerText = 'Salvando pedido...';
+        el('carregando').style.display = 'inline'; el('carregando').innerText = 'Salvando pedido...';
 
         let numeroGerado = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -902,7 +917,7 @@
 
             });
 
-            document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('valorTotal').value = '';
+            el('nome').value = ''; el('whatsapp').value = ''; el('valorTotal').value = '';
 
             carrinhoTemporario = []; atualizarTelaCarrinho();
 
@@ -922,7 +937,7 @@
 
     db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
 
-        document.getElementById('carregando').style.display = 'none'; 
+        el('carregando').style.display = 'none'; 
 
         todosPedidos = []; 
 
@@ -984,13 +999,13 @@
 
 
 
-        document.getElementById('dashPedidosMes').innerText = metricas.pedMes;
+        el('dashPedidosMes').innerText = metricas.pedMes;
 
-        document.getElementById('dashFilaEstampa').innerText = metricas.filaEstampa;
+        el('dashFilaEstampa').innerText = metricas.filaEstampa;
 
-        document.getElementById('dashEnviar').innerText = metricas.paraEnviar;
+        el('dashEnviar').innerText = metricas.paraEnviar;
 
-        document.getElementById('dashFaturamento').innerText = formatCurrency(metricas.faturamento);
+        el('dashFaturamento').innerText = formatCurrency(metricas.faturamento);
 
 
 
@@ -1006,11 +1021,8 @@
 
         document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('ativo'));
 
-        if(tipo === 'TODOS') document.getElementById('filtro-todos').classList.add('ativo');
-
-        if(tipo === 'PENDENTE_PGTO') document.getElementById('filtro-pendente').classList.add('ativo');
-
-        if(tipo === 'AGUARDANDO ESTAMPA') document.getElementById('filtro-estampa').classList.add('ativo');
+        const filtroId = FILTRO_BTN_MAP[tipo];
+        if (filtroId) el(filtroId).classList.add('ativo');
 
         aplicarFiltros();
 
@@ -1020,9 +1032,9 @@
 
     function aplicarFiltros() {
 
-        let termo = document.getElementById('inputBusca').value.toUpperCase();
+        let termo = el('inputBusca').value.toUpperCase();
 
-        let container = document.getElementById('gridPedidosContainer');
+        let container = el('gridPedidosContainer');
 
         container.innerHTML = '';
 
@@ -1058,17 +1070,7 @@
 
         pedidosFiltrados.forEach(pedido => {
 
-            let classeLogistica = 'select-status ';
-
-            if(pedido.statusAtualizado === 'PEDIDO FEITO') classeLogistica += 'status-pedido-feito';
-
-            else if(pedido.statusAtualizado === 'AGUARDANDO ESTAMPA') classeLogistica += 'status-aguardando';
-
-            else if(pedido.statusAtualizado === 'ESTAMPA PRONTA') classeLogistica += 'status-estampa-pronta';
-
-            else if(pedido.statusAtualizado === 'PEDIDO ENVIADO') classeLogistica += 'status-pedido-enviado';
-
-            else if(pedido.statusAtualizado === 'PEDIDO ENTREGUE') classeLogistica += 'status-pedido-entregue';
+            let classeLogistica = `select-status ${STATUS_CLASS_MAP[pedido.statusAtualizado] || ''}`.trim();
 
 
 
@@ -1240,27 +1242,27 @@
 
         const p = todosPedidos.find(x => x.id === id); if(!p) return;
 
-        document.getElementById('editId').value = p.id;
+        el('editId').value = p.id;
 
-        document.getElementById('tituloEditPedido').innerText = "#" + p.numeroPedido;
+        el('tituloEditPedido').innerText = "#" + p.numeroPedido;
 
-        document.getElementById('editNome').value = p.nome || '';
+        el('editNome').value = p.nome || '';
 
-        document.getElementById('editWhatsapp').value = p.whatsapp || '';
+        el('editWhatsapp').value = p.whatsapp || '';
 
-        document.getElementById('editValorTotal').value = formatCurrency(p.valorTotal || 0);
+        el('editValorTotal').value = formatCurrency(p.valorTotal || 0);
 
-        if(p.metodoPagamento) document.getElementById('editMetodoPagamento').value = p.metodoPagamento;
+        if(p.metodoPagamento) el('editMetodoPagamento').value = p.metodoPagamento;
 
         
 
-        let container = document.getElementById('editItensContainer'); container.innerHTML = '';
+        let container = el('editItensContainer'); container.innerHTML = '';
 
         p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
 
         
 
-        document.getElementById('modalEdicao').style.display = 'flex';
+        el('modalEdicao').style.display = 'flex';
 
         recalcularSomaEdicao(); 
 
@@ -1274,7 +1276,7 @@
 
         tempDiv.innerHTML = gerarHtmlLinhaEdicao({ codigoEstampa: "", nomeEstampa: "", tipoPeca: "OVERSIZED", tamanho: "G", cor: "PRETA", valorUnitario: 0, quantidade: 1 });
 
-        document.getElementById('editItensContainer').appendChild(tempDiv.firstElementChild);
+        el('editItensContainer').appendChild(tempDiv.firstElementChild);
 
         recalcularSomaEdicao();
 
@@ -1366,19 +1368,19 @@
 
         });
 
-        document.getElementById('editValorTotal').value = formatCurrency(soma);
+        el('editValorTotal').value = formatCurrency(soma);
 
     }
 
 
 
-    function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
+    function fecharModalEdicao() { el('modalEdicao').style.display = 'none'; }
 
 
 
     function salvarAlteracoesEdicao() {
 
-        const id = document.getElementById('editId').value;
+        const id = el('editId').value;
 
         let itens = [];
 
@@ -1408,19 +1410,19 @@
 
 
 
-        let valorTotalCalculado = unmaskCurrency(document.getElementById('editValorTotal').value);
+        let valorTotalCalculado = unmaskCurrency(el('editValorTotal').value);
 
 
 
         db.collection("pedidos").doc(id).update({
 
-            nome: document.getElementById('editNome').value.toUpperCase(),
+            nome: el('editNome').value.toUpperCase(),
 
-            whatsapp: document.getElementById('editWhatsapp').value,
+            whatsapp: el('editWhatsapp').value,
 
             valorTotal: valorTotalCalculado,
 
-            metodoPagamento: document.getElementById('editMetodoPagamento').value,
+            metodoPagamento: el('editMetodoPagamento').value,
 
             itens: itens 
 
