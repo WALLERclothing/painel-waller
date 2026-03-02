@@ -19,6 +19,9 @@ function showToast(msg, isError = false) {
     setTimeout(() => toast.remove(), 3500);
 }
 
+function setFieldError(id, msg = '') { const el = document.getElementById(id); if(el) el.innerText = msg; }
+function limparErrosFormulario() { ['erroWhatsapp','erroNome','erroEstampa'].forEach(id => setFieldError(id, '')); }
+
 // ==========================================
 // UTILITÁRIOS E FRETE
 // ==========================================
@@ -285,7 +288,8 @@ function adicionarAoCarrinho() {
     const val = unmaskCurrency(document.getElementById('valorUnitario').value);
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
 
-    if(!cod || !nom) { showToast("Preencha código e nome!", true); return; }
+    setFieldError('erroEstampa', '');
+    if(!cod || !nom) { setFieldError('erroEstampa', 'Preencha código e nome da estampa para adicionar.'); showToast("Preencha código e nome!", true); return; }
     if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Aviso: Estoque baixo/zerado para esta estampa!", true); }
 
     carrinhoTemporario.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: tip, tamanho: tam, cor: cor, quantidade: qtd, valorUnitario: val });
@@ -302,7 +306,9 @@ function atualizarTelaCarrinho() {
         document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${p.quantidade}x</strong> ${p.tipoPeca} (${p.tamanho}) - [${p.codigoEstampa}]</span><div><span style="color:var(--red); font-weight:900;">${formatCurrency(p.valorUnitario)}</span> <button class="btn-remove-item" onclick="removerDoCarrinho(${i})">X</button></div></div>`;
     });
     let frete = unmaskCurrency(document.getElementById('valorFrete').value);
-    document.getElementById('valorTotal').value = formatCurrency(soma + frete);
+    let total = soma + frete;
+    document.getElementById('valorTotal').value = formatCurrency(total);
+    document.getElementById('resumoFinanceiro').innerHTML = `<div class="resumo-financeiro-linha"><span>Subtotal Peças</span><strong>${formatCurrency(soma)}</strong></div><div class="resumo-financeiro-linha"><span>Frete</span><strong>${formatCurrency(frete)}</strong></div><div class="resumo-financeiro-linha total"><span>Total Pedido</span><strong>${formatCurrency(total)}</strong></div>`;
     document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 }
 
@@ -314,6 +320,10 @@ async function salvarPedidoCompleto() {
     let frete = unmaskCurrency(document.getElementById('valorFrete').value);
     let total = unmaskCurrency(document.getElementById('valorTotal').value);
 
+    limparErrosFormulario();
+    if(!whatsapp) setFieldError('erroWhatsapp', 'Informe o WhatsApp do cliente.');
+    if(!nome) setFieldError('erroNome', 'Informe o nome do cliente.');
+    if(carrinhoTemporario.length===0) setFieldError('erroEstampa', 'Adicione ao menos uma peça ao pedido.');
     if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
 
     document.getElementById('btnGerarOrdem').innerText = "SALVANDO...";
@@ -381,6 +391,14 @@ function renderizarBestSellers(freq) {
     document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
 }
 
+function gerarProximaAcaoCRM(cliente) {
+    if(!cliente.ultimaCompra) return '<span class="badge-acao">ATIVAR</span>';
+    const dias = Math.floor((new Date() - cliente.ultimaCompra) / 86400000);
+    if(dias > 45) return '<span class="badge-acao urgente">FOLLOW-UP</span>';
+    if(cliente.totalGasto >= 500) return '<span class="badge-acao oportunidade">OFERTA VIP</span>';
+    return '<span class="badge-acao">MANTER CONTATO</span>';
+}
+
 function renderizarCRM() {
     let combinados = {};
     Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
@@ -401,6 +419,7 @@ function renderizarCRM() {
             <td style="color:var(--text-muted); font-size:0.8rem;">${dataUc}</td>
             <td>${formatCurrency(tktMedio)}</td>
             <td style="color:var(--green); font-weight:900; font-size:1.1rem;">${formatCurrency(c[1].totalGasto)}</td>
+            <td>${gerarProximaAcaoCRM(c[1])}</td>
             <td style="display:flex; gap:5px;">
                 <button class="btn-icone" onclick="abrirFichaCliente('${c[0]}')" title="Abrir Ficha">👤</button>
                 <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="background:var(--black); color:var(--bg-body);">💬</a>
@@ -455,7 +474,18 @@ function renderizarKanban() {
 
 function filtrarKanban() {
     let termo = document.getElementById('inputBusca').value.toUpperCase();
-    document.querySelectorAll('.pedido-card').forEach(card => { card.style.display = card.innerText.toUpperCase().includes(termo) ? 'flex' : 'none'; });
+    let filtroStatus = document.getElementById('filtroKanbanStatus').value;
+    let filtroPgto = document.getElementById('filtroKanbanPagamento').value;
+
+    document.querySelectorAll('.pedido-card').forEach(card => {
+        let texto = card.innerText.toUpperCase();
+        let statusCard = (todosPedidos.find(p => p.id === card.id) || {}).statusAtualizado || '';
+        let pgtoCard = (todosPedidos.find(p => p.id === card.id) || {}).statusPagamento || '';
+        let okBusca = texto.includes(termo);
+        let okStatus = filtroStatus === 'TODOS' || statusCard === filtroStatus;
+        let okPgto = filtroPgto === 'TODOS' || pgtoCard === filtroPgto;
+        card.style.display = (okBusca && okStatus && okPgto) ? 'flex' : 'none';
+    });
 }
 
 function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
