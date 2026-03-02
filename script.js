@@ -109,7 +109,7 @@ function preencherEstampaPorCodigo() {
 function adicionarAoCarrinho() {
     const cod = upper(el('codigoEstampa').value);
     const nom = upper(el('nomeEstampa').value);
-    if (!cod || !nom) return alert('Preencha código e nome!');
+    if (!cod || !nom) return alert('Preencha código e nome da peça!');
 
     carrinhoTemporario.push({
         codigoEstampa: cod,
@@ -126,21 +126,37 @@ function adicionarAoCarrinho() {
     el('nomeEstampa').value = '';
     el('valorUnitario').value = '';
     el('quantidade').value = 1;
+    el('mensagemAutoPreenchimento').textContent = '';
 }
 
 function atualizarTelaCarrinho() {
     let soma = 0;
     el('listaCarrinho').innerHTML = '';
-    carrinhoTemporario.forEach((p) => {
+    carrinhoTemporario.forEach((p, index) => {
         soma += p.quantidade * p.valorUnitario;
-        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca}</strong> • ${p.nomeEstampa}</div><div>${formatCurrency(p.valorUnitario)}</div></div>`;
+        el('listaCarrinho').innerHTML += `
+        <div class="item-carrinho">
+            <div>
+                <strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa} <br>
+                <small style="color: #6b7280;">Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small>
+            </div>
+            <div>
+                <strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong>
+                <button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">X</button>
+            </div>
+        </div>`;
     });
     el('valorTotal').value = formatCurrency(soma);
 }
 
+function removerDoCarrinho(index) {
+    carrinhoTemporario.splice(index, 1);
+    atualizarTelaCarrinho();
+}
+
 async function salvarPedidoCompleto() {
     const nome = upper(el('nome').value);
-    if (!nome || carrinhoTemporario.length === 0) return alert('Dados incompletos!');
+    if (!nome || carrinhoTemporario.length === 0) return alert('Preencha o nome do cliente e adicione pelo menos um item!');
 
     const statusBase = el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO';
 
@@ -163,7 +179,17 @@ async function salvarPedidoCompleto() {
         dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    alert('Pedido salvo com sucesso!');
+    alert('🔥 Pedido lançado com sucesso!');
+    
+    // Limpar o formulário todo após o pedido ser salvo
+    document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
+    el('metodoPagamento').value = 'PIX';
+    el('statusPagamento').value = 'PAGO';
+    el('tipoPeca').value = 'OVERSIZED';
+    el('tamanho').value = 'P';
+    el('cor').value = 'PRETA';
+    el('quantidade').value = 1;
+    
     carrinhoTemporario = [];
     atualizarTelaCarrinho();
 }
@@ -221,10 +247,16 @@ function statusOptionsSelecionado(atual) {
     return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join('');
 }
 
+// NOVA FUNÇÃO DO WHATSAPP SUPER ORGANIZADA
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome);
-    const itens = (pedido.itens || []).map((i) => `${i.quantidade || 1}x ${i.nomeEstampa || i.codigoEstampa || 'PEÇA'}`).join(', ') || 'seus itens';
-    return `Oi, ${nome}! Passando pra te atualizar: seu pedido #${pedido.numeroPedido || ''} está em *${pedido.status || 'processamento'}* 🚀 Itens: ${itens}. Qualquer coisa me chama por aqui!`;
+    let itensTexto = '';
+    
+    (pedido.itens || []).forEach(i => {
+        itensTexto += `\n▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PEÇA'} | ${i.nomeEstampa || i.codigoEstampa}\n   Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n   Valor: ${formatCurrency(i.valorUnitario || 0)}\n`;
+    });
+
+    return `Fala, ${nome}! 💀\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* está: *${pedido.status || 'PROCESSANDO'}* 🚀\n\n*🛒 RESUMO DO SEU DROP:*\n${itensTexto}\n*💰 TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer dúvida, é só dar um salve por aqui!`;
 }
 
 function linkWhatsPedido(pedido) {
@@ -244,7 +276,7 @@ async function salvarStatusPedido(id, selectId) {
 }
 
 function excluirPedido(id) {
-    if (!confirm('Excluir pedido?')) return;
+    if (!confirm('Tem certeza que deseja excluir este pedido? Essa ação não tem volta.')) return;
     db.collection('pedidos').doc(id).delete();
 }
 
@@ -264,8 +296,8 @@ function renderPedidosGrid(lista) {
                 ${abrirSanfonaStatus(pedido.id, upper(pedido.status || 'PEDIDO FEITO'))}
                 <div class="pedido-actions">
                     <a class="btn-whats" target="_blank" href="${linkWhatsPedido(pedido)}">WhatsApp</a>
-                    <button class="catalog-edit" onclick="abrirVisualizacaoClientePedido('${pedido.id}')">Visualizar</button>
-                    <button class="catalog-delete" onclick="excluirPedido('${pedido.id}')">Excluir</button>
+                    <button class="catalog-edit" onclick="abrirVisualizacaoClientePedido('${pedido.id}')">Ver Ficha</button>
+                    <button class="catalog-delete" onclick="excluirPedido('${pedido.id}')">🗑️</button>
                 </div>
             </article>`).join('')}</div></section>`;
     });
@@ -355,7 +387,7 @@ function abrirVisualizacaoCliente(cliente) {
             <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
             <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
         </div>
-        <h3 class="form-section-title">Histórico de pedidos</h3>
+        <h3 class="form-section-title" style="margin-top:1rem;">Histórico de pedidos</h3>
         <div>${(cliente.historicoPedidos || []).map((p) => `<div class="item-carrinho"><div>#${p.numeroPedido} • ${formatDate(p.dataCriacao)} • ${p.status}</div><div>${formatCurrency(p.valorTotal || 0)}</div></div>`).join('') || 'Sem histórico'}</div>`;
     el('modalFichaCliente').style.display = 'flex';
 }
@@ -367,7 +399,6 @@ function abrirVisualizacaoClientePedido(idPedido) {
     const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === chave);
     if (cliente) abrirVisualizacaoCliente(cliente);
 }
-
 
 function visualizarClientePorId(idRef) {
     const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === idRef);
@@ -434,7 +465,7 @@ function renderClientes(lista = clientesCache) {
             <p><strong>Cidade:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
             <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span></div>
             <div class="pedido-actions">
-                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Visualizar</button>
+                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha</button>
                 <button class="catalog-edit" onclick="editarCliente('${idRef}')">Editar</button>
                 <button class="catalog-delete" onclick="excluirCliente('${idRef}')">Excluir</button>
             </div>
@@ -442,22 +473,17 @@ function renderClientes(lista = clientesCache) {
     });
 }
 
-function filtrarClientes() {
-    const busca = upper(el('filtroClientes').value);
-    renderClientes(clientesCache.filter((cliente) => upper(`${cliente.nome} ${cliente.whatsapp} ${cliente.documento} ${cliente.cidade}`).includes(busca)));
-}
-
 function gerarPDF() {
     if (!pedidosCache.length) return alert('Sem pedidos para PDF.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text('Fila de Produção', 14, 14);
+    doc.text('Fila de Produção - Waller Clothing', 14, 14);
     doc.autoTable({
         startY: 20,
         head: [['Pedido', 'Cliente', 'Status', 'Total']],
         body: pedidosCache.map((p) => [`#${p.numeroPedido || '-'}`, p.nome || '-', p.status || '-', formatCurrency(p.valorTotal || 0)])
     });
-    doc.save(`fila-${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`fila-producao-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 async function salvarNovaEstampa(e) {
