@@ -87,7 +87,7 @@
             <div class="form-section-title">Resumo do pedido</div>
             <div id="listaCarrinho"></div>
         </div>
-        <button type="button" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+        <button type="button" id="btnSalvarPedido" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
     </div>
 </div>
 
@@ -120,10 +120,11 @@
                     <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO" required>
                     <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required>
                 </div>
-                <div class="form-grid cols-2">
+                <div class="form-grid cols-3">
                     <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
+                    <input type="number" id="cadEstoqueEstampa" placeholder="QTD ESTOQUE" required>
                     <details class="sanfona-tipo">
-                        <summary>Tipo padrão</summary>
+                        <summary>Padrão</summary>
                         <select id="cadTipoPadrao"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
                     </details>
                 </div>
@@ -133,7 +134,7 @@
 
         <div class="card">
             <div class="catalog-header">
-                <h2 class="card-title">Catálogo de Estampas <span id="carregandoEstampas">Lendo...</span></h2>
+                <h2 class="card-title">Catálogo / Estoque <span id="carregandoEstampas">Lendo...</span></h2>
                 <input type="text" id="filtroEstampas" placeholder="🔎 Buscar por código ou nome" oninput="filtrarCatalogo()">
             </div>
             <div id="catalogoEstampas" class="catalog-grid"></div>
@@ -187,21 +188,30 @@
     </div>
 </div>
 
+<div id="modalFichaPedido" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharFichaPedido()">X</button>
+        <h2 class="card-title" id="fichaPedidoTitulo">Detalhes do Pedido</h2>
+        <div id="fichaPedidoConteudo"></div>
+    </div>
+</div>
+
 <div id="modalCatalogo" class="modal-overlay">
     <div class="modal-box">
         <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
         <h2 class="card-title">Editar Item do Catálogo</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
-            <div class="form-grid cols-2">
+            <div class="form-grid cols-3">
                 <input type="text" id="editCatalogoNome" placeholder="NOME DA ESTAMPA" required>
                 <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
+                <input type="number" id="editCatalogoEstoque" placeholder="QTD ESTOQUE" required>
             </div>
             <details class="sanfona-tipo" open>
                 <summary>Tipo padrão</summary>
                 <select id="editCatalogoTipo"><option value="">SELECIONE</option><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
             </details>
-            <button type="submit" class="btn-primary">SALVAR ALTERAÇÕES</button>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">SALVAR ALTERAÇÕES</button>
         </form>
     </div>
 </div>
