@@ -19,6 +19,9 @@ function showToast(msg, isError = false) {
     setTimeout(() => toast.remove(), 3500);
 }
 
+function setFieldError(id, msg = '') { const el = document.getElementById(id); if(el) el.innerText = msg; }
+function limparErrosFormulario() { ['erroWhatsapp','erroNome','erroEstampa'].forEach(id => setFieldError(id, '')); }
+
 // ==========================================
 // UTILITÁRIOS E FRETE
 // ==========================================
@@ -27,6 +30,7 @@ function unmaskCurrency(value) {
     return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 }
 function formatCurrency(num) { return "R$ " + (parseFloat(num) || 0).toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
+function formatDateBR(dateObj) { return dateObj ? new Date(dateObj).toLocaleDateString('pt-BR') : '-'; }
 
 document.addEventListener('input', function(e) {
     if(e.target.classList.contains('moeda') && !e.target.readOnly) {
@@ -41,6 +45,7 @@ function aplicarMascaraTelefone(e) {
     if(v.length <= 2) e.target.value = v; else if(v.length <= 6) e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
 }
 document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
+document.getElementById('whatsapp').addEventListener('input', function() { if(this.value.trim().length > 10) verificarClienteFiel(); });
 
 async function buscarCEP(cep) {
     let cleanCep = cep.replace(/\D/g, '');
@@ -171,33 +176,85 @@ db.collection("clientes").onSnapshot(snap => {
 });
 
 let mapaClientes = {}; 
+
+function normalizarTelefone(v) { return (v || '').replace(/\D/g, ''); }
+
+function buscarClientePorWhatsapp(whatsappDigitado) {
+    if(!whatsappDigitado) return { perfil: null, compras: null };
+    if(clientesCadastrados[whatsappDigitado] || mapaClientes[whatsappDigitado]) {
+        return { perfil: clientesCadastrados[whatsappDigitado] || null, compras: mapaClientes[whatsappDigitado] || null };
+    }
+
+    let alvo = normalizarTelefone(whatsappDigitado);
+    let chavePerfil = Object.keys(clientesCadastrados).find(k => normalizarTelefone(k) === alvo);
+    let chaveCompras = Object.keys(mapaClientes).find(k => normalizarTelefone(k) === alvo);
+
+    return {
+        perfil: chavePerfil ? clientesCadastrados[chavePerfil] : null,
+        compras: chaveCompras ? mapaClientes[chaveCompras] : null
+    };
+}
+
+function preencherDadosClienteNoLancamento(perfil = {}, compras = {}) {
+    const enderecoCompleto = perfil.endereco || compras.endereco || '';
+    let enderecoBase = enderecoCompleto;
+    let numero = '';
+
+    if(enderecoCompleto.includes(',')) {
+        let partes = enderecoCompleto.split(',');
+        let ultimaParte = (partes.pop() || '').trim();
+        if(/^\d+[A-Za-z-]*$/.test(ultimaParte)) {
+            numero = ultimaParte;
+            enderecoBase = partes.join(',').trim();
+        }
+    }
+
+    document.getElementById('nome').value = perfil.nome || compras.nome || '';
+    document.getElementById('cep').value = perfil.cep || compras.cep || '';
+    document.getElementById('endereco').value = enderecoBase || enderecoCompleto;
+    document.getElementById('numeroEnd').value = numero;
+}
+
 function verificarClienteFiel() {
     let w = document.getElementById('whatsapp').value.trim();
-    if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
-        document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
-        if(clientesCadastrados[w] && !document.getElementById('nome').value) {
-             document.getElementById('nome').value = clientesCadastrados[w].nome || '';
-             document.getElementById('cep').value = clientesCadastrados[w].cep || '';
-             document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
-        }
-    } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
+    let achado = buscarClientePorWhatsapp(w);
+    let existeCliente = !!(achado.perfil || achado.compras);
+
+    if(w.length > 10 && existeCliente) { 
+        document.getElementById('alertaClienteFiel').style.display = 'inline-block';
+        preencherDadosClienteNoLancamento(achado.perfil || {}, achado.compras || {});
+    } else {
+        document.getElementById('alertaClienteFiel').style.display = 'none';
+    }
 }
 
 function abrirFichaCliente(whatsapp) {
-    let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0 };
+    let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0, ultimaCompra: null, pedidos: [] };
     let perfil = clientesCadastrados[whatsapp] || {};
+    let ticketMedio = dadosCompra.qtd > 0 ? (dadosCompra.totalGasto / dadosCompra.qtd) : 0;
 
     document.getElementById('fichaWhatsapp').value = whatsapp;
     document.getElementById('fichaNome').value = perfil.nome || dadosCompra.nome || '';
+    document.getElementById('fichaEmail').value = perfil.email || '';
     document.getElementById('fichaInsta').value = perfil.insta || '';
     document.getElementById('fichaDataNasc').value = perfil.dataNasc || '';
     document.getElementById('fichaCEP').value = perfil.cep || dadosCompra.cep || '';
     document.getElementById('fichaEndereco').value = perfil.endereco || dadosCompra.endereco || '';
+    document.getElementById('fichaCidade').value = perfil.cidade || '';
+    document.getElementById('fichaUF').value = (perfil.uf || '').toUpperCase();
+    document.getElementById('fichaTamanhoPref').value = perfil.tamanhoPreferido || '';
+    document.getElementById('fichaCorPref').value = perfil.corPreferida || '';
+    document.getElementById('fichaUltimoContato').value = perfil.ultimoContato || '';
     document.getElementById('fichaObs').value = perfil.obs || '';
-    
+
     document.getElementById('fichaQtdPedidos').innerText = dadosCompra.qtd;
     document.getElementById('fichaTotalGasto').innerText = formatCurrency(dadosCompra.totalGasto);
-    
+    document.getElementById('fichaTicketMedio').innerText = formatCurrency(ticketMedio);
+    document.getElementById('fichaUltimaCompra').innerText = formatDateBR(dadosCompra.ultimaCompra);
+    document.getElementById('fichaHistoricoPedidos').innerHTML = (dadosCompra.pedidos || []).slice(0, 5).map(p =>
+        `<div class="ficha-historico-item"><strong>#${p.numeroPedido}</strong> ${formatDateBR(p.data)} • ${formatCurrency(p.valor)} <span>${p.status}</span></div>`
+    ).join('') || 'Sem pedidos para este cliente.';
+
     document.getElementById('modalFichaCliente').style.display = 'flex';
 }
 
@@ -207,8 +264,12 @@ function salvarFichaCliente() {
     let w = document.getElementById('fichaWhatsapp').value;
     db.collection("clientes").doc(w).set({
         whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(),
+        email: document.getElementById('fichaEmail').value.trim().toLowerCase(),
         insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value,
         cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
+        cidade: document.getElementById('fichaCidade').value, uf: document.getElementById('fichaUF').value.toUpperCase(),
+        tamanhoPreferido: document.getElementById('fichaTamanhoPref').value, corPreferida: document.getElementById('fichaCorPref').value,
+        ultimoContato: document.getElementById('fichaUltimoContato').value,
         obs: document.getElementById('fichaObs').value
     }, {merge: true}).then(() => { showToast("Ficha do Cliente Salva!"); fecharFichaCliente(); });
 }
@@ -227,7 +288,8 @@ function adicionarAoCarrinho() {
     const val = unmaskCurrency(document.getElementById('valorUnitario').value);
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
 
-    if(!cod || !nom) { showToast("Preencha código e nome!", true); return; }
+    setFieldError('erroEstampa', '');
+    if(!cod || !nom) { setFieldError('erroEstampa', 'Preencha código e nome da estampa para adicionar.'); showToast("Preencha código e nome!", true); return; }
     if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Aviso: Estoque baixo/zerado para esta estampa!", true); }
 
     carrinhoTemporario.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: tip, tamanho: tam, cor: cor, quantidade: qtd, valorUnitario: val });
@@ -244,7 +306,9 @@ function atualizarTelaCarrinho() {
         document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${p.quantidade}x</strong> ${p.tipoPeca} (${p.tamanho}) - [${p.codigoEstampa}]</span><div><span style="color:var(--red); font-weight:900;">${formatCurrency(p.valorUnitario)}</span> <button class="btn-remove-item" onclick="removerDoCarrinho(${i})">X</button></div></div>`;
     });
     let frete = unmaskCurrency(document.getElementById('valorFrete').value);
-    document.getElementById('valorTotal').value = formatCurrency(soma + frete);
+    let total = soma + frete;
+    document.getElementById('valorTotal').value = formatCurrency(total);
+    document.getElementById('resumoFinanceiro').innerHTML = `<div class="resumo-financeiro-linha"><span>Subtotal Peças</span><strong>${formatCurrency(soma)}</strong></div><div class="resumo-financeiro-linha"><span>Frete</span><strong>${formatCurrency(frete)}</strong></div><div class="resumo-financeiro-linha total"><span>Total Pedido</span><strong>${formatCurrency(total)}</strong></div>`;
     document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 }
 
@@ -256,6 +320,10 @@ async function salvarPedidoCompleto() {
     let frete = unmaskCurrency(document.getElementById('valorFrete').value);
     let total = unmaskCurrency(document.getElementById('valorTotal').value);
 
+    limparErrosFormulario();
+    if(!whatsapp) setFieldError('erroWhatsapp', 'Informe o WhatsApp do cliente.');
+    if(!nome) setFieldError('erroNome', 'Informe o nome do cliente.');
+    if(carrinhoTemporario.length===0) setFieldError('erroEstampa', 'Adicione ao menos uma peça ao pedido.');
     if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
 
     document.getElementById('btnGerarOrdem').innerText = "SALVANDO...";
@@ -300,10 +368,11 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
 
         // CRM Aggregate com Última Compra
         if(p.whatsapp) {
-            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d };
+            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d, pedidos: [] };
             mapaClientes[p.whatsapp].qtd++;
             if(d > mapaClientes[p.whatsapp].ultimaCompra) mapaClientes[p.whatsapp].ultimaCompra = d;
             if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
+            mapaClientes[p.whatsapp].pedidos.push({ numeroPedido: p.numeroPedido, data: d, valor: p.valorTotal || 0, status: p.statusAtualizado });
         }
 
         if(p.itens && p.statusPagamento === 'PAGO') { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
@@ -322,11 +391,19 @@ function renderizarBestSellers(freq) {
     document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
 }
 
+function gerarProximaAcaoCRM(cliente) {
+    if(!cliente.ultimaCompra) return '<span class="badge-acao">ATIVAR</span>';
+    const dias = Math.floor((new Date() - cliente.ultimaCompra) / 86400000);
+    if(dias > 45) return '<span class="badge-acao urgente">FOLLOW-UP</span>';
+    if(cliente.totalGasto >= 500) return '<span class="badge-acao oportunidade">OFERTA VIP</span>';
+    return '<span class="badge-acao">MANTER CONTATO</span>';
+}
+
 function renderizarCRM() {
     let combinados = {};
     Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
     Object.keys(clientesCadastrados).forEach(w => {
-        if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null };
+        if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null, pedidos: [] };
         combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
     });
 
@@ -342,6 +419,7 @@ function renderizarCRM() {
             <td style="color:var(--text-muted); font-size:0.8rem;">${dataUc}</td>
             <td>${formatCurrency(tktMedio)}</td>
             <td style="color:var(--green); font-weight:900; font-size:1.1rem;">${formatCurrency(c[1].totalGasto)}</td>
+            <td>${gerarProximaAcaoCRM(c[1])}</td>
             <td style="display:flex; gap:5px;">
                 <button class="btn-icone" onclick="abrirFichaCliente('${c[0]}')" title="Abrir Ficha">👤</button>
                 <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="background:var(--black); color:var(--bg-body);">💬</a>
@@ -396,7 +474,18 @@ function renderizarKanban() {
 
 function filtrarKanban() {
     let termo = document.getElementById('inputBusca').value.toUpperCase();
-    document.querySelectorAll('.pedido-card').forEach(card => { card.style.display = card.innerText.toUpperCase().includes(termo) ? 'flex' : 'none'; });
+    let filtroStatus = document.getElementById('filtroKanbanStatus').value;
+    let filtroPgto = document.getElementById('filtroKanbanPagamento').value;
+
+    document.querySelectorAll('.pedido-card').forEach(card => {
+        let texto = card.innerText.toUpperCase();
+        let statusCard = (todosPedidos.find(p => p.id === card.id) || {}).statusAtualizado || '';
+        let pgtoCard = (todosPedidos.find(p => p.id === card.id) || {}).statusPagamento || '';
+        let okBusca = texto.includes(termo);
+        let okStatus = filtroStatus === 'TODOS' || statusCard === filtroStatus;
+        let okPgto = filtroPgto === 'TODOS' || pgtoCard === filtroPgto;
+        card.style.display = (okBusca && okStatus && okPgto) ? 'flex' : 'none';
+    });
 }
 
 function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
