@@ -16,6 +16,7 @@ const STATUS_LIST = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', '
 
 let estampasCache = [];
 let carrinhoTemporario = [];
+let carrinhoEdicao = []; // Novo carrinho só para a janela de edição
 let pedidosCache = [];
 let clientesExtrasCache = [];
 let clientesCache = [];
@@ -78,6 +79,21 @@ function carregarTema() {
     }
 }
 
+// ================= LANÇAR DROP =================
+function limparLancarDrop() {
+    if(!confirm("Tem certeza que deseja limpar todo o formulário?")) return;
+    document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
+    el('metodoPagamento').value = 'PIX';
+    el('statusPagamento').value = 'PAGO';
+    el('tipoPeca').value = 'OVERSIZED';
+    el('tamanho').value = 'P';
+    el('cor').value = 'PRETA';
+    el('quantidade').value = 1;
+    el('mensagemAutoPreenchimento').textContent = '';
+    carrinhoTemporario = [];
+    atualizarTelaCarrinho();
+}
+
 function preencherEstampaPorCodigo() {
     const codigo = upper(el('codigoEstampa').value);
     el('codigoEstampa').value = codigo;
@@ -91,7 +107,7 @@ function preencherEstampaPorCodigo() {
 
     const encontrada = estampasCache.find((item) => item.codigo === codigo);
     if (!encontrada) {
-        feedback.textContent = 'Código não encontrado no catálogo.';
+        feedback.textContent = 'Código não encontrado.';
         feedback.classList.add('warn');
         feedback.classList.remove('ok');
         return;
@@ -137,14 +153,8 @@ function atualizarTelaCarrinho() {
         soma += p.quantidade * p.valorUnitario;
         el('listaCarrinho').innerHTML += `
         <div class="item-carrinho">
-            <div>
-                <strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa} <br>
-                <small style="color: #6b7280;">Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small>
-            </div>
-            <div>
-                <strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong>
-                <button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">X</button>
-            </div>
+            <div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div>
+            <div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">X</button></div>
         </div>`;
     });
     el('valorTotal').value = formatCurrency(soma);
@@ -170,107 +180,34 @@ async function salvarPedidoCompleto() {
         cidade: upper(el('cidade').value),
         estado: upper(el('estado').value),
         endereco: upper(el('endereco').value),
+        complemento: upper(el('complemento').value),
         referencia: upper(el('referencia').value),
         valorTotal: unmaskCurrency(el('valorTotal').value),
         metodoPagamento: el('metodoPagamento').value,
         statusPagamento: el('statusPagamento').value,
         itens: carrinhoTemporario,
-        status: statusBase
+        status: statusBase,
+        numeroPedido: Math.floor(1000 + Math.random() * 9000).toString(),
+        dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    if (pedidoEmEdicaoId) {
-        await db.collection('pedidos').doc(pedidoEmEdicaoId).update(dadosPedido);
-        alert('Pedido atualizado com sucesso!');
-        pedidoEmEdicaoId = null;
-        el('btnSalvarPedido').textContent = 'GERAR ORDEM DE SERVIÇO';
-    } else {
-        dadosPedido.numeroPedido = Math.floor(1000 + Math.random() * 9000).toString();
-        dadosPedido.dataCriacao = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection('pedidos').add(dadosPedido);
-        alert('Pedido lançado com sucesso!');
-    }
-    
-    document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
-    el('metodoPagamento').value = 'PIX';
-    el('statusPagamento').value = 'PAGO';
-    el('tipoPeca').value = 'OVERSIZED';
-    el('tamanho').value = 'P';
-    el('cor').value = 'PRETA';
-    el('quantidade').value = 1;
-    
-    carrinhoTemporario = [];
-    atualizarTelaCarrinho();
+    await db.collection('pedidos').add(dadosPedido);
+    alert('Pedido lançado com sucesso!');
+    limparLancarDrop();
     mudarAba('producao');
 }
 
-function filtrarCatalogo() {
-    const filtro = upper(el('filtroEstampas').value);
-    renderCatalogo(estampasCache.filter((est) => est.codigo.includes(filtro) || est.nome.includes(filtro)));
-}
-
-function abrirModalCatalogo(codigo) {
-    const item = estampasCache.find((est) => est.codigo === codigo);
-    if (!item) return;
-    el('editCatalogoCodigo').value = item.codigo;
-    el('editCatalogoNome').value = item.nome;
-    el('editCatalogoValor').value = formatCurrency(item.valor || 0);
-    el('editCatalogoTipo').value = item.tipoPadrao || '';
-    el('editCatalogoEstoque').value = item.estoque || 0;
-    el('modalCatalogo').style.display = 'flex';
-}
-function fecharModalCatalogo() { el('modalCatalogo').style.display = 'none'; }
-
-async function salvarEdicaoCatalogo(e) {
-    e.preventDefault();
-    const codigo = upper(el('editCatalogoCodigo').value);
-    await db.collection('estampas').doc(codigo).set({
-        codigo,
-        nome: upper(el('editCatalogoNome').value),
-        valor: unmaskCurrency(el('editCatalogoValor').value),
-        tipoPadrao: upper(el('editCatalogoTipo').value),
-        estoque: parseInt(el('editCatalogoEstoque').value) || 0
-    });
-    fecharModalCatalogo();
-}
-
-function renderCatalogo(lista = estampasCache) {
-    const container = el('catalogoEstampas');
-    container.innerHTML = '';
-    if (!lista.length) {
-        container.innerHTML = '<div class="catalog-empty">Nenhum item no catálogo.</div>';
-        return;
-    }
-
-    lista.forEach((est) => {
-        const estoqueMsg = est.estoque > 0 ? `Estoque: ${est.estoque}` : 'ESGOTADO';
-        const estoqueClass = est.estoque > 0 ? '' : 'stock-esgotado';
-        
-        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-stock ${estoqueClass}">${estoqueMsg}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Excluir</button></div></article>`;
-    });
-}
-
-function statusClass(status) {
-    if (status === 'AGUARDANDO PAGAMENTO') return 'badge-pendente';
-    if (status === 'EM SEPARAÇÃO') return 'badge-estampa';
-    if (status === 'ENVIO EFETUADO') return 'badge-enviado';
-    if (status === 'PEDIDO ENTREGUE') return 'badge-entregue';
-    return 'badge-default';
-}
-
-function statusOptionsSelecionado(atual) {
-    return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join('');
-}
-
-// WHATSAPP TEXTO PURO SEM EMOJIS, APENAS NEGRITO (Marcador "-" não zoa as cores)
+// ================= MENSAGEM WHATSAPP =================
+// A formatação aqui é super rígida: sem emojis estranhos e com quebras de linha perfeitas
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome);
     let itensTexto = '';
     
     (pedido.itens || []).forEach(i => {
-        itensTexto += `- ${i.quantidade || 1}x ${i.tipoPeca || 'PEÇA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`;
+        itensTexto += `- ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`;
     });
 
-    return `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* está: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}*TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer dúvida, é só dar um salve por aqui!`;
+    return `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* esta: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}*TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer duvida, e so dar um salve por aqui!`;
 }
 
 function linkWhatsPedido(pedido) {
@@ -279,6 +216,90 @@ function linkWhatsPedido(pedido) {
     return `https://wa.me/55${numero}?text=${encodeURIComponent(mensagemWhatsInformal(pedido))}`;
 }
 
+// ================= EDIÇÃO DE PEDIDO EM MODAL =================
+function abrirModalEditarPedido(idPedido) {
+    const pedido = pedidosCache.find(p => p.id === idPedido);
+    if (!pedido) return;
+    
+    pedidoEmEdicaoId = pedido.id;
+    
+    el('editPedNome').value = pedido.nome || '';
+    el('editPedWhatsapp').value = pedido.whatsapp || '';
+    el('editPedInstagram').value = pedido.instagram || '';
+    el('editPedCpf').value = pedido.documento || '';
+    el('editPedCep').value = pedido.cep || '';
+    el('editPedCidade').value = pedido.cidade || '';
+    el('editPedEstado').value = pedido.estado || '';
+    el('editPedEndereco').value = pedido.endereco || '';
+    el('editPedComplemento').value = pedido.complemento || '';
+    el('editPedReferencia').value = pedido.referencia || '';
+    el('editPedMetodo').value = pedido.metodoPagamento || 'PIX';
+    el('editPedStatusPagamento').value = pedido.statusPagamento || 'PAGO';
+
+    carrinhoEdicao = [...pedido.itens];
+    atualizarTelaCarrinhoEdicao();
+
+    fecharFichaPedido(); // Fecha a ficha se estiver aberta
+    el('modalEditarPedidoCompleto').style.display = 'flex';
+}
+
+function fecharModalEditarPedido() {
+    el('modalEditarPedidoCompleto').style.display = 'none';
+    pedidoEmEdicaoId = null;
+    carrinhoEdicao = [];
+}
+
+function atualizarTelaCarrinhoEdicao() {
+    let soma = 0;
+    el('listaCarrinhoEdicao').innerHTML = '';
+    
+    if(carrinhoEdicao.length === 0) {
+        el('listaCarrinhoEdicao').innerHTML = '<p style="color:red; font-size:0.8rem; margin:0;">Pedido ficará sem itens se salvo assim.</p>';
+    }
+
+    carrinhoEdicao.forEach((p, index) => {
+        soma += p.quantidade * p.valorUnitario;
+        el('listaCarrinhoEdicao').innerHTML += `
+        <div class="item-carrinho">
+            <div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa}</div>
+            <div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div>
+        </div>`;
+    });
+    el('editPedValorTotal').value = formatCurrency(soma);
+}
+
+function removerDoCarrinhoEdicao(index) {
+    carrinhoEdicao.splice(index, 1);
+    atualizarTelaCarrinhoEdicao();
+}
+
+async function salvarEdicaoPedidoDefinitiva() {
+    if (!pedidoEmEdicaoId) return;
+    
+    const dadosEditados = {
+        nome: upper(el('editPedNome').value),
+        whatsapp: upper(el('editPedWhatsapp').value),
+        instagram: upper(el('editPedInstagram').value),
+        documento: upper(el('editPedCpf').value),
+        cep: upper(el('editPedCep').value),
+        cidade: upper(el('editPedCidade').value),
+        estado: upper(el('editPedEstado').value),
+        endereco: upper(el('editPedEndereco').value),
+        complemento: upper(el('editPedComplemento').value),
+        referencia: upper(el('editPedReferencia').value),
+        metodoPagamento: el('editPedMetodo').value,
+        statusPagamento: el('editPedStatusPagamento').value,
+        itens: carrinhoEdicao,
+        valorTotal: unmaskCurrency(el('editPedValorTotal').value)
+    };
+
+    await db.collection('pedidos').doc(pedidoEmEdicaoId).update(dadosEditados);
+    alert('Pedido atualizado na base de dados!');
+    fecharModalEditarPedido();
+}
+
+
+// ================= KANBAN =================
 function abrirSanfonaStatus(id, statusAtual) {
     const selectId = `status-select-${id}`;
     return `<details class="status-sanfona"><summary>Alterar status</summary><select id="${selectId}">${statusOptionsSelecionado(statusAtual)}</select><button class="btn-add" onclick="salvarStatusPedido('${id}','${selectId}')">Salvar</button></details>`;
@@ -290,7 +311,7 @@ async function salvarStatusPedido(id, selectId) {
 }
 
 function excluirPedido(id) {
-    if (!confirm('Excluir este pedido?')) return;
+    if (!confirm('Excluir este pedido permanentemente?')) return;
     db.collection('pedidos').doc(id).delete();
 }
 
@@ -307,7 +328,8 @@ function renderPedidosGrid(lista) {
     grupos.forEach((grupo) => {
         container.innerHTML += `<section class="kanban-col"><header><h3>${grupo.status}</h3><span>${grupo.itens.length}</span></header><div class="kanban-cards">${grupo.itens.map((pedido) => `
             <article class="pedido-card-v2">
-                <div class="pedido-header"><strong>#${pedido.numeroPedido || '----'} • ${pedido.nome || 'SEM NOME'}</strong><span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span></div>
+                <div class="pedido-header"><strong>#${pedido.numeroPedido || '----'}</strong><span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span></div>
+                <p><strong>${pedido.nome || 'SEM NOME'}</strong></p>
                 <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
                 <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
                 <p><strong>Data:</strong> ${formatDate(pedido.dataCriacao)}</p>
@@ -356,6 +378,7 @@ function atualizarDashboard(lista) {
     el('dashFaturamento').textContent = formatCurrency(lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
 }
 
+// ================= CLIENTES E FICHAS =================
 function extrairClientesDosPedidos() {
     const mapa = new Map();
     clientesExtrasCache.forEach((cliente) => {
@@ -367,7 +390,7 @@ function extrairClientesDosPedidos() {
         const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
         if (!chave) return;
         const base = mapa.get(chave) || {
-            nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), referencia: upper(pedido.referencia), totalPedidos: 0, totalGasto: 0, historicoPedidos: []
+            nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), complemento: upper(pedido.complemento), referencia: upper(pedido.referencia), totalPedidos: 0, totalGasto: 0, historicoPedidos: []
         };
         base.totalPedidos += 1;
         base.totalGasto += Number(pedido.valorTotal) || 0;
@@ -375,6 +398,7 @@ function extrairClientesDosPedidos() {
         
         if (!base.cep) base.cep = upper(pedido.cep);
         if (!base.endereco) base.endereco = upper(pedido.endereco);
+        if (!base.complemento) base.complemento = upper(pedido.complemento);
         if (!base.cidade) base.cidade = upper(pedido.cidade);
         if (!base.estado) base.estado = upper(pedido.estado);
         if (!base.referencia) base.referencia = upper(pedido.referencia);
@@ -397,7 +421,7 @@ function abrirVisualizacaoCliente(cliente) {
             <p><strong>CPF/CNPJ:</strong> ${cliente.documento || '-'}</p>
             <p><strong>CEP:</strong> ${cliente.cep || '-'}</p>
             <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} / ${cliente.estado || ''}</p>
-            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `(Ref: ${cliente.referencia})` : ''}</p>
+            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.complemento ? ` - ${cliente.complemento}` : ''} ${cliente.referencia ? `(Ref: ${cliente.referencia})` : ''}</p>
             <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
             <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
         </div>
@@ -424,46 +448,19 @@ function abrirFichaPedido(idPedido) {
             <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
             <p><strong>Status:</strong> ${pedido.status || '-'}</p>
             <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
-            <p><strong>Endereço:</strong> ${pedido.endereco || '-'}, ${pedido.cidade || '-'}/${pedido.estado || '-'}</p>
+            <p><strong>Endereço:</strong> ${pedido.endereco || '-'} ${pedido.complemento ? `- ${pedido.complemento}` : ''}, ${pedido.cidade || '-'}/${pedido.estado || '-'}</p>
             <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
         </div>
         <h3 class="form-section-title">Peças no pedido</h3>
         <div style="margin-bottom: 1.5rem;">
             ${(pedido.itens || []).map(i => `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${i.nomeEstampa || i.codigoEstampa}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`).join('')}
         </div>
-        <button class="btn-primary" onclick="carregarPedidoParaEdicao('${pedido.id}')">EDITAR ESTE PEDIDO</button>
+        <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">EDITAR ESTE PEDIDO</button>
     `;
     el('modalFichaPedido').style.display = 'flex';
 }
 
 function fecharFichaPedido() { el('modalFichaPedido').style.display = 'none'; }
-
-function carregarPedidoParaEdicao(idPedido) {
-    const pedido = pedidosCache.find(p => p.id === idPedido);
-    if (!pedido) return;
-    
-    pedidoEmEdicaoId = pedido.id;
-
-    el('nome').value = pedido.nome || '';
-    el('whatsapp').value = pedido.whatsapp || '';
-    el('instagram').value = pedido.instagram || '';
-    el('cpf').value = pedido.documento || '';
-    el('cep').value = pedido.cep || '';
-    el('cidade').value = pedido.cidade || '';
-    el('estado').value = pedido.estado || '';
-    el('endereco').value = pedido.endereco || '';
-    el('referencia').value = pedido.referencia || '';
-    el('metodoPagamento').value = pedido.metodoPagamento || 'PIX';
-    el('statusPagamento').value = pedido.statusPagamento || 'PAGO';
-
-    carrinhoTemporario = [...pedido.itens];
-    atualizarTelaCarrinho();
-
-    el('btnSalvarPedido').textContent = 'SALVAR ALTERAÇÕES DO PEDIDO';
-    fecharFichaPedido();
-    mudarAba('cadastro');
-}
-
 function fecharFichaCliente() { el('modalFichaCliente').style.display = 'none'; }
 function abrirCadastroCliente() { el('modalCliente').style.display = 'flex'; }
 function fecharCadastroCliente() { el('modalCliente').style.display = 'none'; }
@@ -480,6 +477,7 @@ async function salvarCliente(e) {
         cidade: upper(el('clienteCidade').value),
         estado: upper(el('clienteEstado').value),
         endereco: upper(el('clienteEndereco').value),
+        complemento: upper(el('clienteComplemento').value),
         referencia: upper(el('clienteReferencia').value)
     }, { merge: true });
     e.target.reset();
@@ -498,6 +496,7 @@ function editarCliente(idRef) {
     el('clienteCidade').value = cliente.cidade || '';
     el('clienteEstado').value = cliente.estado || '';
     el('clienteEndereco').value = cliente.endereco || '';
+    el('clienteComplemento').value = cliente.complemento || '';
     el('clienteReferencia').value = cliente.referencia || '';
 }
 
@@ -539,6 +538,54 @@ function gerarPDF() {
         body: pedidosCache.map((p) => [`#${p.numeroPedido || '-'}`, p.nome || '-', p.status || '-', formatCurrency(p.valorTotal || 0)])
     });
     doc.save(`fila-producao-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ================= CATÁLOGO =================
+function filtrarCatalogo() {
+    const filtro = upper(el('filtroEstampas').value);
+    renderCatalogo(estampasCache.filter((est) => est.codigo.includes(filtro) || est.nome.includes(filtro)));
+}
+
+function abrirModalCatalogo(codigo) {
+    const item = estampasCache.find((est) => est.codigo === codigo);
+    if (!item) return;
+    el('editCatalogoCodigo').value = item.codigo;
+    el('editCatalogoNome').value = item.nome;
+    el('editCatalogoValor').value = formatCurrency(item.valor || 0);
+    el('editCatalogoTipo').value = item.tipoPadrao || '';
+    el('editCatalogoEstoque').value = item.estoque || 0;
+    el('modalCatalogo').style.display = 'flex';
+}
+
+function fecharModalCatalogo() { el('modalCatalogo').style.display = 'none'; }
+
+async function salvarEdicaoCatalogo(e) {
+    e.preventDefault();
+    const codigo = upper(el('editCatalogoCodigo').value);
+    await db.collection('estampas').doc(codigo).set({
+        codigo,
+        nome: upper(el('editCatalogoNome').value),
+        valor: unmaskCurrency(el('editCatalogoValor').value),
+        tipoPadrao: upper(el('editCatalogoTipo').value),
+        estoque: parseInt(el('editCatalogoEstoque').value) || 0
+    });
+    fecharModalCatalogo();
+}
+
+function renderCatalogo(lista = estampasCache) {
+    const container = el('catalogoEstampas');
+    container.innerHTML = '';
+    if (!lista.length) {
+        container.innerHTML = '<div class="catalog-empty">Nenhum item no catálogo.</div>';
+        return;
+    }
+
+    lista.forEach((est) => {
+        const estoqueMsg = est.estoque > 0 ? `Estoque: ${est.estoque}` : 'ESGOTADO';
+        const estoqueClass = est.estoque > 0 ? '' : 'stock-esgotado';
+        
+        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-stock ${estoqueClass}">${estoqueMsg}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Excluir</button></div></article>`;
+    });
 }
 
 async function salvarNovaEstampa(e) {
