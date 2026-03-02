@@ -19,10 +19,7 @@
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
-    <div class="nav-actions">
-        <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙 Tema escuro</button>
-        <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
-    </div>
+    <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
 </nav>
 
 <div class="tab-menu">
@@ -94,8 +91,8 @@
 <div id="aba-producao" class="container" style="display: none;">
     <div class="dashboard-grid">
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
-        <div class="dash-card"><h3>Aguardando Pagamento</h3><span id="dashAguardandoPagamento">0</span></div>
-        <div class="dash-card"><h3>Envio Efetuado</h3><span id="dashEnviar">0</span></div>
+        <div class="dash-card"><h3>Fila de Estamparia</h3><span id="dashFilaEstampa">0</span></div>
+        <div class="dash-card"><h3>Envios Pendentes</h3><span id="dashEnviar">0</span></div>
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
     <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
@@ -103,8 +100,8 @@
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR..." onkeyup="aplicarFiltros()">
         <div class="botoes-filtro">
             <button class="btn-filtro ativo" id="filtro-todos" onclick="setFiltroBtn('TODOS')">Ver Todos</button>
-            <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('AGUARDANDO PAGAMENTO')">⏳ Aguardando Pagamento</button>
-            <button class="btn-filtro" id="filtro-separacao" onclick="setFiltroBtn('EM SEPARAÇÃO')">📦 Em Separação</button>
+            <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('PENDENTE_PGTO')">⏳ Pendentes</button>
+            <button class="btn-filtro" id="filtro-estampa" onclick="setFiltroBtn('AGUARDANDO ESTAMPA')">👕 Fila Estampa</button>
         </div>
     </div>
     <div class="grid-pedidos" id="gridPedidosContainer"></div>
@@ -137,41 +134,34 @@
     </div>
 </div>
 
+
 <div id="aba-clientes" class="container" style="display: none;">
     <div class="card">
         <div class="catalog-header">
             <h2 class="card-title">Fichas de Clientes <span id="carregandoClientes">Lendo...</span></h2>
-            <div class="cliente-head-actions">
-                <input type="text" id="filtroClientes" placeholder="🔎 Buscar por nome, whatsapp, cidade ou documento" oninput="filtrarClientes()">
-                <button class="btn-add" onclick="abrirCadastroCliente()">+ Novo Cliente</button>
-            </div>
+            <input type="text" id="filtroClientes" placeholder="🔎 Buscar por nome, whatsapp, cidade ou documento" oninput="filtrarClientes()">
         </div>
         <div id="listaClientes" class="clientes-grid"></div>
     </div>
 </div>
 
-<div id="modalCliente" class="modal-overlay">
+<div id="modalEdicao" class="modal-overlay">
     <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharCadastroCliente()">X</button>
-        <h2 class="card-title">Novo Cliente</h2>
-        <form id="formCliente" onsubmit="salvarCliente(event)">
-            <div class="form-grid cols-3">
-                <input type="text" id="clienteNome" placeholder="NOME" required>
-                <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP" required>
-                <input type="text" id="clienteInstagram" placeholder="INSTAGRAM">
-            </div>
-            <div class="form-grid cols-4">
-                <input type="text" id="clienteDocumento" placeholder="CPF/CNPJ">
-                <input type="date" id="clienteAniversario" placeholder="ANIVERSÁRIO">
-                <input type="text" id="clienteCidade" placeholder="CIDADE">
-                <input type="text" id="clienteEstado" placeholder="UF">
-            </div>
-            <div class="form-grid cols-2">
-                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO">
-                <input type="text" id="clienteReferencia" placeholder="REFERÊNCIA">
-            </div>
-            <button type="submit" class="btn-primary">SALVAR CLIENTE</button>
-        </form>
+        <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
+        <h2 class="card-title">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+            <input type="text" id="editNome" placeholder="NOME">
+            <input type="text" id="editWhatsapp" placeholder="WHATSAPP">
+        </div>
+        <div class="form-grid">
+            <input type="text" id="editValorTotal" class="moeda" readonly style="background:#fee2e2; color:#d90429; font-weight:900;">
+            <select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
+        </div>
+        <div class="form-section-title">PEÇAS DO PEDIDO</div>
+        <div id="editItensContainer"></div>
+        <button type="button" class="btn-add" onclick="adicionarItemEdicao()">+ ADICIONAR PEÇA</button>
+        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
     </div>
 </div>
 
