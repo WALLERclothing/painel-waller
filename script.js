@@ -9,16 +9,17 @@ const firebaseConfig = {
     appId: "1:595978694752:web:69aa74348560268a5a1305"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 
 const STATUS_LIST = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', 'ENVIO EFETUADO', 'PEDIDO ENTREGUE'];
 
 let estampasCache = [];
 let carrinhoTemporario = [];
-let carrinhoEdicao = []; // Novo carrinho só para a janela de edição
+let carrinhoEdicao = [];
 let pedidosCache = [];
-let clientesExtrasCache = [];
 let clientesCache = [];
 let filtroAtual = 'TODOS';
 let pedidoEmEdicaoId = null;
@@ -72,16 +73,39 @@ function alternarTema() {
 }
 
 function carregarTema() {
-    const tema = localStorage.getItem('temaWaller');
-    if (tema === 'dark') {
+    if (localStorage.getItem('temaWaller') === 'dark') {
         document.body.classList.add('dark-mode');
         el('btnTema').textContent = 'Tema claro';
     }
 }
 
+// ================= AUTO PREENCHER CLIENTE =================
+function autoPreencherCliente() {
+    const numWhats = onlyDigits(el('whatsapp').value);
+    if (!numWhats) return;
+
+    const clienteExistente = clientesCache.find(c => onlyDigits(c.whatsapp) === numWhats);
+    
+    if (clienteExistente) {
+        if (!el('nome').value) el('nome').value = clienteExistente.nome || '';
+        el('instagram').value = clienteExistente.instagram || '';
+        el('cpf').value = clienteExistente.documento || '';
+        el('cep').value = clienteExistente.cep || '';
+        el('cidade').value = clienteExistente.cidade || '';
+        el('estado').value = clienteExistente.estado || '';
+        el('endereco').value = clienteExistente.endereco || '';
+        el('complemento').value = clienteExistente.complemento || '';
+        el('referencia').value = clienteExistente.referencia || '';
+        
+        // Dá um flash visual de sucesso
+        el('whatsapp').style.borderColor = '#166534';
+        setTimeout(() => el('whatsapp').style.borderColor = '', 1500);
+    }
+}
+
 // ================= LANÇAR DROP =================
 function limparLancarDrop() {
-    if(!confirm("Tem certeza que deseja limpar todo o formulário?")) return;
+    if(!confirm("Tem certeza que deseja limpar todo o formulário de pedido?")) return;
     document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
     el('metodoPagamento').value = 'PIX';
     el('statusPagamento').value = 'PAGO';
@@ -167,7 +191,7 @@ function removerDoCarrinho(index) {
 
 async function salvarPedidoCompleto() {
     const nome = upper(el('nome').value);
-    if (!nome || carrinhoTemporario.length === 0) return alert('Preencha o nome do cliente e adicione pelo menos um item!');
+    if (!nome || carrinhoTemporario.length === 0) return alert('Preencha o nome do cliente e adicione itens no pedido!');
 
     const statusBase = el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO';
 
@@ -193,18 +217,33 @@ async function salvarPedidoCompleto() {
 
     await db.collection('pedidos').add(dadosPedido);
     alert('Pedido lançado com sucesso!');
+    
+    // Cadastrar cliente invisivelmente se não existir
+    const idCliente = onlyDigits(dadosPedido.whatsapp) || `${Date.now()}`;
+    db.collection('clientes').doc(idCliente).set({
+        nome: dadosPedido.nome,
+        whatsapp: dadosPedido.whatsapp,
+        instagram: dadosPedido.instagram,
+        documento: dadosPedido.documento,
+        cep: dadosPedido.cep,
+        cidade: dadosPedido.cidade,
+        estado: dadosPedido.estado,
+        endereco: dadosPedido.endereco,
+        complemento: dadosPedido.complemento,
+        referencia: dadosPedido.referencia
+    }, { merge: true });
+
     limparLancarDrop();
     mudarAba('producao');
 }
 
-// ================= MENSAGEM WHATSAPP =================
-// A formatação aqui é super rígida: sem emojis estranhos e com quebras de linha perfeitas
+// ================= WHATSAPP BLINDADO =================
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome);
     let itensTexto = '';
     
     (pedido.itens || []).forEach(i => {
-        itensTexto += `- ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`;
+        itensTexto += `▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`;
     });
 
     return `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* esta: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}*TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer duvida, e so dar um salve por aqui!`;
@@ -215,6 +254,7 @@ function linkWhatsPedido(pedido) {
     if (!numero) return '#';
     return `https://wa.me/55${numero}?text=${encodeURIComponent(mensagemWhatsInformal(pedido))}`;
 }
+
 
 // ================= EDIÇÃO DE PEDIDO EM MODAL =================
 function abrirModalEditarPedido(idPedido) {
@@ -239,7 +279,7 @@ function abrirModalEditarPedido(idPedido) {
     carrinhoEdicao = [...pedido.itens];
     atualizarTelaCarrinhoEdicao();
 
-    fecharFichaPedido(); // Fecha a ficha se estiver aberta
+    fecharFichaPedido();
     el('modalEditarPedidoCompleto').style.display = 'flex';
 }
 
@@ -254,7 +294,7 @@ function atualizarTelaCarrinhoEdicao() {
     el('listaCarrinhoEdicao').innerHTML = '';
     
     if(carrinhoEdicao.length === 0) {
-        el('listaCarrinhoEdicao').innerHTML = '<p style="color:red; font-size:0.8rem; margin:0;">Pedido ficará sem itens se salvo assim.</p>';
+        el('listaCarrinhoEdicao').innerHTML = '<p style="color:#d90429; font-size:0.8rem; margin:0; font-weight:bold;">Atenção: Pedido ficará sem itens se salvo assim.</p>';
     }
 
     carrinhoEdicao.forEach((p, index) => {
@@ -294,12 +334,24 @@ async function salvarEdicaoPedidoDefinitiva() {
     };
 
     await db.collection('pedidos').doc(pedidoEmEdicaoId).update(dadosEditados);
-    alert('Pedido atualizado na base de dados!');
+    alert('✅ Pedido atualizado com sucesso!');
     fecharModalEditarPedido();
 }
 
 
-// ================= KANBAN =================
+// ================= KANBAN PRODUÇÃO =================
+function statusClass(status) {
+    if (status === 'AGUARDANDO PAGAMENTO') return 'badge-pendente';
+    if (status === 'EM SEPARAÇÃO') return 'badge-estampa';
+    if (status === 'ENVIO EFETUADO') return 'badge-enviado';
+    if (status === 'PEDIDO ENTREGUE') return 'badge-entregue';
+    return 'badge-default';
+}
+
+function statusOptionsSelecionado(atual) {
+    return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join('');
+}
+
 function abrirSanfonaStatus(id, statusAtual) {
     const selectId = `status-select-${id}`;
     return `<details class="status-sanfona"><summary>Alterar status</summary><select id="${selectId}">${statusOptionsSelecionado(statusAtual)}</select><button class="btn-add" onclick="salvarStatusPedido('${id}','${selectId}')">Salvar</button></details>`;
@@ -328,7 +380,10 @@ function renderPedidosGrid(lista) {
     grupos.forEach((grupo) => {
         container.innerHTML += `<section class="kanban-col"><header><h3>${grupo.status}</h3><span>${grupo.itens.length}</span></header><div class="kanban-cards">${grupo.itens.map((pedido) => `
             <article class="pedido-card-v2">
-                <div class="pedido-header"><strong>#${pedido.numeroPedido || '----'}</strong><span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span></div>
+                <div class="pedido-header">
+                    <strong>#${pedido.numeroPedido || '----'}</strong>
+                    <span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span>
+                </div>
                 <p><strong>${pedido.nome || 'SEM NOME'}</strong></p>
                 <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
                 <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
@@ -378,30 +433,32 @@ function atualizarDashboard(lista) {
     el('dashFaturamento').textContent = formatCurrency(lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
 }
 
-// ================= CLIENTES E FICHAS =================
+// ================= CLIENTES =================
 function extrairClientesDosPedidos() {
     const mapa = new Map();
-    clientesExtrasCache.forEach((cliente) => {
-        const chave = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
-        if (chave) mapa.set(chave, { ...cliente, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] });
+    clientesCache.forEach((c) => {
+        const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`;
+        mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] });
     });
 
     pedidosCache.forEach((pedido) => {
         const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
         if (!chave) return;
+        
         const base = mapa.get(chave) || {
             nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), complemento: upper(pedido.complemento), referencia: upper(pedido.referencia), totalPedidos: 0, totalGasto: 0, historicoPedidos: []
         };
+        
         base.totalPedidos += 1;
         base.totalGasto += Number(pedido.valorTotal) || 0;
         base.historicoPedidos.push(pedido);
         
+        // Mantém dados sempre atualizados pelo último pedido se faltar
         if (!base.cep) base.cep = upper(pedido.cep);
         if (!base.endereco) base.endereco = upper(pedido.endereco);
         if (!base.complemento) base.complemento = upper(pedido.complemento);
         if (!base.cidade) base.cidade = upper(pedido.cidade);
         if (!base.estado) base.estado = upper(pedido.estado);
-        if (!base.referencia) base.referencia = upper(pedido.referencia);
 
         mapa.set(chave, base);
     });
@@ -501,19 +558,19 @@ function editarCliente(idRef) {
 }
 
 function excluirCliente(idRef) {
-    if (!confirm('Excluir ficha de cliente?')) return;
+    if (!confirm('Excluir ficha deste cliente?')) return;
     db.collection('clientes').doc(idRef).delete();
 }
 
-function renderClientes(lista = clientesCache) {
+function renderClientes() {
     const container = el('listaClientes');
     container.innerHTML = '';
-    if (!lista.length) {
-        container.innerHTML = '<div class="catalog-empty">Nenhum cliente encontrado.</div>';
+    if (!clientesCache.length) {
+        container.innerHTML = '<div class="catalog-empty">Nenhum cliente na base.</div>';
         return;
     }
 
-    lista.forEach((cliente) => {
+    clientesCache.forEach((cliente) => {
         const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
         container.innerHTML += `<article class="cliente-card">
             <h3>${cliente.nome || 'SEM NOME'}</h3>
@@ -522,6 +579,32 @@ function renderClientes(lista = clientesCache) {
             <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span></div>
             <div class="pedido-actions">
                 <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha Completa</button>
+                <button class="catalog-delete" onclick="excluirCliente('${idRef}')">🗑️ Excluir</button>
+            </div>
+        </article>`;
+    });
+}
+
+function filtrarClientes() {
+    const busca = upper(el('filtroClientes').value);
+    const container = el('listaClientes');
+    container.innerHTML = '';
+    
+    const filtrado = clientesCache.filter((c) => upper(`${c.nome} ${c.whatsapp} ${c.documento} ${c.cidade}`).includes(busca));
+    
+    if(!filtrado.length) {
+        container.innerHTML = '<div class="catalog-empty">Nenhum cliente encontrado na busca.</div>';
+        return;
+    }
+
+    filtrado.forEach((cliente) => {
+        const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
+        container.innerHTML += `<article class="cliente-card">
+            <h3>${cliente.nome || 'SEM NOME'}</h3>
+            <p><strong>Whatsapp:</strong> ${cliente.whatsapp || '-'}</p>
+            <div class="pedido-actions">
+                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha Completa</button>
+                <button class="catalog-delete" onclick="excluirCliente('${idRef}')">🗑️</button>
             </div>
         </article>`;
     });
@@ -540,7 +623,24 @@ function gerarPDF() {
     doc.save(`fila-producao-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-// ================= CATÁLOGO =================
+// ================= CATÁLOGO DE ESTAMPAS =================
+function abrirModalNovaEstampa() { el('modalNovaEstampa').style.display = 'flex'; }
+function fecharModalNovaEstampa() { el('modalNovaEstampa').style.display = 'none'; }
+
+async function salvarNovaEstampa(e) {
+    e.preventDefault();
+    const cod = upper(el('cadCodigoEstampa').value);
+    await db.collection('estampas').doc(cod).set({
+        codigo: cod,
+        nome: upper(el('cadNomeEstampa').value),
+        valor: unmaskCurrency(el('cadValorEstampa').value),
+        tipoPadrao: upper(el('cadTipoPadrao').value),
+        estoque: parseInt(el('cadEstoqueEstampa').value) || 0
+    });
+    e.target.reset();
+    fecharModalNovaEstampa();
+}
+
 function filtrarCatalogo() {
     const filtro = upper(el('filtroEstampas').value);
     renderCatalogo(estampasCache.filter((est) => est.codigo.includes(filtro) || est.nome.includes(filtro)));
@@ -584,27 +684,31 @@ function renderCatalogo(lista = estampasCache) {
         const estoqueMsg = est.estoque > 0 ? `Estoque: ${est.estoque}` : 'ESGOTADO';
         const estoqueClass = est.estoque > 0 ? '' : 'stock-esgotado';
         
-        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-stock ${estoqueClass}">${estoqueMsg}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Excluir</button></div></article>`;
+        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-stock ${estoqueClass}">${estoqueMsg}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">🗑️ Excluir</button></div></article>`;
     });
 }
 
-async function salvarNovaEstampa(e) {
-    e.preventDefault();
-    const cod = upper(el('cadCodigoEstampa').value);
-    await db.collection('estampas').doc(cod).set({
-        codigo: cod,
-        nome: upper(el('cadNomeEstampa').value),
-        valor: unmaskCurrency(el('cadValorEstampa').value),
-        tipoPadrao: upper(el('cadTipoPadrao').value),
-        estoque: parseInt(el('cadEstoqueEstampa').value) || 0
-    });
-    e.target.reset();
-}
 
+// ================= LISTENERS DO FIREBASE =================
 function iniciarListeners() {
+    db.collection('clientes').onSnapshot((snap) => {
+        let lidos = [];
+        snap.forEach((doc) => lidos.push(doc.data()));
+        clientesCache = lidos; // Atualiza primeiro a base local pura
+        
+        // Só tenta renderizar o resto se os pedidos já foram lidos
+        if(pedidosCache.length > 0) {
+            extrairClientesDosPedidos();
+            renderClientes();
+        }
+        el('carregandoClientes').style.display = 'none';
+    });
+
     db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
-        pedidosCache = [];
-        snap.forEach((doc) => pedidosCache.push({ id: doc.id, ...doc.data() }));
+        let ped = [];
+        snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() }));
+        pedidosCache = ped;
+        
         atualizarDashboard(pedidosCache);
         aplicarFiltros();
         extrairClientesDosPedidos();
@@ -613,24 +717,18 @@ function iniciarListeners() {
     });
 
     db.collection('estampas').orderBy('codigo').onSnapshot((snap) => {
-        estampasCache = [];
+        let est = [];
         snap.forEach((doc) => {
-            const est = doc.data();
-            estampasCache.push({ codigo: upper(est.codigo), nome: upper(est.nome), valor: Number(est.valor) || 0, tipoPadrao: upper(est.tipoPadrao), estoque: Number(est.estoque) || 0 });
+            const data = doc.data();
+            est.push({ codigo: upper(data.codigo), nome: upper(data.nome), valor: Number(data.valor) || 0, tipoPadrao: upper(data.tipoPadrao), estoque: Number(data.estoque) || 0 });
         });
+        estampasCache = est;
         renderCatalogo();
         el('carregandoEstampas').style.display = 'none';
     });
-
-    db.collection('clientes').onSnapshot((snap) => {
-        clientesExtrasCache = [];
-        snap.forEach((doc) => clientesExtrasCache.push(doc.data()));
-        extrairClientesDosPedidos();
-        renderClientes();
-        el('carregandoClientes').style.display = 'none';
-    });
 }
 
+// ================= INICIALIZAÇÃO =================
 el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
 el('cadValorEstampa').addEventListener('blur', () => {
     const value = unmaskCurrency(el('cadValorEstampa').value);
@@ -639,6 +737,10 @@ el('cadValorEstampa').addEventListener('blur', () => {
 el('editCatalogoValor').addEventListener('blur', () => {
     const value = unmaskCurrency(el('editCatalogoValor').value);
     if (value > 0) el('editCatalogoValor').value = formatCurrency(value);
+});
+el('editPedValorTotal').addEventListener('blur', () => {
+    const value = unmaskCurrency(el('editPedValorTotal').value);
+    if (value > 0) el('editPedValorTotal').value = formatCurrency(value);
 });
 
 carregarTema();
