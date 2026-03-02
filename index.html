@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -17,7 +17,7 @@
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
         <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙 Tema escuro</button>
-        <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
+        <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar Relatório</button>
     </div>
 </nav>
 
@@ -27,6 +27,8 @@
     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
     <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🧾 Fichas de Clientes</button>
 </div>
+
+<div id="toast-container"></div>
 
 <div id="aba-cadastro" class="container">
     <div class="card">
@@ -49,7 +51,8 @@
                 <input type="text" id="complemento" placeholder="COMPLEMENTO (Ex: Apto 32)">
                 <input type="text" id="referencia" placeholder="PONTO DE REFERÊNCIA">
             </div>
-            <div class="form-grid cols-3">
+            <div class="form-grid cols-4">
+                <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
                 <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL" readonly>
                 <select id="metodoPagamento">
                     <option value="PIX">PIX</option>
@@ -66,12 +69,12 @@
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
             <div class="form-section-title">2. Adicionar peças ao pedido</div>
             <div class="form-grid cols-2">
-                <input type="text" id="codigoEstampa" placeholder="CÓDIGO DO PRODUTO">
+                <input type="text" id="codigoEstampa" placeholder="CÓDIGO DO PRODUTO" onblur="preencherEstampaPorCodigo()">
                 <input type="text" id="nomeEstampa" placeholder="NOME DO PRODUTO (AUTOMÁTICO)">
             </div>
             <div class="form-grid cols-5">
                 <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
-                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
+                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option><option value="UN">UN (Único)</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UNITÁRIO">
                 <input type="number" id="quantidade" value="1" min="1" placeholder="QTD">
@@ -98,6 +101,14 @@
         <div class="dash-card"><h3>Envio Efetuado</h3><span id="dashEnviar">0</span></div>
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
+    
+    <div class="card" style="margin-bottom: 1rem; padding: 1rem;">
+        <h3 class="form-section-title" style="margin-bottom: 10px;">Faturamento (Últimos 7 dias)</h3>
+        <div style="height: 180px; width: 100%;">
+            <canvas id="graficoFaturamento"></canvas>
+        </div>
+    </div>
+
     <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com o banco...</span></h2>
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
@@ -201,29 +212,23 @@
                 <input type="text" id="editPedComplemento" placeholder="COMPLEMENTO">
                 <input type="text" id="editPedReferencia" placeholder="REFERÊNCIA">
             </div>
-            <div class="form-grid cols-3">
-                <input type="text" id="editPedValorTotal" class="moeda" placeholder="VALOR TOTAL" readonly>
-                <select id="editPedMetodo">
-                    <option value="PIX">PIX</option>
-                    <option value="CARTÃO">CARTÃO</option>
-                    <option value="DINHEIRO">DINHEIRO / BOLETO</option>
-                </select>
-                <select id="editPedStatusPagamento">
-                    <option value="PAGO">PAGO</option>
-                    <option value="PENDENTE">PENDENTE</option>
-                </select>
+            <div class="form-grid cols-4">
+                <input type="text" id="editPedRastreio" placeholder="CÓDIGO DE RASTREIO (Ex: QQ12345BR)">
+                <input type="text" id="editPedFrete" class="moeda" placeholder="VALOR FRETE" oninput="atualizarTelaCarrinhoEdicao()">
+                <select id="editPedMetodo"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO / BOLETO</option></select>
+                <select id="editPedStatusPagamento"><option value="PAGO">PAGO</option><option value="PENDENTE">PENDENTE</option></select>
             </div>
         </div>
         
         <div class="form-section">
             <div class="form-section-title">Adicionar Mais Itens</div>
             <div class="form-grid cols-2">
-                <input type="text" id="editPedCodigoEstampa" placeholder="CÓDIGO DO PRODUTO" oninput="preencherEstampaPorCodigoEdicao()">
+                <input type="text" id="editPedCodigoEstampa" placeholder="CÓDIGO DO PRODUTO" onblur="preencherEstampaPorCodigoEdicao()">
                 <input type="text" id="editPedNomeEstampa" placeholder="NOME DO PRODUTO">
             </div>
             <div class="form-grid cols-5">
                 <select id="editPedTipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
-                <select id="editPedTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
+                <select id="editPedTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option><option value="UN">UN</option></select>
                 <select id="editPedCor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 <input type="text" id="editPedValorUnitario" class="moeda" placeholder="R$ UNITÁRIO">
                 <input type="number" id="editPedQuantidade" value="1" min="1">
@@ -235,8 +240,9 @@
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
             <div class="form-section-title">Itens Deste Pedido</div>
             <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
+            <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: #d90429;">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
         </div>
-        <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
+        <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO E ESTOQUE</button>
     </div>
 </div>
 
@@ -249,18 +255,26 @@
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" required>
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DO PRODUTO" required>
             </div>
-            <div class="form-grid cols-3">
+            <div class="form-grid cols-2">
                 <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
-                <input type="number" id="cadEstoqueEstampa" placeholder="QTD ESTOQUE" required>
                 <select id="cadTipoPadrao">
-                    <option value="">TIPO DO PRODUTO</option>
+                    <option value="">TIPO DO PRODUTO (OPCIONAL)</option>
                     <option value="OVERSIZED">OVERSIZED</option>
                     <option value="MOLETOM">MOLETOM</option>
                     <option value="REGATA">REGATA</option>
                     <option value="ACESSÓRIO">ACESSÓRIO</option>
                 </select>
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 1rem;">CADASTRAR NO CATÁLOGO</button>
+            <div class="form-section-title" style="margin-top: 1rem;">Estoque por Tamanho</div>
+            <div class="form-grid cols-6">
+                <div><small>P</small><input type="number" id="cadEstP" placeholder="P" min="0" value="0"></div>
+                <div><small>M</small><input type="number" id="cadEstM" placeholder="M" min="0" value="0"></div>
+                <div><small>G</small><input type="number" id="cadEstG" placeholder="G" min="0" value="0"></div>
+                <div><small>GG</small><input type="number" id="cadEstGG" placeholder="GG" min="0" value="0"></div>
+                <div><small>XG</small><input type="number" id="cadEstXG" placeholder="XG" min="0" value="0"></div>
+                <div><small>Único</small><input type="number" id="cadEstUN" placeholder="UN" min="0" value="0"></div>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">CADASTRAR PRODUTO</button>
         </form>
     </div>
 </div>
@@ -271,18 +285,26 @@
         <h2 class="card-title">Editar Produto do Catálogo</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
-            <div class="form-grid cols-3">
+            <div class="form-grid cols-2">
                 <input type="text" id="editCatalogoNome" placeholder="NOME DO PRODUTO" required>
                 <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
-                <input type="number" id="editCatalogoEstoque" placeholder="QTD ESTOQUE" required>
             </div>
-            <select id="editCatalogoTipo" style="margin-top: 10px;">
+            <select id="editCatalogoTipo" style="margin-bottom: 10px;">
                 <option value="">TIPO DO PRODUTO</option>
                 <option value="OVERSIZED">OVERSIZED</option>
                 <option value="MOLETOM">MOLETOM</option>
                 <option value="REGATA">REGATA</option>
                 <option value="ACESSÓRIO">ACESSÓRIO</option>
             </select>
+            <div class="form-section-title">Estoque por Tamanho</div>
+            <div class="form-grid cols-6">
+                <div><small>P</small><input type="number" id="editEstP" min="0" value="0"></div>
+                <div><small>M</small><input type="number" id="editEstM" min="0" value="0"></div>
+                <div><small>G</small><input type="number" id="editEstG" min="0" value="0"></div>
+                <div><small>GG</small><input type="number" id="editEstGG" min="0" value="0"></div>
+                <div><small>XG</small><input type="number" id="editEstXG" min="0" value="0"></div>
+                <div><small>Único</small><input type="number" id="editEstUN" min="0" value="0"></div>
+            </div>
             <button type="submit" class="btn-primary" style="margin-top: 1rem;">SALVAR ALTERAÇÕES</button>
         </form>
     </div>
