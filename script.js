@@ -12,26 +12,27 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+const STATUS_LIST = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', 'ENVIO EFETUADO', 'PEDIDO ENTREGUE'];
+
 let estampasCache = [];
 let carrinhoTemporario = [];
 let pedidosCache = [];
+let clientesExtrasCache = [];
 let clientesCache = [];
 let filtroAtual = 'TODOS';
 
-const STATUSS = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', 'ENVIO EFETUADO', 'RECEBIDO'];
+function upper(v) { return (v || '').toString().trim().toUpperCase(); }
+function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
 
 function formatCurrency(num) {
     const value = parseFloat(num) || 0;
-    return 'R$ ' + value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`;
 }
 
 function unmaskCurrency(value) {
     if (!value) return 0;
     return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 }
-
-function upper(v) { return (v || '').toString().trim().toUpperCase(); }
-function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
 
 function formatDate(dateValue) {
     if (!dateValue) return '-';
@@ -42,6 +43,10 @@ function formatDate(dateValue) {
 function getItensResumo(itens = []) {
     if (!itens.length) return 'Sem itens';
     return itens.map((item) => `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa || 'PEÇA'}`).join(' • ');
+}
+
+function primeiroNome(nome = '') {
+    return (nome.trim().split(' ')[0] || 'cliente');
 }
 
 function mudarAba(aba) {
@@ -76,27 +81,29 @@ function preencherEstampaPorCodigo() {
     const codigo = upper(el('codigoEstampa').value);
     el('codigoEstampa').value = codigo;
     const feedback = el('mensagemAutoPreenchimento');
+
     if (!codigo) {
         feedback.textContent = '';
         feedback.classList.remove('ok', 'warn');
         return;
     }
 
-    const encontrada = estampasCache.find((estampa) => estampa.codigo === codigo);
-    if (encontrada) {
-        el('nomeEstampa').value = encontrada.nome;
-        el('valorUnitario').value = formatCurrency(encontrada.valor || 0);
-        if (encontrada.tipoPadrao && Array.from(el('tipoPeca').options).some((opt) => opt.value === encontrada.tipoPadrao)) {
-            el('tipoPeca').value = encontrada.tipoPadrao;
-        }
-        feedback.textContent = `Estampa encontrada: ${encontrada.nome}`;
-        feedback.classList.add('ok');
-        feedback.classList.remove('warn');
-    } else {
-        feedback.textContent = 'Código não encontrado no catálogo. Preencha o nome manualmente.';
+    const encontrada = estampasCache.find((item) => item.codigo === codigo);
+    if (!encontrada) {
+        feedback.textContent = 'Código não encontrado no catálogo.';
         feedback.classList.add('warn');
         feedback.classList.remove('ok');
+        return;
     }
+
+    el('nomeEstampa').value = encontrada.nome;
+    el('valorUnitario').value = formatCurrency(encontrada.valor || 0);
+    if (encontrada.tipoPadrao && Array.from(el('tipoPeca').options).some((opt) => opt.value === encontrada.tipoPadrao)) {
+        el('tipoPeca').value = encontrada.tipoPadrao;
+    }
+    feedback.textContent = `Estampa encontrada: ${encontrada.nome}`;
+    feedback.classList.add('ok');
+    feedback.classList.remove('warn');
 }
 
 function adicionarAoCarrinho() {
@@ -113,14 +120,12 @@ function adicionarAoCarrinho() {
         quantidade: parseInt(el('quantidade').value, 10) || 1,
         valorUnitario: unmaskCurrency(el('valorUnitario').value)
     });
-    atualizarTelaCarrinho();
 
+    atualizarTelaCarrinho();
     el('codigoEstampa').value = '';
     el('nomeEstampa').value = '';
     el('valorUnitario').value = '';
     el('quantidade').value = 1;
-    el('mensagemAutoPreenchimento').textContent = '';
-    el('mensagemAutoPreenchimento').classList.remove('ok', 'warn');
 }
 
 function atualizarTelaCarrinho() {
@@ -128,7 +133,7 @@ function atualizarTelaCarrinho() {
     el('listaCarrinho').innerHTML = '';
     carrinhoTemporario.forEach((p) => {
         soma += p.quantidade * p.valorUnitario;
-        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca}</strong> • ${p.nomeEstampa} [${p.codigoEstampa}]</div><div>${formatCurrency(p.valorUnitario)}</div></div>`;
+        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca}</strong> • ${p.nomeEstampa}</div><div>${formatCurrency(p.valorUnitario)}</div></div>`;
     });
     el('valorTotal').value = formatCurrency(soma);
 }
@@ -137,7 +142,9 @@ async function salvarPedidoCompleto() {
     const nome = upper(el('nome').value);
     if (!nome || carrinhoTemporario.length === 0) return alert('Dados incompletos!');
 
-    const payload = {
+    const statusBase = el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO';
+
+    await db.collection('pedidos').add({
         numeroPedido: Math.floor(1000 + Math.random() * 9000).toString(),
         nome,
         whatsapp: upper(el('whatsapp').value),
@@ -152,83 +159,13 @@ async function salvarPedidoCompleto() {
         metodoPagamento: el('metodoPagamento').value,
         statusPagamento: el('statusPagamento').value,
         itens: carrinhoTemporario,
-        status: el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO',
+        status: statusBase,
         dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await db.collection('pedidos').add(payload);
-        alert('Pedido salvo com sucesso!');
-        carrinhoTemporario = [];
-        atualizarTelaCarrinho();
-    } catch (error) {
-        console.error(error);
-        alert('Erro ao salvar pedido.');
-    }
-}
-
-function abrirCadastroCliente() { el('modalCliente').style.display = 'flex'; }
-function fecharCadastroCliente() { el('modalCliente').style.display = 'none'; }
-
-async function salvarCliente(event) {
-    event.preventDefault();
-    const whatsapp = onlyDigits(el('clienteWhatsapp').value);
-    const id = whatsapp || `${Date.now()}`;
-    const payload = {
-        nome: upper(el('clienteNome').value),
-        whatsapp,
-        instagram: upper(el('clienteInstagram').value),
-        documento: upper(el('clienteDocumento').value),
-        aniversario: el('clienteAniversario').value || '',
-        cidade: upper(el('clienteCidade').value),
-        estado: upper(el('clienteEstado').value),
-        endereco: upper(el('clienteEndereco').value),
-        referencia: upper(el('clienteReferencia').value),
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await db.collection('clientes').doc(id).set(payload, { merge: true });
-        event.target.reset();
-        fecharCadastroCliente();
-        alert('Cliente cadastrado com sucesso!');
-    } catch (e) {
-        console.error(e);
-        alert('Erro ao salvar cliente.');
-    }
-}
-
-function aniversarioProximo(dataIso) {
-    if (!dataIso) return false;
-    const hoje = new Date();
-    const niver = new Date(dataIso + 'T00:00:00');
-    const prox = new Date(hoje.getFullYear(), niver.getMonth(), niver.getDate());
-    const diff = Math.ceil((prox - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
-    return diff >= 0 && diff <= 15;
-}
-
-function renderCatalogo(lista = estampasCache) {
-    const container = el('catalogoEstampas');
-    container.innerHTML = '';
-    if (!lista.length) {
-        container.innerHTML = '<div class="catalog-empty">Nenhuma estampa cadastrada.</div>';
-        return;
-    }
-    lista.forEach((est) => {
-        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-type">Tipo padrão: <strong>${est.tipoPadrao || '-'}</strong></p><div class="catalog-actions"><button class="catalog-edit" onclick="editarProdutoCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Remover</button></div></article>`;
     });
-}
 
-function editarProdutoCatalogo(codigo) {
-    const produto = estampasCache.find((item) => item.codigo === codigo);
-    if (!produto) return;
-    const novoNome = prompt('Editar nome da estampa:', produto.nome);
-    if (novoNome === null) return;
-    const novoValor = prompt('Editar valor base (R$):', (produto.valor || 0).toFixed(2).replace('.', ','));
-    if (novoValor === null) return;
-    const novoTipo = prompt('Editar tipo padrão (opcional):', produto.tipoPadrao || '');
-    if (novoTipo === null) return;
-    db.collection('estampas').doc(codigo).set({ codigo, nome: upper(novoNome), valor: unmaskCurrency(novoValor), tipoPadrao: upper(novoTipo) });
+    alert('Pedido salvo com sucesso!');
+    carrinhoTemporario = [];
+    atualizarTelaCarrinho();
 }
 
 function filtrarCatalogo() {
@@ -236,120 +173,247 @@ function filtrarCatalogo() {
     renderCatalogo(estampasCache.filter((est) => est.codigo.includes(filtro) || est.nome.includes(filtro)));
 }
 
-function getWhatsappLink(whatsapp, pedido) {
-    const numero = onlyDigits(whatsapp);
-    if (!numero) return '#';
-    const msg = encodeURIComponent(`Olá ${pedido.nome || ''}, atualizamos o status do pedido #${pedido.numeroPedido || ''}: ${pedido.status || ''}.`);
-    return `https://wa.me/55${numero}?text=${msg}`;
+function abrirModalCatalogo(codigo) {
+    const item = estampasCache.find((est) => est.codigo === codigo);
+    if (!item) return;
+    el('editCatalogoCodigo').value = item.codigo;
+    el('editCatalogoNome').value = item.nome;
+    el('editCatalogoValor').value = formatCurrency(item.valor || 0);
+    el('editCatalogoTipo').value = item.tipoPadrao || '';
+    el('modalCatalogo').style.display = 'flex';
+}
+function fecharModalCatalogo() { el('modalCatalogo').style.display = 'none'; }
+
+async function salvarEdicaoCatalogo(e) {
+    e.preventDefault();
+    const codigo = upper(el('editCatalogoCodigo').value);
+    await db.collection('estampas').doc(codigo).set({
+        codigo,
+        nome: upper(el('editCatalogoNome').value),
+        valor: unmaskCurrency(el('editCatalogoValor').value),
+        tipoPadrao: upper(el('editCatalogoTipo').value)
+    });
+    fecharModalCatalogo();
 }
 
-function editarPedido(id) {
-    const pedido = pedidosCache.find((p) => p.id === id);
-    if (!pedido) return;
-    const novoStatus = prompt(`Status do pedido (${STATUSS.join(', ')}):`, pedido.status || 'PEDIDO FEITO');
-    if (novoStatus === null) return;
-    const novoPagamento = prompt('Status do pagamento (PAGO/PENDENTE):', pedido.statusPagamento || 'PENDENTE');
-    if (novoPagamento === null) return;
-    db.collection('pedidos').doc(id).update({ status: upper(novoStatus), statusPagamento: upper(novoPagamento) });
+function renderCatalogo(lista = estampasCache) {
+    const container = el('catalogoEstampas');
+    container.innerHTML = '';
+    if (!lista.length) {
+        container.innerHTML = '<div class="catalog-empty">Nenhum item no catálogo.</div>';
+        return;
+    }
+
+    lista.forEach((est) => {
+        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Excluir</button></div></article>`;
+    });
 }
 
-function excluirPedido(id) {
-    if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
-    db.collection('pedidos').doc(id).delete();
-}
-
-function statusBadgeClass(status) {
+function statusClass(status) {
     if (status === 'AGUARDANDO PAGAMENTO') return 'badge-pendente';
     if (status === 'EM SEPARAÇÃO') return 'badge-estampa';
     if (status === 'ENVIO EFETUADO') return 'badge-enviado';
-    if (status === 'RECEBIDO') return 'badge-default';
+    if (status === 'PEDIDO ENTREGUE') return 'badge-entregue';
     return 'badge-default';
+}
+
+function statusOptionsSelecionado(atual) {
+    return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join('');
+}
+
+function mensagemWhatsInformal(pedido) {
+    const nome = primeiroNome(pedido.nome);
+    const itens = (pedido.itens || []).map((i) => `${i.quantidade || 1}x ${i.nomeEstampa || i.codigoEstampa || 'PEÇA'}`).join(', ') || 'seus itens';
+    return `Oi, ${nome}! Passando pra te atualizar: seu pedido #${pedido.numeroPedido || ''} está em *${pedido.status || 'processamento'}* 🚀 Itens: ${itens}. Qualquer coisa me chama por aqui!`;
+}
+
+function linkWhatsPedido(pedido) {
+    const numero = onlyDigits(pedido.whatsapp);
+    if (!numero) return '#';
+    return `https://wa.me/55${numero}?text=${encodeURIComponent(mensagemWhatsInformal(pedido))}`;
+}
+
+function abrirSanfonaStatus(id, statusAtual) {
+    const selectId = `status-select-${id}`;
+    return `<details class="status-sanfona"><summary>Alterar status</summary><select id="${selectId}">${statusOptionsSelecionado(statusAtual)}</select><button class="btn-add" onclick="salvarStatusPedido('${id}','${selectId}')">Salvar</button></details>`;
+}
+
+async function salvarStatusPedido(id, selectId) {
+    const status = upper(el(selectId).value);
+    await db.collection('pedidos').doc(id).update({ status });
+}
+
+function excluirPedido(id) {
+    if (!confirm('Excluir pedido?')) return;
+    db.collection('pedidos').doc(id).delete();
 }
 
 function renderPedidosGrid(lista) {
     const container = el('gridPedidosContainer');
     container.innerHTML = '';
-    if (!lista.length) {
-        container.innerHTML = '<div class="catalog-empty">Nenhum pedido encontrado.</div>';
-        return;
-    }
 
-    const grupos = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', 'ENVIO EFETUADO', 'RECEBIDO'];
-    grupos.forEach((status) => {
-        const pedidosStatus = lista.filter((pedido) => upper(pedido.status || 'PEDIDO FEITO') === status);
-        container.innerHTML += `<section class="status-group"><h3>${status} <span>(${pedidosStatus.length})</span></h3><div class="status-group-grid">${pedidosStatus.map((pedido) => `
+    const grupos = STATUS_LIST.map((status) => ({ status, itens: lista.filter((p) => upper(p.status || 'PEDIDO FEITO') === status) }));
+
+    grupos.forEach((grupo) => {
+        container.innerHTML += `<section class="kanban-col"><header><h3>${grupo.status}</h3><span>${grupo.itens.length}</span></header><div class="kanban-cards">${grupo.itens.map((pedido) => `
             <article class="pedido-card-v2">
-                <div class="pedido-header"><strong>#${pedido.numeroPedido || '----'} • ${pedido.nome || 'SEM NOME'}</strong><span class="pedido-badge ${statusBadgeClass(status)}">${status}</span></div>
-                <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
+                <div class="pedido-header"><strong>#${pedido.numeroPedido || '----'} • ${pedido.nome || 'SEM NOME'}</strong><span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span></div>
                 <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
                 <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
                 <p><strong>Data:</strong> ${formatDate(pedido.dataCriacao)}</p>
+                ${abrirSanfonaStatus(pedido.id, upper(pedido.status || 'PEDIDO FEITO'))}
                 <div class="pedido-actions">
-                    <button class="catalog-edit" onclick="editarPedido('${pedido.id}')">Editar</button>
+                    <a class="btn-whats" target="_blank" href="${linkWhatsPedido(pedido)}">WhatsApp</a>
+                    <button class="catalog-edit" onclick="abrirVisualizacaoClientePedido('${pedido.id}')">Visualizar</button>
                     <button class="catalog-delete" onclick="excluirPedido('${pedido.id}')">Excluir</button>
-                    <a class="btn-whats" target="_blank" href="${getWhatsappLink(pedido.whatsapp, pedido)}">WhatsApp</a>
                 </div>
-            </article>
-        `).join('')}</div></section>`;
+            </article>`).join('')}</div></section>`;
     });
-}
-
-function atualizarDashboard(lista) {
-    const hoje = new Date();
-    const pedidosMes = lista.filter((p) => p.dataCriacao && ((p.dataCriacao.toDate ? p.dataCriacao.toDate() : new Date(p.dataCriacao)).getMonth() === hoje.getMonth())).length;
-    const aguardandoPgto = lista.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
-    const enviados = lista.filter((p) => upper(p.status) === 'ENVIO EFETUADO').length;
-    const faturamento = lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0);
-
-    el('dashPedidosMes').textContent = pedidosMes;
-    el('dashAguardandoPagamento').textContent = aguardandoPgto;
-    el('dashEnviar').textContent = enviados;
-    el('dashFaturamento').textContent = formatCurrency(faturamento);
 }
 
 function aplicarFiltros() {
     const busca = upper(el('inputBusca').value);
-    const filtrada = pedidosCache.filter((pedido) => {
-        const texto = `${upper(pedido.nome)} ${upper(pedido.whatsapp)} ${upper(pedido.numeroPedido)} ${upper(getItensResumo(pedido.itens))}`;
-        const okBusca = texto.includes(busca);
-        if (filtroAtual === 'TODOS') return okBusca;
-        return upper(pedido.status) === filtroAtual && okBusca;
+    const filtrado = pedidosCache.filter((pedido) => {
+        const texto = `${upper(pedido.nome)} ${upper(pedido.whatsapp)} ${upper(getItensResumo(pedido.itens))}`;
+        const matchBusca = texto.includes(busca);
+        if (filtroAtual === 'TODOS') return matchBusca;
+        if (filtroAtual === 'AGUARDANDO PAGAMENTO') return upper(pedido.status) === 'AGUARDANDO PAGAMENTO' && matchBusca;
+        if (filtroAtual === 'EM PRODUÇÃO') return ['PEDIDO FEITO', 'EM SEPARAÇÃO'].includes(upper(pedido.status)) && matchBusca;
+        if (filtroAtual === 'EM ENVIO') return ['ENVIO EFETUADO'].includes(upper(pedido.status)) && matchBusca;
+        return matchBusca;
     });
-    renderPedidosGrid(filtrada);
+    renderPedidosGrid(filtrado);
 }
 
 function setFiltroBtn(filtro) {
     filtroAtual = filtro;
     document.querySelectorAll('.btn-filtro').forEach((btn) => btn.classList.remove('ativo'));
-    const idMap = { TODOS: 'filtro-todos', 'AGUARDANDO PAGAMENTO': 'filtro-pendente', 'EM SEPARAÇÃO': 'filtro-separacao' };
+    const idMap = { TODOS: 'filtro-todos', 'AGUARDANDO PAGAMENTO': 'filtro-pagamento', 'EM PRODUÇÃO': 'filtro-producao', 'EM ENVIO': 'filtro-envio' };
     if (idMap[filtro]) el(idMap[filtro]).classList.add('ativo');
     aplicarFiltros();
 }
 
-function extrairClientesDosPedidos(pedidos = [], clientesExtras = []) {
-    const mapa = new Map();
+function atualizarDashboard(lista) {
+    const hoje = new Date();
+    const pedidosMes = lista.filter((pedido) => {
+        if (!pedido.dataCriacao) return false;
+        const d = pedido.dataCriacao.toDate ? pedido.dataCriacao.toDate() : new Date(pedido.dataCriacao);
+        return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+    }).length;
+    el('dashPedidosMes').textContent = pedidosMes;
+    el('dashAguardandoPagamento').textContent = lista.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
+    el('dashEnviar').textContent = lista.filter((p) => upper(p.status) === 'ENVIO EFETUADO').length;
+    el('dashFaturamento').textContent = formatCurrency(lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
+}
 
-    clientesExtras.forEach((c) => {
-        const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`;
-        if (!chave) return;
-        mapa.set(chave, { ...c, nome: upper(c.nome), totalPedidos: 0, totalGasto: 0, ultimaCompra: null });
+function aniversarioProximo(dataIso) {
+    if (!dataIso) return false;
+    const hoje = new Date();
+    const data = new Date(`${dataIso}T00:00:00`);
+    const prox = new Date(hoje.getFullYear(), data.getMonth(), data.getDate());
+    const diff = Math.ceil((prox - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
+    return diff >= 0 && diff <= 15;
+}
+
+function extrairClientesDosPedidos() {
+    const mapa = new Map();
+    clientesExtrasCache.forEach((cliente) => {
+        const chave = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
+        if (chave) mapa.set(chave, { ...cliente, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] });
     });
 
-    pedidos.forEach((pedido) => {
+    pedidosCache.forEach((pedido) => {
         const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
         if (!chave) return;
-        const atual = mapa.get(chave) || {
-            nome: upper(pedido.nome), whatsapp: onlyDigits(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento),
-            cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), referencia: upper(pedido.referencia), aniversario: '', totalPedidos: 0, totalGasto: 0, ultimaCompra: null
+        const base = mapa.get(chave) || {
+            nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), aniversario: '', cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), referencia: upper(pedido.referencia), totalPedidos: 0, totalGasto: 0, historicoPedidos: []
         };
-        atual.totalPedidos += 1;
-        atual.totalGasto += Number(pedido.valorTotal) || 0;
-        const data = pedido.dataCriacao && (pedido.dataCriacao.toDate ? pedido.dataCriacao.toDate() : new Date(pedido.dataCriacao));
-        if (data && (!atual.ultimaCompra || data > atual.ultimaCompra)) atual.ultimaCompra = data;
-        mapa.set(chave, atual);
+        base.totalPedidos += 1;
+        base.totalGasto += Number(pedido.valorTotal) || 0;
+        base.historicoPedidos.push(pedido);
+        mapa.set(chave, base);
     });
 
-    clientesCache = Array.from(mapa.values()).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    clientesCache = Array.from(mapa.values()).sort((a, b) => {
+        const aNiver = aniversarioProximo(a.aniversario) ? 0 : 1;
+        const bNiver = aniversarioProximo(b.aniversario) ? 0 : 1;
+        if (aNiver !== bNiver) return aNiver - bNiver;
+        return (a.nome || '').localeCompare(b.nome || '');
+    });
+}
+
+function abrirVisualizacaoCliente(cliente) {
+    el('fichaClienteTitulo').textContent = `Ficha: ${cliente.nome || 'Cliente'}`;
+    el('fichaClienteConteudo').innerHTML = `
+        <div class="cliente-ficha-grid">
+            <p><strong>WhatsApp:</strong> ${cliente.whatsapp || '-'}</p>
+            <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
+            <p><strong>Documento:</strong> ${cliente.documento || '-'}</p>
+            <p><strong>Aniversário:</strong> ${cliente.aniversario || '-'}</p>
+            <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
+            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `• ${cliente.referencia}` : ''}</p>
+            <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
+            <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
+        </div>
+        <h3 class="form-section-title">Histórico de pedidos</h3>
+        <div>${(cliente.historicoPedidos || []).map((p) => `<div class="item-carrinho"><div>#${p.numeroPedido} • ${formatDate(p.dataCriacao)} • ${p.status}</div><div>${formatCurrency(p.valorTotal || 0)}</div></div>`).join('') || 'Sem histórico'}</div>`;
+    el('modalFichaCliente').style.display = 'flex';
+}
+
+function abrirVisualizacaoClientePedido(idPedido) {
+    const pedido = pedidosCache.find((p) => p.id === idPedido);
+    if (!pedido) return;
+    const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
+    const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === chave);
+    if (cliente) abrirVisualizacaoCliente(cliente);
+}
+
+
+function visualizarClientePorId(idRef) {
+    const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === idRef);
+    if (cliente) abrirVisualizacaoCliente(cliente);
+}
+
+function fecharFichaCliente() { el('modalFichaCliente').style.display = 'none'; }
+function abrirCadastroCliente() { el('modalCliente').style.display = 'flex'; }
+function fecharCadastroCliente() { el('modalCliente').style.display = 'none'; }
+
+async function salvarCliente(e) {
+    e.preventDefault();
+    const id = onlyDigits(el('clienteWhatsapp').value) || `${Date.now()}`;
+    await db.collection('clientes').doc(id).set({
+        nome: upper(el('clienteNome').value),
+        whatsapp: upper(el('clienteWhatsapp').value),
+        instagram: upper(el('clienteInstagram').value),
+        documento: upper(el('clienteDocumento').value),
+        aniversario: el('clienteAniversario').value || '',
+        cidade: upper(el('clienteCidade').value),
+        estado: upper(el('clienteEstado').value),
+        endereco: upper(el('clienteEndereco').value),
+        referencia: upper(el('clienteReferencia').value)
+    }, { merge: true });
+    e.target.reset();
+    fecharCadastroCliente();
+}
+
+function editarCliente(idRef) {
+    const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === idRef);
+    if (!cliente) return;
+    abrirCadastroCliente();
+    el('clienteNome').value = cliente.nome || '';
+    el('clienteWhatsapp').value = cliente.whatsapp || '';
+    el('clienteInstagram').value = cliente.instagram || '';
+    el('clienteDocumento').value = cliente.documento || '';
+    el('clienteAniversario').value = cliente.aniversario || '';
+    el('clienteCidade').value = cliente.cidade || '';
+    el('clienteEstado').value = cliente.estado || '';
+    el('clienteEndereco').value = cliente.endereco || '';
+    el('clienteReferencia').value = cliente.referencia || '';
+}
+
+function excluirCliente(idRef) {
+    if (!confirm('Excluir ficha de cliente?')) return;
+    db.collection('clientes').doc(idRef).delete();
 }
 
 function renderClientes(lista = clientesCache) {
@@ -361,99 +425,92 @@ function renderClientes(lista = clientesCache) {
     }
 
     lista.forEach((cliente) => {
-        container.innerHTML += `<article class="cliente-card ${aniversarioProximo(cliente.aniversario) ? 'cliente-alerta' : ''}">
+        const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
+        const destaque = aniversarioProximo(cliente.aniversario);
+        container.innerHTML += `<article class="cliente-card ${destaque ? 'cliente-alerta' : ''}">
             <h3>${cliente.nome || 'SEM NOME'}</h3>
-            ${aniversarioProximo(cliente.aniversario) ? '<span class="niver-tag">🎂 Aniversário próximo</span>' : ''}
+            ${destaque ? '<span class="niver-tag pulse">🎂 Aniversário próximo</span>' : ''}
             <p><strong>Whatsapp:</strong> ${cliente.whatsapp || '-'}</p>
-            <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
-            <p><strong>Documento:</strong> ${cliente.documento || '-'}</p>
             <p><strong>Cidade:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
-            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `• ${cliente.referencia}` : ''}</p>
-            <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span><span>Última compra: ${cliente.ultimaCompra ? cliente.ultimaCompra.toLocaleDateString('pt-BR') : '-'}</span></div>
+            <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span></div>
+            <div class="pedido-actions">
+                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Visualizar</button>
+                <button class="catalog-edit" onclick="editarCliente('${idRef}')">Editar</button>
+                <button class="catalog-delete" onclick="excluirCliente('${idRef}')">Excluir</button>
+            </div>
         </article>`;
     });
 }
 
 function filtrarClientes() {
     const busca = upper(el('filtroClientes').value);
-    const filtrados = clientesCache.filter((cliente) => upper(`${cliente.nome} ${cliente.whatsapp} ${cliente.instagram} ${cliente.documento} ${cliente.cidade} ${cliente.estado} ${cliente.endereco}`).includes(busca));
-    renderClientes(filtrados);
+    renderClientes(clientesCache.filter((cliente) => upper(`${cliente.nome} ${cliente.whatsapp} ${cliente.documento} ${cliente.cidade}`).includes(busca)));
 }
 
 function gerarPDF() {
-    if (!pedidosCache.length) return alert('Não há pedidos para gerar PDF.');
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(14);
-        doc.text('Waller Clothing - Fila de Produção', 14, 14);
-        const linhas = pedidosCache.map((p) => [`#${p.numeroPedido || '-'}`, p.nome || '-', p.status || '-', p.statusPagamento || '-', formatCurrency(p.valorTotal || 0)]);
-        doc.autoTable({ startY: 20, head: [['Pedido', 'Cliente', 'Status', 'Pagamento', 'Total']], body: linhas, styles: { fontSize: 9 } });
-        doc.save(`fila-producao-${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (error) {
-        console.error(error);
-        alert('Falha ao gerar PDF.');
-    }
+    if (!pedidosCache.length) return alert('Sem pedidos para PDF.');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('Fila de Produção', 14, 14);
+    doc.autoTable({
+        startY: 20,
+        head: [['Pedido', 'Cliente', 'Status', 'Total']],
+        body: pedidosCache.map((p) => [`#${p.numeroPedido || '-'}`, p.nome || '-', p.status || '-', formatCurrency(p.valorTotal || 0)])
+    });
+    doc.save(`fila-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-function carregarPedidosTempoReal() {
+async function salvarNovaEstampa(e) {
+    e.preventDefault();
+    const cod = upper(el('cadCodigoEstampa').value);
+    await db.collection('estampas').doc(cod).set({
+        codigo: cod,
+        nome: upper(el('cadNomeEstampa').value),
+        valor: unmaskCurrency(el('cadValorEstampa').value),
+        tipoPadrao: upper(el('cadTipoPadrao').value)
+    });
+    e.target.reset();
+}
+
+function iniciarListeners() {
     db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
         pedidosCache = [];
         snap.forEach((doc) => pedidosCache.push({ id: doc.id, ...doc.data() }));
         atualizarDashboard(pedidosCache);
         aplicarFiltros();
-        carregarClientes();
+        extrairClientesDosPedidos();
+        renderClientes();
         el('carregando').style.display = 'none';
-    }, () => {
-        el('carregando').textContent = 'Erro ao sincronizar pedidos';
     });
-}
 
-function carregarClientes() {
+    db.collection('estampas').orderBy('codigo').onSnapshot((snap) => {
+        estampasCache = [];
+        snap.forEach((doc) => {
+            const est = doc.data();
+            estampasCache.push({ codigo: upper(est.codigo), nome: upper(est.nome), valor: Number(est.valor) || 0, tipoPadrao: upper(est.tipoPadrao) });
+        });
+        renderCatalogo();
+        el('carregandoEstampas').style.display = 'none';
+    });
+
     db.collection('clientes').onSnapshot((snap) => {
-        const clientesExtras = [];
-        snap.forEach((doc) => clientesExtras.push(doc.data()));
-        extrairClientesDosPedidos(pedidosCache, clientesExtras);
+        clientesExtrasCache = [];
+        snap.forEach((doc) => clientesExtrasCache.push(doc.data()));
+        extrairClientesDosPedidos();
         renderClientes();
         el('carregandoClientes').style.display = 'none';
-    }, () => {
-        extrairClientesDosPedidos(pedidosCache, []);
-        renderClientes();
-        el('carregandoClientes').textContent = 'Erro';
     });
-}
-
-function salvarNovaEstampa(e) {
-    e.preventDefault();
-    const cod = upper(el('cadCodigoEstampa').value);
-    const nome = upper(el('cadNomeEstampa').value);
-    const valor = unmaskCurrency(el('cadValorEstampa').value);
-    const tipoPadrao = upper(el('cadTipoPadrao').value);
-    db.collection('estampas').doc(cod).set({ codigo: cod, nome, valor, tipoPadrao });
-    e.target.reset();
 }
 
 el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
-el('codigoEstampa').addEventListener('blur', preencherEstampaPorCodigo);
-el('valorUnitario').addEventListener('blur', () => {
-    const value = unmaskCurrency(el('valorUnitario').value);
-    if (value > 0) el('valorUnitario').value = formatCurrency(value);
-});
 el('cadValorEstampa').addEventListener('blur', () => {
     const value = unmaskCurrency(el('cadValorEstampa').value);
     if (value > 0) el('cadValorEstampa').value = formatCurrency(value);
 });
-
-db.collection('estampas').orderBy('codigo').onSnapshot((snap) => {
-    el('carregandoEstampas').style.display = 'none';
-    estampasCache = [];
-    snap.forEach((doc) => {
-        const est = doc.data();
-        estampasCache.push({ codigo: upper(est.codigo), nome: upper(est.nome), valor: Number(est.valor) || 0, tipoPadrao: upper(est.tipoPadrao) });
-    });
-    renderCatalogo();
-    preencherEstampaPorCodigo();
+el('editCatalogoValor').addEventListener('blur', () => {
+    const value = unmaskCurrency(el('editCatalogoValor').value);
+    if (value > 0) el('editCatalogoValor').value = formatCurrency(value);
 });
 
 carregarTema();
-carregarPedidosTempoReal();
+iniciarListeners();
