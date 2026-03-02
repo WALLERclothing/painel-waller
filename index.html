@@ -2,278 +2,262 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waller Clothing | Mega Painel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>W.O.S - Cloud & Security</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <!-- Imagem do ícone encolhida -->
+    <link rel="icon" type="image/png" href="Waller%20Os%20images/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;800;900&display=swap" rel="stylesheet">
     
+    <!-- SDKs FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <!-- POLYFILL MOBILE TOUCH -->
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/scroll-behaviour.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+    
+    <!-- QUILL.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <script>
+        window.addEventListener('touchmove', function() {}, {passive: false});
+        MobileDragDrop.polyfill({ dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride });
+    </script>
+
+    <!-- Link para o arquivo CSS externo -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="toast-container" id="toastContainer"></div>
-
-<nav class="navbar">
-    <h1>WALLER CLOTHING</h1>
-    <div class="nav-actions">
-        <button class="btn-nav" onclick="toggleTheme()">🌙 MODO ESCURO</button>
-        <button class="btn-nav" onclick="abrirModalPDF()">📄 GERAR PDF</button>
+    <!-- TELA DE LOGIN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <!-- Imagem da logo encolhida -->
+           <img src="Waller%20Os%20images/logo.png" alt="Logo WOS" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+            <h2>WALLER OS</h2>
+            <p>Selecione seu Perfil</p>
+            <input type="text" id="login-search-input" class="search-input" style="width: 100%; max-width: 100%; margin-bottom: 15px;" placeholder="🔍 Buscar usuário..." oninput="filtrarUsuariosLogin()">
+            <div id="profile-list-container" style="margin-bottom: 25px; text-align: left;">
+                <div class="accordion-header" onclick="toggleLoginAccordion()" style="margin-bottom: 0; border-radius: 6px 6px 0 0;">
+                    <span>👥 Perfis Cadastrados</span><span id="login-accordion-icon">▼</span>
+                </div>
+                <div class="accordion-body" id="login-accordion-body" style="padding: 10px; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 6px 6px; background: var(--bg-main); max-height: 250px; overflow-y: auto; margin: 0;">
+                    <p style="color:var(--text-muted); font-size:14px; text-align:center;">Conectando...</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-secondary" style="width: 100%;" onclick="abrirGestaoUsuarios()">⚙️ Gestão de Usuários</button>
+            </div>
+        </div>
     </div>
-</nav>
 
-<div class="tab-menu">
-    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
-    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Kanban Produção</button>
-    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
-    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🤝 CRM Clientes</button>
-</div>
-
-<div id="aba-cadastro" class="container">
-    <div class="card">
-        <h2 class="card-title">Lançar Drop / Pedido</h2>
-        
-        <div class="form-section">
-            <div class="form-section-title">
-                1. Dados do Cliente e Financeiro 
-                <span id="alertaClienteFiel" class="label-fiel">⭐ CLIENTE FIEL</span>
-            </div>
-            <div class="form-grid">
-                <input type="text" id="whatsapp" placeholder="WHATSAPP (Buscar Histórico)" maxlength="15" onblur="verificarClienteFiel()">
-                <input type="text" id="nome" placeholder="NOME DO CLIENTE">
-            </div>
-            <div class="form-errors-row">
-                <small id="erroWhatsapp" class="field-error"></small>
-                <small id="erroNome" class="field-error"></small>
-            </div>
-            <div class="form-grid" style="margin-bottom: 0;">
-                <input type="text" id="cep" placeholder="CEP (Autopreencher)" maxlength="9" onblur="buscarCEP(this.value)">
-                <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
-                <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.5;">
-                <input type="text" id="complementoEnd" placeholder="COMPLEMENTO" style="flex: 1;">
+    <!-- TOP BAR -->
+   <div class="top-bar">
+        <div class="top-bar-left">
+            <!-- Imagem da logo (menor) encolhida -->
+            <img src="Waller%20Os%20images/logo.png" alt="Logo WOS" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px;">
+            <div class="top-bar-brand-text">
+                <h1>WALLER OS</h1>
+                <span class="sync-status" id="cloud-status">☁️ Conectando...</span>
             </div>
             
-            <div class="form-grid" style="margin-top: 1rem;">
-                <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
-                <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
-                <select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="color: var(--red); font-weight: 900; border-color: var(--red);">
+            <div class="top-bar-clock">
+                <div id="clock-time">00:00:00</div>
+                <div id="clock-date">Carregando...</div>
             </div>
         </div>
         
-        <div class="form-section" style="border-bottom: none;">
-            <div class="form-section-title">2. Adicionar Peças ao Pedido</div>
-            <div class="form-grid">
-                <input type="text" id="codigoEstampa" list="estampas-list" placeholder="BUSCAR CÓDIGO OU NOME DA ESTAMPA..." style="flex: 1;" oninput="autocompletarEstampa(this.value)">
-                <datalist id="estampas-list"></datalist>
-                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
+        <div class="top-bar-right">
+            <div class="filter-container">
+                <button class="btn-top" id="btn-filters" onclick="document.getElementById('filter-dropdown').classList.toggle('show')">🔍 Filtros</button>
+                <div class="filter-dropdown" id="filter-dropdown">
+                    <label class="filter-option"><input type="checkbox" id="f-minhas" onchange="filtrarCartoes()"> Só Minhas Tarefas</label>
+                    <label class="filter-option"><input type="checkbox" id="f-urgentes" onchange="filtrarCartoes()"> Só Urgentes/Atrasadas</label>
+                    <label class="filter-option"><input type="checkbox" id="f-ocultar-concluidas" onchange="filtrarCartoes()"> Ocultar Concluídas</label>
+                </div>
             </div>
-            <div class="form-errors-row">
-                <small id="erroEstampa" class="field-error" style="grid-column: 1 / -1;"></small>
-            </div>
-            <div class="form-grid">
-                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
-                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
-                <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
-                
-                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN (PEÇA)" style="flex: 0.5;">
-                <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
-            </div>
-            <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
-        </div>
-
-        <div id="carrinho-container">
-            <div class="form-section-title" style="margin-bottom: 0.5rem;">Resumo do Pedido:</div>
-            <div id="listaCarrinho"></div>
-            <div id="resumoFinanceiro" class="resumo-financeiro"></div>
-        </div>
-        <button type="button" id="btnGerarOrdem" class="btn-primary btn-primary-sticky-mobile" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
-    </div>
-</div>
-
-<div id="aba-producao" class="container" style="display: none;">
-    <div class="dashboard-grid">
-        <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
-        <div class="dash-card"><h3>Top 3 Estampas</h3><div id="dashBestSellers" class="best-sellers-list">Carregando...</div></div>
-        <div class="dash-card green-text">
-            <div style="display:flex; justify-content:space-between; width:100%;">
-                <h3>Faturamento</h3>
-                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem;">
-                    <option value="ALL">...</option>
-                </select>
-            </div>
-            <span id="dashFaturamento">R$ 0,00</span>
-        </div>
-    </div>
-
-    <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
-        <div class="form-grid" style="margin-bottom:0;">
-            <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NO KANBAN (NOME, ZAP OU NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
-            <select id="filtroKanbanStatus" onchange="filtrarKanban()">
-                <option value="TODOS">STATUS: TODOS</option>
-                <option value="PEDIDO FEITO">PEDIDO FEITO</option>
-                <option value="AGUARDANDO ESTAMPA">AGUARDANDO ESTAMPA</option>
-                <option value="ESTAMPA PRONTA">ESTAMPA PRONTA</option>
-                <option value="PEDIDO ENVIADO">PEDIDO ENVIADO</option>
-            </select>
-            <select id="filtroKanbanPagamento" onchange="filtrarKanban()">
-                <option value="TODOS">PGTO: TODOS</option>
-                <option value="PAGO">PAGO</option>
-                <option value="PENDENTE">PENDENTE</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="kanban-board">
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO FEITO')">
-            <div class="kanban-header">📥 PEDIDO FEITO</div>
-            <div id="col-PEDIDO-FEITO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'AGUARDANDO ESTAMPA')">
-            <div class="kanban-header">👕 FILA ESTAMPA</div>
-            <div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'ESTAMPA PRONTA')">
-            <div class="kanban-header">📦 PRONTO / ENVIAR</div>
-            <div id="col-ESTAMPA-PRONTA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO ENVIADO')">
-            <div class="kanban-header">🚚 ENVIADO</div>
-            <div id="col-PEDIDO-ENVIADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
-        </div>
-    </div>
-</div>
-
-<div id="aba-estampas" class="container" style="display: none;">
-    <div class="card">
-        <h2 class="card-title" id="tituloCardEstampa">Cadastrar / Editar Estampa</h2>
-        <form onsubmit="salvarNovaEstampa(event)">
-            <input type="hidden" id="editEstampaCodigoOriginal" value="">
-            <div class="form-grid">
-                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
-                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
-            </div>
-            <div class="form-grid">
-                <select id="cadCategoriaEstampa" style="flex:1;">
-                    <option value="CAMISETA">CAMISETA</option>
-                    <option value="MOLETOM">MOLETOM</option>
-                    <option value="ACESSÓRIO">ACESSÓRIO</option>
-                    <option value="OUTROS">OUTROS</option>
-                </select>
-                <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" id="btnSalvarEstampa" class="btn-primary" style="margin-top:0; flex: 2;">+ SALVAR ESTAMPA</button>
-                <button type="button" id="btnCancelarEstampa" class="btn-add" style="margin-top:0; flex: 1; display: none;" onclick="cancelarEdicaoEstampa()">CANCELAR</button>
-            </div>
-        </form>
-    </div>
-    <div class="card">
-        <h2 class="card-title">Estampas e Estoque</h2>
-        <table>
-            <thead><tr><th style="width: 15%;">Código</th><th style="width: 45%;">Nome e Categoria</th><th style="width: 25%;">Estoque (Ajuste Rápido)</th><th style="width: 15%;">Ações</th></tr></thead>
-            <tbody id="listaEstampas"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="aba-clientes" class="container" style="display: none;">
-    <div class="card">
-        <h2 class="card-title">Top Clientes da Waller</h2>
-        <table>
-            <thead><tr><th>Cliente / Contato</th><th>Pedidos</th><th>Última Compra</th><th>Ticket Médio</th><th>Total Gasto</th><th>Próxima Ação</th><th>Ficha</th></tr></thead>
-            <tbody id="listaClientesCRM"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="modalFichaCliente" class="modal-overlay">
-    <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
-        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
-        
-        <div class="ficha-kpis">
-            <div class="ficha-kpi"><strong id="fichaQtdPedidos">0</strong><span>Pedidos</span></div>
-            <div class="ficha-kpi"><strong id="fichaTotalGasto">R$ 0,00</strong><span>Total Gasto</span></div>
-            <div class="ficha-kpi"><strong id="fichaTicketMedio">R$ 0,00</strong><span>Ticket Médio</span></div>
-            <div class="ficha-kpi"><strong id="fichaUltimaCompra">-</strong><span>Última Compra</span></div>
-        </div>
-
-        <div class="form-grid">
-            <input type="text" id="fichaNome" placeholder="NOME COMPLETO" style="flex:2;">
-            <input type="text" id="fichaWhatsapp" placeholder="WHATSAPP" disabled style="flex:1;">
-        </div>
-        <div class="form-grid">
-            <input type="email" id="fichaEmail" placeholder="E-MAIL" style="flex:1; text-transform:none;">
-            <input type="text" id="fichaInsta" placeholder="@INSTAGRAM" style="flex:1;">
-            <input type="text" id="fichaDataNasc" placeholder="DATA NASCIMENTO (DD/MM/AAAA)" style="flex:1;">
-        </div>
-        <div class="form-grid">
-            <input type="text" id="fichaCEP" placeholder="CEP" style="flex:0.5;">
-            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:1.8;">
-            <input type="text" id="fichaCidade" placeholder="CIDADE" style="flex:1;">
-            <input type="text" id="fichaUF" placeholder="UF" maxlength="2" style="flex:0.3;">
-        </div>
-        <div class="form-grid">
-            <input type="text" id="fichaTamanhoPref" placeholder="TAMANHO PREFERIDO" style="flex:1;">
-            <input type="text" id="fichaCorPref" placeholder="COR PREFERIDA" style="flex:1;">
-            <input type="text" id="fichaUltimoContato" placeholder="ÚLTIMO CONTATO (DD/MM/AAAA)" style="flex:1;">
-        </div>
-        
-        <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Tamanhos preferidos, estilo, reclamações, etc)"></textarea>
-
-        <div class="ficha-historico-box">
-            <div class="form-section-title" style="margin-bottom:0.6rem;">Histórico Recente</div>
-            <div id="fichaHistoricoPedidos" class="ficha-historico-lista">Sem pedidos para este cliente.</div>
-        </div>
-        
-        <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
-    </div>
-</div>
-
-<div id="modalEdicao" class="modal-overlay">
-    <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
-        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
-        <input type="hidden" id="editId">
-        <div class="form-grid" style="margin-bottom: 1rem;"><input type="text" id="editNome" placeholder="NOME"><input type="text" id="editWhatsapp" placeholder="WHATSAPP"></div>
-        <div class="form-grid" style="margin-bottom: 2rem;"><input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" readonly style="color: var(--red); background: var(--gray);"><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
-        <div class="form-section-title">PEÇAS DO PEDIDO</div>
-        <div id="editItensContainer"></div>
-        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
-    </div>
-</div>
-
-<div id="modalPDF" class="modal-overlay">
-    <div class="modal-box" style="max-width: 600px;">
-        <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
-        <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIOS</h2>
-        <div class="grid-pdf-opcoes">
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('PEDIDO FEITO')">📥 PEDIDO FEITO</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             
-            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red); color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+           <input type="text" id="search-input" class="search-input" placeholder="Pesquisar tarefas..." oninput="filtrarCartoes()">
+            <button class="btn-top" onclick="abrirCalculadora()">🧮 Calculadora</button>
+            <button class="btn-top" id="btn-toggle-view" onclick="toggleViewMode()" style="background: var(--brand-red); color: white; border-color: var(--brand-red);">📅 Calendário</button>
+            
+            <div class="user-menu-container">
+                <button class="user-name-btn" id="btn-user-menu" onclick="document.getElementById('user-dropdown').classList.toggle('show')">
+                    <span id="display-username-text" style="white-space: nowrap;">👤 NOME</span>
+                    <span class="menu-badge" id="user-menu-badge">0</span>
+                    <span style="font-size: 10px; margin-left: 8px; color: var(--text-muted);">▼</span>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <button class="dropdown-item" onclick="toggleTema()" id="btn-tema">🌓 Modo Claro</button>
+                    <button class="dropdown-item" onclick="abrirInbox()">📬 Inbox <span class="menu-badge" id="inbox-badge">0</span></button>
+                    <button class="dropdown-item" onclick="abrirLixeira()">🗑️ Lixeira</button>
+                    <button class="dropdown-item" onclick="alterarSenhaPerfil()">🔑 Alterar Senha</button>
+                    <button class="dropdown-item" onclick="abrirTelaPerfis()">Trocar Perfil</button>
+                    <button class="dropdown-item danger" onclick="fazerLogout()">🚪 Sair do Perfil</button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="bulk-action-bar">
-    <strong style="font-size: 1.2rem; color: var(--red);"><span id="bulk-count">0</span> SELECIONADOS</strong>
-    <select id="bulk-status-select" style="width: auto;">
-        <option value="AGUARDANDO ESTAMPA">Mover p/ FILA ESTAMPA</option>
-        <option value="ESTAMPA PRONTA">Mover p/ PRONTO ENVIAR</option>
-        <option value="PEDIDO ENVIADO">Mover p/ ENVIADO</option>
-        <option value="PEDIDO ENTREGUE">Mover p/ ENTREGUE</option>
-    </select>
-    <button class="btn-add" style="width: auto; background: var(--black); color: var(--bg-body);" onclick="executarBulkUpdate()">APLICAR</button>
-    <button class="btn-add" style="width: auto; color: var(--red);" onclick="limparBulk()">CANCELAR</button>
-</div>
+    <div class="workspace-bar" id="workspace-bar" style="display: none;"></div>
+    <div class="board" id="board"></div>
 
-<script src="script.js"></script>
+    <div class="calendar-container" id="calendar-view">
+        <div class="calendar-header">
+            <button class="btn-secondary" style="width: auto; padding: 8px 15px;" onclick="mudarMes(-1)">⬅ Anterior</button>
+            <h2 id="calendar-month-year">Mês Ano</h2>
+            <button class="btn-secondary" style="width: auto; padding: 8px 15px;" onclick="mudarMes(1)">Próximo ➡</button>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+
+    <!-- CHAT FLUTUANTE -->
+    <button id="btn-floating-chat" class="btn-floating-chat" onclick="toggleChatWidget()" style="display:none;">
+        💬 Chat <span id="chat-badge" class="notification-badge">0</span>
+    </button>
+    <div id="chat-widget" class="chat-widget">
+        <div class="chat-header">
+            <div class="chat-header-top">
+                <h3 id="chat-widget-title" style="margin:0; font-size:16px; font-weight:800; color:white; display:flex; align-items:center; gap:10px; width:100%;">🏢 Chat da Área</h3>
+            </div>
+            <div class="chat-tabs">
+                <button id="tab-chat-area" class="chat-tab-btn active" onclick="setChatAba('area')">🏢 Área Atual</button>
+                <button id="tab-chat-privado" class="chat-tab-btn" onclick="setChatAba('privado')">👤 Privado</button>
+            </div>
+        </div>
+        <div id="chat-body-contacts" class="chat-body" style="display:none;"></div>
+        <div id="chat-body-messages" class="chat-body"></div>
+        <div class="chat-footer" id="chat-footer-input">
+            <input type="text" id="chat-live-input" class="chat-input" placeholder="Escreva sua mensagem..." onkeydown="if(event.key==='Enter') enviarMensagemAoVivo()">
+            <button class="chat-send-btn" onclick="enviarMensagemAoVivo()">➤</button>
+        </div>
+    </div>
+
+    <!-- MODAIS DE SISTEMA -->
+    <div class="sys-modal-overlay" id="sys-admin-modal"><div class="sys-modal" style="width: 550px;"><h3>⚙️ GESTÃO DE USUÁRIOS</h3><div style="display:flex; justify-content:flex-end; margin-bottom: 10px;"><button class="btn-primary-red" style="width:auto; padding:8px 15px; font-size:12px;" onclick="adminCriarUsuario()">+ Novo Usuário</button></div><div id="admin-users-list" style="max-height: 300px; overflow-y: auto; text-align: left; padding-right:5px;"></div><button class="btn-secondary" style="margin-top: 20px;" onclick="document.getElementById('sys-admin-modal').style.display='none'">Fechar Painel</button></div></div>
+    <div class="sys-modal-overlay" id="sys-members-modal"><div class="sys-modal" style="width: 550px;"><h3>👥 MEMBROS DA ÁREA</h3><div id="members-list-container" style="max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 15px;"></div><div id="add-member-section" style="display: none; padding-top: 15px; border-top: 1px solid var(--border-color); text-align: left;"><label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">ADICIONAR NOVO MEMBRO:</label><div style="display: flex; gap: 10px; margin-top: 5px;"><select id="new-member-select" class="form-control" style="flex: 2;"></select><select id="new-member-role" class="form-control" style="flex: 1;"><option value="editor">Editor</option><option value="viewer">Leitor</option></select><button class="btn-primary-red" style="width: auto;" onclick="adicionarMembroWorkspace()">Add</button></div></div><button class="btn-secondary" style="margin-top: 20px;" onclick="document.getElementById('sys-members-modal').style.display='none'">Fechar Janela</button></div></div>
+    <div class="sys-modal-overlay" id="sys-transfer-modal"><div class="sys-modal"><h3>👑 TRANSFERIR POSSE</h3><select id="transfer-owner-select" class="form-control" style="margin-bottom: 20px;"></select><div style="display: flex; gap: 10px;"><button class="btn-secondary" onclick="document.getElementById('sys-transfer-modal').style.display='none'">Cancelar</button><button class="btn-danger" id="sys-transfer-confirm">Confirmar e Sair</button></div></div></div>
+    <div class="sys-modal-overlay" id="trash-modal"><div class="sys-modal"><h3>🗑️ LIXEIRA</h3><div id="trash-list-container" style="max-height: 300px; overflow-y: auto; text-align: left;"></div><button class="btn-secondary" style="margin-top: 20px;" onclick="document.getElementById('trash-modal').style.display='none'">Fechar</button></div></div>
+    <div class="sys-modal-overlay" id="inbox-modal"><div class="sys-modal"><div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><h3 style="margin:0;">📬 CAIXA DE ENTRADA</h3><button class="btn-primary-red" style="width:auto; padding:8px 15px; font-size:12px;" onclick="abrirNovaMensagem()">+ Escrever</button></div><div id="inbox-list-container" style="max-height: 400px; overflow-y: auto; text-align: left; padding-right:5px;"></div><button class="btn-secondary" style="margin-top: 20px;" onclick="document.getElementById('inbox-modal').style.display='none'">Fechar</button></div></div>
+    <div class="sys-modal-overlay" id="sys-message-modal"><div class="sys-modal"><h3>✉️ ESCREVER E-MAIL</h3><div class="form-group"><label>Para:</label><select id="msg-to" class="form-control"></select></div><div class="form-group"><label>Mensagem:</label><textarea id="msg-text" class="form-control" rows="8"></textarea></div><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-secondary" onclick="document.getElementById('sys-message-modal').style.display='none'">Cancelar</button><button class="btn-primary-red" id="sys-message-confirm" onclick="enviarNovaMensagem()">Enviar</button></div></div></div>
+    <div class="sys-modal-overlay" id="sys-event-modal"><div class="sys-modal"><h3>📅 NOVO EVENTO</h3><p id="event-date-display" style="color: var(--brand-red); font-weight: bold;"></p><input type="hidden" id="event-date-hidden"><div class="form-group"><label>Título do Evento</label><input type="text" id="event-title" class="form-control" placeholder="Reunião, Feriado..."></div><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-secondary" onclick="document.getElementById('sys-event-modal').style.display='none'">Cancelar</button><button class="btn-primary-red" id="btn-save-event" onclick="salvarEventoCalendario()">Salvar Evento</button></div></div></div>
+
+    <!-- MODAL DE ETIQUETA E DESCRIÇÃO EXPANDIDA -->
+    <div class="sys-modal-overlay" id="sys-new-tag-modal"><div class="sys-modal"><h3>NOVA ETIQUETA</h3><div class="form-group"><label>Nome</label><input type="text" id="new-tag-name" class="form-control" placeholder="Ex: Front-end"></div><div class="form-group"><label>Cor</label><input type="color" id="new-tag-color" class="form-control" value="#ef4444" style="height:40px; padding:2px;"></div><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-secondary" onclick="document.getElementById('sys-new-tag-modal').style.display='none'">Cancelar</button><button class="btn-primary-red" onclick="salvarNovaEtiqueta()">Salvar</button></div></div></div>
+    
+    <div class="sys-modal-overlay" id="sys-expand-desc-modal">
+        <div class="modal" style="width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="margin:0; color:var(--text-main);">Descrição Completa</h3>
+                <button class="delete-col-btn" onclick="document.getElementById('sys-expand-desc-modal').style.display='none'">✖</button>
+            </div>
+            <div id="expanded-desc-content" style="flex-grow:1; overflow-y:auto; background:var(--bg-main); padding:20px; border-radius:6px; color:var(--text-main); font-size:14px; line-height:1.6;" class="ql-editor"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE TAREFA (EDIÇÃO) -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="card-modal-content">
+            <div class="modal-header">
+                <input type="text" id="modal-title" placeholder="Título da Tarefa">
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button class="delete-col-btn" id="header-btn-salvar" style="color: var(--brand-red);" onclick="salvarModal()" title="Salvar Alterações (Ctrl+Enter)">💾</button>
+                    <button class="delete-col-btn" id="header-btn-apagar" style="color: var(--brand-red);" onclick="enviarParaLixeira()" title="Apagar Tarefa">🗑️</button>
+                    <button class="delete-col-btn" onclick="tentarFecharModal()" title="Fechar (Esc)">✖</button>
+                </div>
+            </div>
+            
+            <div id="viewer-warning" style="display:none; background: rgba(239, 68, 68, 0.1); color: var(--brand-red); padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; font-weight: bold; text-align: center;">🔒 Acesso apenas de Leitura.</div>
+
+            <div class="form-group">
+                <label>Etiquetas</label>
+                <div id="modal-tags-container" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group" style="margin-bottom:0;"><label>Criado</label><input type="text" id="modal-created-date" class="form-control" disabled></div>
+                <div class="form-group" style="margin-bottom:0;"><label>Prazo</label><input type="date" id="modal-due-date" class="form-control"></div>
+                <div class="form-group" style="margin-bottom:0;"><label>Atribuir</label><select id="modal-assignee" class="form-control"><option value="">Ninguém</option></select></div>
+            </div>
+
+             <div class="form-group" style="background: var(--bg-card); padding: 6px; border-radius: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <input type="checkbox" id="modal-recurrence-enabled" style="width: 18px; height: 18px; accent-color: var(--brand-red);">
+                <span style="font-size: 14px; font-weight: 500;">Recorrência toda:</span>
+                <select id="modal-recurrence-day" class="form-control" style="width: auto; margin-left: auto;">
+                    <option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin:0;">Descrição Completa</label>
+                    <button class="btn-secondary" style="width:auto; padding:4px 8px; font-size:11px;" onclick="expandirDescricao()">🔍 Ler Tela Cheia</button>
+                </div>
+                <div id="editor-container"></div>
+            </div>
+            
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">Checklist</label>
+                    <span id="checklist-progress-text" style="font-size: 11px; font-weight: bold; color: var(--brand-red);">0%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: var(--bg-main); border-radius: 3px; margin-bottom: 15px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <div id="checklist-progress-bar" style="height: 100%; width: 0%; background: var(--brand-red); transition: width 0.3s ease, background-color 0.3s ease;"></div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="new-check-item" class="form-control" placeholder="Novo item..." onkeydown="if(event.key==='Enter') adicionarChecklist()">
+                    <button class="btn-secondary" id="btn-add-check" style="width: auto;" onclick="adicionarChecklist()">Add</button>
+                </div>
+                <div id="checklist-container"></div>
+            </div>
+            
+            <div class="form-group" id="attachment-drop-zone" style="border-top: 1px solid var(--border-color); padding-top: 20px; position: relative; transition: 0.2s;">
+                <label>Anexos <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; text-transform: none;">(Arraste e solte arquivos aqui)</span></label>
+                <div id="attachments-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
+                <input type="file" id="file-upload-input" style="display: none;" onchange="uploadArquivo(event)">
+                <button class="btn-secondary" id="btn-upload" style="width: auto; font-size: 12px; padding: 8px 15px;" onclick="document.getElementById('file-upload-input').click()">📎 Adicionar Arquivo</button>
+                <span id="upload-status" style="font-size: 12px; color: var(--brand-red); margin-left: 10px; font-weight: bold;"></span>
+                <div id="drop-zone-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(239,68,68,0.1); border: 2px dashed var(--brand-red); border-radius: 6px; justify-content: center; align-items: center; font-weight: bold; color: var(--brand-red); z-index: 10; pointer-events: none;">Solte o arquivo para anexar</div>
+            </div>
+                                  
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button class="btn-danger" id="btn-apagar-modal" style="width: 30%;" onclick="enviarParaLixeira()">Apagar Tarefa</button>
+                <button class="btn-primary-red" id="btn-salvar-modal" style="width: 70%;" onclick="salvarModal()" title="Atalho: Ctrl + Enter">Salvar Alterações</button>
+            </div>
+
+            <!-- NOVA ABA DE COMENTÁRIOS -->
+            <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 25px;">
+                <label>💬 Comentários da Equipe</label>
+                <div id="comments-list" style="max-height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:5px;"></div>
+                <div style="display:flex; gap:10px;" id="comment-input-area">
+                    <input type="text" id="new-comment-input" class="form-control" placeholder="Escreva um comentário..." onkeydown="if(event.key==='Enter') adicionarComentario()">
+                    <button class="btn-primary-red" style="width:auto;" onclick="adicionarComentario()">Enviar</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 25px;">
+                <label>Histórico de Atividades</label>
+                <div id="logs-container" class="logs-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CALCULADORA -->
+    <div class="sys-modal-overlay" id="sys-calculator-modal"><div class="sys-modal" style="width: 320px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;"><h3 style="margin:0;">🧮 CALCULADORA</h3><button class="delete-col-btn" onclick="document.getElementById('sys-calculator-modal').style.display='none'">✖</button></div><input type="text" id="calc-display" class="calc-display" disabled value="0"><div class="calc-grid"><button class="calc-btn" onclick="calcInput('7')">7</button><button class="calc-btn" onclick="calcInput('8')">8</button><button class="calc-btn" onclick="calcInput('9')">9</button><button class="calc-btn" onclick="calcOp('/')">÷</button><button class="calc-btn" onclick="calcInput('4')">4</button><button class="calc-btn" onclick="calcInput('5')">5</button><button class="calc-btn" onclick="calcInput('6')">6</button><button class="calc-btn" onclick="calcOp('*')">×</button><button class="calc-btn" onclick="calcInput('1')">1</button><button class="calc-btn" onclick="calcInput('2')">2</button><button class="calc-btn" onclick="calcInput('3')">3</button><button class="calc-btn" onclick="calcOp('-')">-</button><button class="calc-btn" onclick="calcClear()" style="color: #ef4444;">C</button><button class="calc-btn" onclick="calcInput('0')">0</button><button class="calc-btn" onclick="calcInput('.')">.</button><button class="calc-btn" onclick="calcOp('+')">+</button><button class="calc-btn" onclick="calcCalculate()" style="grid-column: span 4; background: var(--brand-red); color: white; border-color: var(--brand-red);"> = </button></div></div></div>
+
+    <!-- MODAIS DE INPUT (GENÉRICOS) -->
+    <div class="sys-modal-overlay" id="sys-input-modal"><div class="sys-modal"><h3 id="sys-input-title">TÍTULO</h3><input type="text" id="sys-input-field" class="form-control" placeholder="..."><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-secondary" onclick="document.getElementById('sys-input-modal').style.display='none'">Cancelar</button><button class="btn-primary-red" id="sys-input-confirm">Confirmar</button></div></div></div>
+    <div class="sys-modal-overlay" id="sys-password-modal"><div class="sys-modal"><h3 id="sys-password-title">AUTORIZAÇÃO</h3><p id="sys-password-msg">Digite a senha</p><input type="password" id="sys-password-field" class="form-control" placeholder="••••••"><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-secondary" onclick="document.getElementById('sys-password-modal').style.display='none'">Cancelar</button><button class="btn-primary-red" id="sys-password-confirm">Acessar</button></div></div></div>
+    <div class="sys-modal-overlay" id="sys-confirm-modal"><div class="sys-modal"><h3 id="sys-confirm-title">CONFIRMAÇÃO</h3><p id="sys-confirm-msg">Tem certeza?</p><div style="display: flex; gap: 10px;"><button class="btn-secondary" onclick="document.getElementById('sys-confirm-modal').style.display='none'">Cancelar</button><button class="btn-danger" id="sys-confirm-btn">Sim</button></div></div></div>
+
+    <!-- Chamada para o Javascript externo -->
+    <script src="script.js"></script>
 </body>
+
 </html>
+
