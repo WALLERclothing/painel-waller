@@ -1,336 +1,564 @@
-/* TEMAS */
-:root { 
-    --brand-red: #ef4444; 
-    --brand-red-hover: #dc2626; 
-    --page-horizontal-padding: 30px;
-    --page-content-padding: 30px;
-    --bg-main: #121212; 
-    --bg-col: #1e1e1e; 
-    --bg-card: #2d2d2d; 
-    --bg-card-hover: #383838; 
-    --text-main: #e4e4e7; 
-    --text-muted: #a1a1aa; 
-    --border-color: #3f3f46; 
-    --bg-dots: radial-gradient(rgba(255, 255, 255, 0.03) 2px, transparent 2px); 
+// ==========================================
+// THEME & TOASTS
+// ==========================================
+function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light'); }
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    localStorage.setItem('waller_theme', isDark ? 'light' : 'dark');
+    applyTheme(isDark ? 'light' : 'dark');
+}
+applyTheme(localStorage.getItem('waller_theme') || 'light');
+
+function showToast(msg, isError = false) {
+    let toast = document.createElement('div');
+    toast.className = 'brutal-toast';
+    toast.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
+    toast.style.color = isError ? 'var(--red)' : 'var(--green)';
+    toast.innerText = msg;
+    document.getElementById('toastContainer').appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
 }
 
-body[data-theme="light"] { 
-    --bg-main: #f4f4f5; 
-    --bg-col: #e4e4e7; 
-    --bg-card: #ffffff; 
-    --bg-card-hover: #fdfdfd; 
-    --text-main: #18181b; 
-    --text-muted: #52525b; 
-    --border-color: #d4d4d8; 
-    --bg-dots: radial-gradient(rgba(0, 0, 0, 0.05) 2px, transparent 2px); 
+// ==========================================
+// UTILITÁRIOS E FRETE
+// ==========================================
+function unmaskCurrency(value) {
+    if (!value) return 0; if (typeof value === 'number') return value;
+    return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 }
+function formatCurrency(num) { return "R$ " + (parseFloat(num) || 0).toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); }
 
-::-webkit-scrollbar { width: 8px; height: 8px; } 
-::-webkit-scrollbar-track { background: var(--bg-main); } 
-::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
-
-body { 
-    font-family: 'Montserrat', sans-serif; 
-    background-color: var(--bg-main); 
-    background-image: var(--bg-dots); 
-    background-size: 24px 24px; 
-    margin: 0; 
-    color: var(--text-main); 
-    height: 100vh; 
-    overflow: hidden; 
-    transition: background-color 0.3s; 
-}
-
-body,
-button,
-input,
-select,
-textarea {
-    font-family: 'Montserrat', sans-serif;
-}
-body.no-scroll { overflow: hidden !important; height: 100vh !important; touch-action: none; }
-
-/* CABEÇALHO E MENU */
-.top-bar { background-color: var(--bg-col); display: flex; align-items: center; justify-content: space-between; padding: 15px var(--page-horizontal-padding); border-bottom: 1px solid var(--border-color); position: relative; z-index: 10; transition: background-color 0.3s; }
-.top-bar-left { display: flex; align-items: center; gap: 15px; }
-.top-bar-logo { width: 45px; height: 45px; object-fit: contain; }
-.top-bar-brand-text { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-.top-bar h1 { margin: 0; font-size: 22px; font-weight: 900; font-style: italic; white-space: nowrap; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
-.sync-status { font-size: 10px; padding: 3px 6px; border-radius: 4px; background: rgba(100,100,100,0.1); font-weight: bold; display: flex; align-items: center; gap: 5px; margin: 0; line-height: 1; }
-
-.top-bar-right { display: flex; align-items: center; gap: 10px; }
-.user-menu-container { position: relative; display: flex; align-items: center; }
-.user-name-btn { background: var(--bg-col); border: 1px solid var(--border-color); color: var(--text-main); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; padding: 10px 15px; border-radius: 8px; transition: 0.2s; font-family: inherit; }
-.user-name-btn:hover { background: var(--bg-card-hover); border-color: var(--brand-red); }
-.user-dropdown { display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-col); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); z-index: 100; min-width: 220px; flex-direction: column; overflow: hidden; }
-.user-dropdown.show { display: flex; animation: pop-in 0.2s forwards; transform-origin: top right; }
-.dropdown-item { background: transparent; border: none; border-bottom: 1px solid var(--border-color); color: var(--text-main); padding: 14px 15px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; font-family: inherit; }
-.dropdown-item:last-child { border-bottom: none; } 
-.dropdown-item:hover { background: var(--bg-card-hover); padding-left: 20px; color: var(--brand-red);}
-.menu-badge { background: var(--brand-red); color: white; border-radius: 12px; font-size: 10px; font-weight: 900; padding: 2px 7px; margin-left: 8px; display: none; align-items: center; justify-content: center; }
-
-.search-input { width: 100%; max-width: 250px; padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); font-family: inherit; font-size: 14px; box-sizing: border-box; transition: 0.3s; }
-.search-input:focus { outline: none; border-color: var(--brand-red); }
-.btn-top { background: transparent; color: var(--text-muted); padding: 10px 15px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; white-space: nowrap; font-family: inherit;}
-.btn-top:hover, .btn-top.active { border-color: var(--brand-red); color: var(--text-main); }
-
-.filter-container { position: relative; }
-.filter-dropdown { display: none; position: absolute; top: 100%; right: 0; margin-top: 5px; background: var(--bg-col); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; z-index: 100; min-width: 200px; flex-direction: column; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-.filter-dropdown.show { display: flex; }
-.filter-option { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 600; }
-.filter-option input { accent-color: var(--brand-red); width: 16px; height: 16px; cursor: pointer;}
-
-/* WORKSPACES E QUADRO */
-.workspace-bar { background-color: var(--bg-col); padding: 12px var(--page-horizontal-padding); display: flex; gap: 10px; border-bottom: 2px solid var(--brand-red); box-shadow: 0 4px 12px rgba(0,0,0,0.2); overflow-x: auto; scrollbar-width: none; align-items: center; transition: 0.3s; }
-.workspace-bar::-webkit-scrollbar { display: none; }
-.ws-tab { background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; white-space: nowrap; display: flex; align-items: center; font-family: inherit; }
-.ws-tab:hover { border-color: #52525b; color: var(--text-main); } 
-.ws-tab.active { background: var(--brand-red); border-color: var(--brand-red); color: white; }
-.ws-add-btn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; font-family: inherit; }
-
-.board { display: flex; gap: 20px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; padding: var(--page-content-padding); height: calc(100vh - 140px); box-sizing: border-box; }
-.column { background: var(--bg-col); width: 320px; min-width: 320px; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; transition: 0.3s; max-height: 100%; box-sizing: border-box; }
-.column-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-shrink: 0; }
-.column-header h3 { margin: 0; font-size: 16px; font-weight: 800; flex-grow: 1; outline: none; }
-.cards-container { min-height: 20px; flex-grow: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 5px; padding-bottom: 5px; }
-.card { background: var(--bg-card); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); cursor: grab; transition: border-color 0.2s, background-color 0.2s, opacity 0.2s; touch-action: none; position: relative;}
-.card:hover { background: var(--bg-card-hover); border-color: #52525b; }
-.card.dragging { opacity: 0.4; border: 1px dashed var(--brand-red); animation: none !important; }
-.card.read-only { cursor: pointer; }
-.column.dragging-col-visual { opacity: 0.4; border: 2px dashed var(--brand-red); background: rgba(239, 68, 68, 0.05); }
-.col-drag-handle { cursor: grab; font-size: 18px; padding-right: 8px; color: var(--text-muted); touch-action: none; transition: 0.2s; }
-.col-drag-handle:hover { color: var(--text-main); }
-
-@keyframes pop-in { 
-    0% { opacity: 0; transform: scale(0.9) translateY(-15px); } 
-    100% { opacity: 1; transform: scale(1) translateY(0); } 
-}
-.new-card-anim { animation: pop-in 0.35s forwards; }
-
-.card-title-container { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
-.card-title { font-weight: 600; font-size: 14px; pointer-events: none; margin: 0; line-height: 1.4; transition: 0.2s; word-break: break-word; }
-.card.completed .card-title { text-decoration: line-through; opacity: 0.5; }
-.card-checkbox { appearance: none; width: 18px; height: 18px; border: 2px solid var(--border-color); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: 0.2s; background: var(--bg-main); }
-.card-checkbox:checked { background-color: #d97706; border-color: #d97706; }
-.card-checkbox:checked::after { content: '✔'; color: #1e1e1e; font-size: 11px; font-weight: 900; }
-
-@keyframes glow-spin-yellow {
-    0%   { box-shadow:  0px -4px 6px -1px rgba(234, 179, 8, 0.6); }
-    25%  { box-shadow:  4px  0px 6px -1px rgba(234, 179, 8, 0.6); }
-    50%  { box-shadow:  0px  4px 6px -1px rgba(234, 179, 8, 0.6); }
-    75%  { box-shadow: -4px  0px 6px -1px rgba(234, 179, 8, 0.6); }
-    100% { box-shadow:  0px -4px 6px -1px rgba(234, 179, 8, 0.6); }
-}
-@keyframes glow-spin-orange {
-    0%   { box-shadow:  0px -4px 6px -1px rgba(249, 115, 22, 0.6); }
-    25%  { box-shadow:  4px  0px 6px -1px rgba(249, 115, 22, 0.6); }
-    50%  { box-shadow:  0px  4px 6px -1px rgba(249, 115, 22, 0.6); }
-    75%  { box-shadow: -4px  0px 6px -1px rgba(249, 115, 22, 0.6); }
-    100% { box-shadow:  0px -4px 6px -1px rgba(249, 115, 22, 0.6); }
-}
-@keyframes glow-spin-red {
-    0%   { box-shadow:  0px -4px 6px -1px rgba(239, 68, 68, 0.6); }
-    25%  { box-shadow:  4px  0px 6px -1px rgba(239, 68, 68, 0.6); }
-    50%  { box-shadow:  0px  4px 6px -1px rgba(239, 68, 68, 0.6); }
-    75%  { box-shadow: -4px  0px 6px -1px rgba(239, 68, 68, 0.6); }
-    100% { box-shadow:  0px -4px 6px -1px rgba(239, 68, 68, 0.6); }
-}
-
-.card.card-warning { border-color: #a16207; animation: glow-spin-yellow 2.5s linear infinite; } 
-.card.card-urgent { border-color: #c2410c; animation: glow-spin-orange 2.5s linear infinite; } 
-.card.card-overdue { border-color: #b91c1c; background-color: rgba(239, 68, 68, 0.05); animation: glow-spin-red 2.5s linear infinite; }
-.badges { display: flex; gap: 6px; font-size: 10px; font-weight: 700; flex-wrap: wrap; pointer-events: none; }
-.badge { padding: 4px 6px; background: var(--bg-main); border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-muted); }
-.badge-assignee { background: rgba(30, 64, 175, 0.3); color: #60a5fa; border-color: rgba(30, 64, 175, 0.5); }
-
-.tag-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-.tag-btn:hover { border-color: var(--text-main); color: var(--text-main); }
-
-/* TELAS E MODAIS */
-#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-main); background-image: var(--bg-dots); display: flex; justify-content: center; align-items: center; z-index: 3000; transition: 0.3s; }
-.sys-modal-overlay { z-index: 4000 !important; } 
-.modal-overlay { z-index: 2000; }
-.sys-modal-overlay, .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; }
-.login-box, .sys-modal, .modal { background: var(--bg-col); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); padding: 30px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; transition: 0.3s; }
-.login-box { width: 450px; text-align: center; } 
-.sys-modal { width: 400px; text-align: center; } 
-.modal { width: 700px; overscroll-behavior: contain; }
-.login-box h2 { font-size: 32px; font-weight: 900; color: var(--brand-red); margin: 0 0 5px 0; font-style: italic; text-transform: uppercase; }
-.login-box p, .sys-modal p { font-size: 14px; margin-bottom: 25px; color: var(--text-muted); }
-.modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;}
-.modal-header input { font-size: 22px; font-weight: 800; border: none; background: transparent; width: 100%; color: var(--text-main); outline: none; font-family: inherit; }
-
-.accordion-header { background: var(--bg-card); color: var(--text-main); padding: 12px 15px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 5px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; font-size: 14px; }
-.accordion-body { display: none; padding-left: 10px; margin-bottom: 10px; border-left: 2px solid var(--border-color); margin-left: 5px; }
-.profile-list-item { display: flex; justify-content: space-between; align-items:center; background: var(--bg-card); border: 1px solid var(--border-color); margin-bottom: 8px; border-radius: 6px; padding: 5px; transition: 0.2s; }
-.profile-name-btn { flex-grow: 1; background: transparent; color: var(--text-main); text-align: left; border: none; padding: 10px; cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 14px;}
-
-.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-.form-group { margin-bottom: 20px; text-align: left; }
-.form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
-.form-control { width: 100%; padding: 12px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
-.form-control:focus { outline: none; border-color: var(--brand-red); }
-
-body:not([data-theme="light"]) { color-scheme: dark; }
-body:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(36%) sepia(74%) saturate(2716%) hue-rotate(338deg) brightness(97%) contrast(98%);
-    cursor: pointer;
-    opacity: 0.8;
-    transition: 0.2s;
-}
-body:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
-
-.ql-toolbar { background: var(--bg-card); border-color: var(--border-color) !important; border-top-left-radius: 6px; border-top-right-radius: 6px; }
-.ql-container { background: var(--bg-main); border-color: var(--border-color) !important; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--text-main); min-height: 120px; cursor: text; }
-#editor-container .ql-editor { min-height: inherit; padding-bottom: 20px; }
-.ql-snow .ql-stroke { stroke: var(--text-muted); } 
-.ql-snow .ql-fill { fill: var(--text-muted); } 
-.ql-snow .ql-picker { color: var(--text-muted); }
-
-button { font-family: inherit; cursor: pointer; }
-.btn-primary-red { background: var(--brand-red); color: white; border: none; padding: 12px 20px; border-radius: 6px; width: 100%; font-weight: 600; transition: 0.2s;}
-.btn-primary-red:hover { background: var(--brand-red-hover); } 
-.btn-primary-red:disabled { background: #52525b; cursor: not-allowed; }
-.btn-secondary { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: 6px; width: 100%; font-weight: 600; transition: 0.2s;}
-.btn-secondary:hover { border-color: var(--text-main); }
-.btn-danger { background: transparent; color: var(--brand-red); border: 1px solid var(--brand-red); padding: 12px 20px; border-radius: 6px; font-weight: 600;}
-.btn-danger:hover { background: rgba(239, 68, 68, 0.1); }
-.delete-col-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; transition: 0.2s; padding: 4px; border-radius: 4px;} 
-.delete-col-btn:hover { color: var(--brand-red); background: rgba(239,68,68,0.1); }
-
-.checklist-item { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; transition: border 0.2s; }
-.checklist-item.done { background: var(--bg-main); opacity: 0.6; }
-.edit-check-input { flex-grow: 1; background: transparent; border: none; color: var(--text-main); outline: none; font-family: inherit; font-size: 14px; }
-.checklist-item.done .edit-check-input { text-decoration: line-through; }
-.drag-handle { cursor: grab; color: #52525b; font-size: 18px; padding: 0 5px; touch-action: none; } 
-
-.attachment-item { display: flex; align-items: center; gap: 8px; background: var(--bg-col); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-main); text-decoration: none; transition: 0.2s; }
-.attachment-item:hover { border-color: var(--text-muted); background: var(--bg-card-hover); }
-.del-anexo-btn { color: #fca5a5; background: none; border: none; cursor: pointer; padding: 0; font-size: 14px; }
-
-.logs-container { max-height: 120px; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-.log-item { font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; align-items: flex-start; }
-.log-date { font-weight: 700; white-space: nowrap; color: var(--text-main); }
-
-#add-column-btn { min-width: 320px; background: rgba(100,100,100,0.05); border: 1px dashed var(--border-color); border-radius: 10px; color: var(--text-muted); padding: 16px; font-size: 14px; font-weight: 600; }
-.add-card-btn { background: none; border: none; color: var(--text-muted); padding-top: 12px; text-align: left; font-size: 13px; font-weight: 600; } 
-.add-card-btn:hover { color: var(--text-main); }
-
-.calendar-container { padding: var(--page-content-padding); display: none; flex-direction: column; gap: 20px; min-height: calc(100vh - 140px); }
-.calendar-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-col); padding: 15px 25px; border-radius: 10px; border: 1px solid var(--border-color); }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-.cal-day-header { text-align: center; font-weight: 800; color: var(--text-muted); font-size: 12px; text-transform: uppercase; padding-bottom: 10px; }
-.cal-cell { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; min-height: 120px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: 0.2s; }
-.cal-cell:hover { border-color: #52525b; background: var(--bg-card-hover); }
-.cal-cell.today { border-color: var(--brand-red); background: rgba(239, 68, 68, 0.05); }
-.cal-cell.empty { background: transparent; border: 1px dashed var(--border-color); opacity: 0.5; pointer-events: none; }
-.cal-date-num { font-size: 14px; font-weight: 800; color: var(--text-muted); align-self: flex-end; margin-bottom: 5px; }
-.cal-event-pill { font-size: 11px; padding: 4px 6px; border-radius: 4px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.cal-event-task { background: rgba(30, 64, 175, 0.3); color: #60a5fa; border: 1px solid rgba(30, 64, 175, 0.5); }
-.cal-event-custom { background: rgba(161, 98, 7, 0.3); color: #fde047; border: 1px solid rgba(161, 98, 7, 0.5); }
-
-/* CALCULADORA */
-.calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.calc-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 15px; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: inherit;}
-.calc-btn:hover { background: var(--bg-card-hover); border-color: var(--brand-red); }
-.calc-display { background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main); font-size: 24px; padding: 15px; border-radius: 6px; text-align: right; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-family: inherit; font-weight: 800;}
-
-/* CHAT FLUTUANTE */
-.btn-floating-chat { position: fixed; bottom: 25px; right: 25px; background: var(--brand-red); color: white; border: none; border-radius: 30px; padding: 15px 25px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4); z-index: 1000; transition: transform 0.2s; }
-.btn-floating-chat:hover { transform: scale(1.05); }
-
-.notification-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: var(--brand-red); border: 2px solid var(--brand-red); border-radius: 50%; width: 20px; height: 20px; font-size: 11px; font-weight: 900; display: none; align-items: center; justify-content: center; z-index: 10;}
-
-@keyframes chat-attention-anim { 
-    0%, 100% { transform: scale(1); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4); } 
-    50% { transform: scale(1.15) rotate(5deg); box-shadow: 0 0 20px #fde047; background-color: #dc2626; } 
-}
-.chat-attention { animation: chat-attention-anim 1s infinite !important; }
-
-.chat-widget { display: none; position: fixed; bottom: 90px; right: 25px; width: 360px; height: 500px; background: var(--bg-col); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); z-index: 1000; flex-direction: column; overflow: hidden; }
-.chat-header { background: #09090b; padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
-.chat-header-top { display: flex; justify-content: space-between; align-items: center; }
-.chat-header-top h3 { margin: 0; font-size: 16px; font-weight: 800; color: white; display: flex; align-items: center; gap: 10px; width:100%;}
-
-.chat-tabs { display: flex; gap: 5px; background: var(--bg-main); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); }
-.chat-tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; position: relative;}
-.chat-tab-btn.active { background: var(--bg-card-hover); color: var(--text-main); }
-
-.chat-body { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg-main); }
-.chat-msg { display: flex; flex-direction: column; max-width: 85%; }
-.chat-msg.sent { align-self: flex-end; }
-.chat-msg.received { align-self: flex-start; }
-
-.chat-msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.4; word-wrap: break-word; position: relative; }
-.chat-msg.sent .chat-msg-bubble { background: var(--brand-red); color: white; border-bottom-right-radius: 4px; }
-.chat-msg.received .chat-msg-bubble { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
-
-.chat-msg-meta { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
-.chat-msg.sent .chat-msg-meta { text-align: right; }
-
-.chat-footer { padding: 15px; background: var(--bg-col); border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
-.chat-input { flex-grow: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); font-family: inherit; font-size: 13px; outline: none; }
-.chat-input:focus { border-color: var(--brand-red); }
-.chat-send-btn { background: var(--brand-red); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
-
-.user-chat-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
-.user-chat-list-item:hover { border-color: #52525b; background: var(--bg-card-hover); }
-
-/* RELÓGIO DO CABEÇALHO */
-.top-bar-clock {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    margin-left: 20px;
-    padding-left: 20px;
-    border-left: 2px solid var(--border-color);
-    line-height: 1.1;
-}
-#clock-time {
-    font-size: 18px;
-    font-weight: 900;
-    color: var(--text-main);
-    letter-spacing: 1px;
-    font-family: inherit;
-}
-#clock-date {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-top: 2px;
-}
-
-@media (max-width: 768px) {
-    :root {
-        --page-horizontal-padding: 15px;
-        --page-content-padding: 15px;
+document.addEventListener('input', function(e) {
+    if(e.target.classList.contains('moeda') && !e.target.readOnly) {
+        let value = e.target.value.replace(/\D/g, "");
+        if (value === "") { e.target.value = ""; return; }
+        e.target.value = "R$ " + (parseInt(value) / 100).toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
     }
+});
 
-    .top-bar-clock {
-        margin-left: auto;
-        padding-left: 0;
-        border-left: none;
-        text-align: center;
-        align-items: center; 
+function aplicarMascaraTelefone(e) {
+    let v = e.target.value.replace(/\D/g, ''); 
+    if(v.length <= 2) e.target.value = v; else if(v.length <= 6) e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
+}
+document.getElementById('whatsapp').addEventListener('input', aplicarMascaraTelefone);
+
+async function buscarCEP(cep) {
+    let cleanCep = cep.replace(/\D/g, '');
+    if(cleanCep.length === 8) {
+        try {
+            let res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            let data = await res.json();
+            if(!data.erro) {
+                document.getElementById('endereco').value = `${data.logradouro}, Bairro: ${data.bairro} - ${data.localidade}/${data.uf}`;
+                document.getElementById('numeroEnd').focus();
+                
+                const tabelaFrete = { 'SP': 15.00, 'RJ': 20.00, 'MG': 20.00, 'ES': 20.00, 'PR': 25.00, 'SC': 25.00, 'RS': 25.00, 'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00 };
+                let valorCalculado = tabelaFrete[data.uf] || 35.00;
+                
+                document.getElementById('valorFrete').value = formatCurrency(valorCalculado);
+                atualizarTelaCarrinho(); 
+                showToast("CEP Encontrado e Frete Calculado!", false);
+            } else { showToast("CEP Inválido", true); }
+        } catch(e) { showToast("Erro ao buscar CEP", true); }
     }
+}
+
+function mudarAba(aba) {
+    ['cadastro', 'producao', 'estampas', 'clientes'].forEach(a => document.getElementById('aba-' + a).style.display = a === aba ? 'block' : 'none');
+    ['Cadastro', 'Producao', 'Estampas', 'Clientes'].forEach(a => document.getElementById('tab' + a + 'Btn').classList.toggle('tab-active', a.toLowerCase() === aba));
+}
+
+function toggleItens(id) {
+    let lista = document.getElementById('itens-' + id);
+    let seta = document.getElementById('seta-' + id);
+    let isHidden = lista.style.display === 'none';
+    lista.style.display = isHidden ? 'flex' : 'none';
+    seta.innerHTML = isHidden ? '▲' : '▼';
+}
+
+// ==========================================
+// FIREBASE INIT
+// ==========================================
+const firebaseConfig = { apiKey: "AIzaSyDnch84Sl5VyIi0YmOAde4jTftsssLEsNA", authDomain: "banco-de-dados-waller.firebaseapp.com", projectId: "banco-de-dados-waller", storageBucket: "banco-de-dados-waller.firebasestorage.app", messagingSenderId: "595978694752", appId: "1:595978694752:web:69aa74348560268a5a1305" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==========================================
+// CATÁLOGO (COM AJUSTE RÁPIDO)
+// ==========================================
+let catalogoEstampas = {}; 
+db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
+    document.getElementById('listaEstampas').innerHTML = '';
+    let datalist = document.getElementById('estampas-list'); datalist.innerHTML = '';
+    catalogoEstampas = {}; 
     
-    .top-bar { flex-direction: column; align-items: stretch; padding: 12px var(--page-horizontal-padding); gap: 15px; }
-    .top-bar-left { width: 100%; justify-content: flex-start; gap: 12px; }
-    .top-bar-logo { width: 38px; height: 38px; }
-    .top-bar-right { width: 100%; justify-content: space-between; gap: 10px; flex-wrap: wrap;}
-    .search-input { max-width: 100% !important; flex-grow: 1; }
-    .workspace-bar { padding: 10px var(--page-horizontal-padding); } 
-    .board { padding: var(--page-content-padding); } 
-    .column { width: 85vw; min-width: 85vw; }
-    .calendar-container { padding: var(--page-content-padding); } 
-    .calendar-grid { grid-template-columns: 1fr; gap: 5px; }
-    .cal-day-header { display: none; } 
-    .cal-cell { min-height: 80px; flex-direction: row; flex-wrap: wrap; }
-    .cal-date-num { width: 100%; text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
-    .login-box, .sys-modal, .modal { width: 95% !important; max-width: 100% !important; padding: 20px; }
-    .form-row { grid-template-columns: 1fr !important; }
-    .chat-widget { width: 100%; height: 100%; bottom: 0; right: 0; border-radius: 0; z-index: 5000; }
+    querySnapshot.forEach((doc) => {
+        let est = doc.data(); let estoque = est.estoque || 0; let cat = est.categoria || 'CAMISETA';
+        catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque, categoria: cat };
+        
+        datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
+        
+        let badgeSoldOut = estoque <= 0 ? `<span class="badge-soldout">SOLD OUT</span>` : '';
+        
+        document.getElementById('listaEstampas').innerHTML += `
+        <tr>
+            <td><strong>${est.codigo}</strong></td>
+            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat}</div></td>
+            <td>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', -1)">-</button>
+                    <span style="font-weight:900; font-size:1.1rem; width:30px; text-align:center; color:${estoque <= 0 ? 'var(--red)' : 'var(--black)'}">${estoque}</span>
+                    <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', 1)">+</button>
+                    ${badgeSoldOut}
+                </div>
+            </td>
+            <td style="display:flex; gap:5px;">
+                <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque}, '${cat}')">✏️</button>
+                <button class="btn-icone" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
+            </td>
+        </tr>`;
+    });
+});
+
+function ajustarEstoqueRapido(id, delta) {
+    db.collection("estampas").doc(id).update({ estoque: firebase.firestore.FieldValue.increment(delta) });
+}
+
+function autocompletarEstampa(val) {
+    let code = val.toUpperCase().trim();
+    if(catalogoEstampas[code]) { document.getElementById('nomeEstampa').value = catalogoEstampas[code].nome; }
+}
+
+function salvarNovaEstampa(e) {
+    e.preventDefault();
+    let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
+    let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
+    let cat = document.getElementById('cadCategoriaEstampa').value;
+    let est = parseInt(document.getElementById('cadEstoque').value) || 0;
+    let docId = document.getElementById('editEstampaCodigoOriginal').value || cod;
+
+    db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, categoria: cat, estoque: est }, { merge: true })
+    .then(() => { cancelarEdicaoEstampa(); showToast("Estampa Salva!"); });
+}
+
+function excluirEstampa(id) { if(confirm(`Apagar estampa?`)) db.collection("estampas").doc(id).delete(); }
+
+function prepararEdicaoEstampa(c, n, e, cat) {
+    document.getElementById('cadCodigoEstampa').value = c; document.getElementById('cadCodigoEstampa').disabled = true;
+    document.getElementById('cadNomeEstampa').value = n; document.getElementById('cadEstoque').value = e;
+    document.getElementById('cadCategoriaEstampa').value = cat || 'CAMISETA';
+    document.getElementById('editEstampaCodigoOriginal').value = c;
+    document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR'; document.getElementById('btnCancelarEstampa').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelarEdicaoEstampa() {
+    document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
+    document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadEstoque').value = '0';
+    document.getElementById('cadCategoriaEstampa').value = 'CAMISETA';
+    document.getElementById('editEstampaCodigoOriginal').value = '';
+    document.getElementById('btnSalvarEstampa').innerText = '+ CADASTRAR'; document.getElementById('btnCancelarEstampa').style.display = 'none';
+}
+
+// ==========================================
+// CRM: DADOS DE CLIENTES (FICHA)
+// ==========================================
+let clientesCadastrados = {};
+db.collection("clientes").onSnapshot(snap => {
+    clientesCadastrados = {};
+    snap.forEach(doc => clientesCadastrados[doc.id] = doc.data());
+    if(Object.keys(mapaClientes).length > 0) renderizarCRM();
+});
+
+let mapaClientes = {}; 
+function verificarClienteFiel() {
+    let w = document.getElementById('whatsapp').value.trim();
+    if(w.length > 10 && (mapaClientes[w] || clientesCadastrados[w])) { 
+        document.getElementById('alertaClienteFiel').style.display = 'inline-block'; 
+        if(clientesCadastrados[w] && !document.getElementById('nome').value) {
+             document.getElementById('nome').value = clientesCadastrados[w].nome || '';
+             document.getElementById('cep').value = clientesCadastrados[w].cep || '';
+             document.getElementById('endereco').value = clientesCadastrados[w].endereco || '';
+        }
+    } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
+}
+
+function abrirFichaCliente(whatsapp) {
+    let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0 };
+    let perfil = clientesCadastrados[whatsapp] || {};
+
+    document.getElementById('fichaWhatsapp').value = whatsapp;
+    document.getElementById('fichaNome').value = perfil.nome || dadosCompra.nome || '';
+    document.getElementById('fichaInsta').value = perfil.insta || '';
+    document.getElementById('fichaDataNasc').value = perfil.dataNasc || '';
+    document.getElementById('fichaCEP').value = perfil.cep || dadosCompra.cep || '';
+    document.getElementById('fichaEndereco').value = perfil.endereco || dadosCompra.endereco || '';
+    document.getElementById('fichaObs').value = perfil.obs || '';
+    
+    document.getElementById('fichaQtdPedidos').innerText = dadosCompra.qtd;
+    document.getElementById('fichaTotalGasto').innerText = formatCurrency(dadosCompra.totalGasto);
+    
+    document.getElementById('modalFichaCliente').style.display = 'flex';
+}
+
+function fecharFichaCliente() { document.getElementById('modalFichaCliente').style.display = 'none'; }
+
+function salvarFichaCliente() {
+    let w = document.getElementById('fichaWhatsapp').value;
+    db.collection("clientes").doc(w).set({
+        whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(),
+        insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value,
+        cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
+        obs: document.getElementById('fichaObs').value
+    }, {merge: true}).then(() => { showToast("Ficha do Cliente Salva!"); fecharFichaCliente(); });
+}
+
+// ==========================================
+// CARRINHO E LANÇAMENTO DE PEDIDO
+// ==========================================
+let todosPedidos = []; let carrinhoTemporario = []; 
+
+function adicionarAoCarrinho() {
+    const cod = document.getElementById('codigoEstampa').value.toUpperCase().trim();
+    const nom = document.getElementById('nomeEstampa').value.toUpperCase().trim();
+    const tip = document.getElementById('tipoPeca').value;
+    const tam = document.getElementById('tamanho').value;
+    const cor = document.getElementById('cor').value;
+    const val = unmaskCurrency(document.getElementById('valorUnitario').value);
+    const qtd = parseInt(document.getElementById('quantidade').value) || 1;
+
+    if(!cod || !nom) { showToast("Preencha código e nome!", true); return; }
+    if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Aviso: Estoque baixo/zerado para esta estampa!", true); }
+
+    carrinhoTemporario.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: tip, tamanho: tam, cor: cor, quantidade: qtd, valorUnitario: val });
+    atualizarTelaCarrinho();
+    document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('codigoEstampa').focus();
+}
+
+function removerDoCarrinho(i) { carrinhoTemporario.splice(i, 1); atualizarTelaCarrinho(); }
+
+function atualizarTelaCarrinho() {
+    let soma = 0; document.getElementById('listaCarrinho').innerHTML = '';
+    carrinhoTemporario.forEach((p, i) => {
+        soma += (p.quantidade * p.valorUnitario);
+        document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${p.quantidade}x</strong> ${p.tipoPeca} (${p.tamanho}) - [${p.codigoEstampa}]</span><div><span style="color:var(--red); font-weight:900;">${formatCurrency(p.valorUnitario)}</span> <button class="btn-remove-item" onclick="removerDoCarrinho(${i})">X</button></div></div>`;
+    });
+    let frete = unmaskCurrency(document.getElementById('valorFrete').value);
+    document.getElementById('valorTotal').value = formatCurrency(soma + frete);
+    document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
+}
+
+async function salvarPedidoCompleto() {
+    let nome = document.getElementById('nome').value.toUpperCase();
+    let whatsapp = document.getElementById('whatsapp').value;
+    let cep = document.getElementById('cep').value;
+    let end = document.getElementById('endereco').value + ", " + document.getElementById('numeroEnd').value;
+    let frete = unmaskCurrency(document.getElementById('valorFrete').value);
+    let total = unmaskCurrency(document.getElementById('valorTotal').value);
+
+    if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
+
+    document.getElementById('btnGerarOrdem').innerText = "SALVANDO...";
+    let numGerado = Math.floor(1000 + Math.random() * 9000).toString();
+
+    try {
+        await db.collection("pedidos").add({
+            numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, cep: cep, endereco: end, valorFrete: frete,
+            valorTotal: total, metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value,
+            itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end }, { merge: true });
+        carrinhoTemporario.forEach(item => {
+            if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
+                db.collection("estampas").doc(item.codigoEstampa).update({ estoque: firebase.firestore.FieldValue.increment(-item.quantidade) });
+            }
+        });
+
+        document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
+        carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO"; showToast(`PEDIDO #${numGerado} SALVO!`);
+    } catch (e) { showToast("Erro ao salvar", true); }
+}
+
+// ==========================================
+// LISTENER DE PEDIDOS E KANBAN
+// ==========================================
+db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
+    todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
+    let met = { pedMes: 0, faturamento: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
+
+    querySnapshot.forEach((doc) => {
+        let p = doc.data(); p.id = doc.id; 
+        p.statusAtualizado = (p.status || 'PEDIDO FEITO').toUpperCase();
+        if(p.statusAtualizado === 'PRONTA / ESTAMPADA') p.statusAtualizado = 'ESTAMPA PRONTA';
+        
+        let d = p.dataCriacao ? p.dataCriacao.toDate() : new Date();
+        p.dataFormatada = d.toLocaleDateString('pt-BR'); p.dataMesAno = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        
+        if(p.statusPagamento === 'PAGO') meses.add(p.dataMesAno);
+        if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
+
+        // CRM Aggregate com Última Compra
+        if(p.whatsapp) {
+            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, ultimaCompra: d };
+            mapaClientes[p.whatsapp].qtd++;
+            if(d > mapaClientes[p.whatsapp].ultimaCompra) mapaClientes[p.whatsapp].ultimaCompra = d;
+            if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
+        }
+
+        if(p.itens && p.statusPagamento === 'PAGO') { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
+        todosPedidos.push(p);
+    });
+
+    document.getElementById('dashPedidosMes').innerText = met.pedMes;
+    atualizarSelectFaturamento(meses);
+    renderizarCRM();
+    renderizarBestSellers(freqEstampas);
+    renderizarKanban(); 
+});
+
+function renderizarBestSellers(freq) {
+    let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,3);
+    document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
+}
+
+function renderizarCRM() {
+    let combinados = {};
+    Object.keys(mapaClientes).forEach(w => combinados[w] = { ...mapaClientes[w] });
+    Object.keys(clientesCadastrados).forEach(w => {
+        if(!combinados[w]) combinados[w] = { nome: clientesCadastrados[w].nome, qtd: 0, totalGasto: 0, ultimaCompra: null };
+        combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
+    });
+
+    let crmList = Object.entries(combinados).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
+    document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => {
+        let dataUc = c[1].ultimaCompra ? c[1].ultimaCompra.toLocaleDateString('pt-BR') : '-';
+        let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
+        let vipBadge = c[1].totalGasto >= 500 ? `<span class="badge-vip">VIP</span>` : '';
+        
+        return `<tr>
+            <td><strong style="font-size:1rem;">${c[1].nome}</strong> ${vipBadge}<br><span style="font-size:0.75rem; color:var(--text-muted);">${c[0]}</span></td>
+            <td><strong style="font-size:1.1rem;">${c[1].qtd}</strong></td>
+            <td style="color:var(--text-muted); font-size:0.8rem;">${dataUc}</td>
+            <td>${formatCurrency(tktMedio)}</td>
+            <td style="color:var(--green); font-weight:900; font-size:1.1rem;">${formatCurrency(c[1].totalGasto)}</td>
+            <td style="display:flex; gap:5px;">
+                <button class="btn-icone" onclick="abrirFichaCliente('${c[0]}')" title="Abrir Ficha">👤</button>
+                <a href="https://wa.me/55${c[0].replace(/\D/g,'')}" target="_blank" class="btn-icone" style="background:var(--black); color:var(--bg-body);">💬</a>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ==========================================
+// KANBAN LOGIC & RENDER (ALINHADO E DISCRETO)
+// ==========================================
+function renderizarKanban() {
+    let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
+    
+    todosPedidos.forEach(p => {
+        if(cols[p.statusAtualizado] === undefined) return; 
+        
+        let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
+        let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:var(--text-muted); font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
+        
+        let cardHtml = `
+        <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="drag(event)">
+            <div class="pedido-header">
+                <div class="header-linha-1">
+                    <div class="id-container">
+                        <input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()" title="Selecionar pedido">
+                        <span class="pedido-id">#${p.numeroPedido}</span>
+                    </div>
+                    <span class="pedido-data">${p.dataFormatada}</span>
+                </div>
+                ${btnPgto}
+            </div>
+            <div class="pedido-body">
+                <div class="cliente-nome">${p.nome} <br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">${p.whatsapp}</span></div>
+                <div class="cliente-financas">${formatCurrency(p.valorTotal)} - ${p.metodoPagamento||'PIX'}</div>
+                <div class="toggle-itens-btn" onclick="toggleItens('${p.id}')"><span>📦 PEÇAS (${p.itens.length})</span><span id="seta-${p.id}">▼</span></div>
+                <div class="pedido-itens-lista" id="itens-${p.id}">${itensHtml}</div>
+            </div>
+            <div class="pedido-footer">
+                <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️ EDITAR</button>
+                <button onclick="excluirPedido('${p.id}')" title="Excluir" style="color:var(--red); flex: 0.3;">❌</button>
+            </div>
+        </div>`;
+        cols[p.statusAtualizado] += cardHtml;
+    });
+
+    Object.keys(cols).forEach(k => {
+        let el = document.getElementById('col-' + k.replace(/ /g,'-'));
+        if(el) el.innerHTML = cols[k];
+    });
+}
+
+function filtrarKanban() {
+    let termo = document.getElementById('inputBusca').value.toUpperCase();
+    document.querySelectorAll('.pedido-card').forEach(card => { card.style.display = card.innerText.toUpperCase().includes(termo) ? 'flex' : 'none'; });
+}
+
+function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+function allowDrop(ev) { ev.preventDefault(); }
+function drop(ev, novoStatus) { ev.preventDefault(); db.collection("pedidos").doc(ev.dataTransfer.getData("text")).update({ status: novoStatus }); showToast("MOVIDO COM SUCESSO!"); }
+function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
+function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
+
+// ==========================================
+// BULK UPDATE E FATURAMENTO
+// ==========================================
+let selecionados = [];
+function checkBulk() {
+    selecionados = Array.from(document.querySelectorAll('.checkbox-bulk:checked')).map(cb => cb.value);
+    document.getElementById('bulk-count').innerText = selecionados.length;
+    document.getElementById('bulk-action-bar').classList.toggle('show', selecionados.length > 0);
+}
+function limparBulk() { document.querySelectorAll('.checkbox-bulk').forEach(cb => cb.checked = false); checkBulk(); }
+function executarBulkUpdate() {
+    let status = document.getElementById('bulk-status-select').value; let batch = db.batch();
+    selecionados.forEach(id => { batch.update(db.collection("pedidos").doc(id), { status: status }); });
+    batch.commit().then(() => { showToast(`${selecionados.length} PEDIDOS ATUALIZADOS!`); limparBulk(); });
+}
+
+function atualizarSelectFaturamento(mesesUnicos) {
+    const select = document.getElementById('selectFaturamentoMes'); const valAnt = select.value; select.innerHTML = '';
+    let arrayMeses = Array.from(mesesUnicos).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aB,mB-1)-new Date(aA,mA-1); });
+    if(!arrayMeses.length) select.innerHTML='<option value="">-</option>';
+    else { arrayMeses.forEach(m => select.innerHTML+=`<option value="${m}">${m}</option>`); select.value = arrayMeses.includes(valAnt)?valAnt:arrayMeses[0]; }
+    calcularFaturamentoMensal();
+}
+function calcularFaturamentoMensal() {
+    let mes = document.getElementById('selectFaturamentoMes').value; let soma = 0;
+    todosPedidos.forEach(p => { if(p.statusPagamento==='PAGO' && p.dataMesAno===mes) soma += parseFloat(p.valorTotal); });
+    document.getElementById('dashFaturamento').innerText = formatCurrency(soma);
+}
+
+// ==========================================
+// EDIÇÃO RÁPIDA DE PEDIDO
+// ==========================================
+function abrirModalEdicao(id) {
+    const p = todosPedidos.find(x => x.id === id); if(!p) return;
+    document.getElementById('editId').value = p.id;
+    document.getElementById('tituloEditPedido').innerText = "#" + p.numeroPedido;
+    document.getElementById('editNome').value = p.nome || '';
+    document.getElementById('editWhatsapp').value = p.whatsapp || '';
+    document.getElementById('editValorTotal').value = formatCurrency(p.valorTotal || 0);
+    if(p.metodoPagamento) document.getElementById('editMetodoPagamento').value = p.metodoPagamento;
+    
+    let container = document.getElementById('editItensContainer'); container.innerHTML = '';
+    p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
+    document.getElementById('modalEdicao').style.display = 'flex';
+    recalcularSomaEdicao(); 
+}
+
+function gerarHtmlLinhaEdicao(item) {
+    const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
+    return `
+    <div class="item-edit-wrapper" style="border: 2px dashed var(--border-color); padding: 15px; margin-bottom: 15px; background: var(--gray); position: relative;">
+        <button type="button" class="btn-remove-item" style="position: absolute; top: 10px; right: 10px;" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
+        <div class="form-grid" style="margin-bottom: 10px; padding-right: 100px;">
+            <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
+            <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
+        </div>
+        <div class="form-grid">
+            <select class="edit-tip"><option value="OVERSIZED" ${t==='OVERSIZED'?'selected':''}>OVERSIZED</option><option value="MOLETOM" ${t==='MOLETOM'?'selected':''}>MOLETOM</option><option value="REGATA" ${t==='REGATA'?'selected':''}>REGATA</option><option value="CAMISETA TRADICIONAL" ${t==='CAMISETA TRADICIONAL'?'selected':''}>CAM. TRADICIONAL</option></select>
+            <select class="edit-tam"><option value="P" ${tam==='P'?'selected':''}>P</option><option value="M" ${tam==='M'?'selected':''}>M</option><option value="G" ${tam==='G'?'selected':''}>G</option><option value="GG" ${tam==='GG'?'selected':''}>GG</option><option value="XG" ${tam==='XG'?'selected':''}>XG</option></select>
+            <select class="edit-cor"><option value="PRETA" ${c==='PRETA'?'selected':''}>PRETA</option><option value="BRANCA" ${c==='BRANCA'?'selected':''}>BRANCA</option><option value="MESCLA" ${c==='MESCLA'?'selected':''}>MESCLA</option><option value="OFF-WHITE" ${c==='OFF-WHITE'?'selected':''}>OFF-WHITE</option></select>
+            <input type="text" class="edit-valor moeda" value="${formatCurrency(item.valorUnitario)}" placeholder="R$ UN" style="flex: 0.5;">
+            <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" min="1" style="flex: 0.3;">
+        </div>
+    </div>`;
+}
+
+function recalcularSomaEdicao() {
+    let soma = 0; document.querySelectorAll('.item-edit-wrapper').forEach(row => { soma += (unmaskCurrency(row.querySelector('.edit-valor').value) * (parseInt(row.querySelector('.edit-qtd').value) || 1)); });
+    document.getElementById('editValorTotal').value = formatCurrency(soma);
+}
+
+function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
+
+function salvarAlteracoesEdicao() {
+    const id = document.getElementById('editId').value; let itens = [];
+    document.querySelectorAll('.item-edit-wrapper').forEach(row => {
+        itens.push({
+            codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(), nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
+            tipoPeca: row.querySelector('.edit-tip').value, tamanho: row.querySelector('.edit-tam').value, cor: row.querySelector('.edit-cor').value,
+            valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value), quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
+        });
+    });
+    if(itens.length === 0) { showToast("Precisa de pelo menos 1 peça.", true); return; }
+    db.collection("pedidos").doc(id).update({
+        nome: document.getElementById('editNome').value.toUpperCase(), whatsapp: document.getElementById('editWhatsapp').value,
+        valorTotal: unmaskCurrency(document.getElementById('editValorTotal').value), metodoPagamento: document.getElementById('editMetodoPagamento').value, itens: itens 
+    }).then(() => { fecharModalEdicao(); showToast("Pedido Editado!"); });
+}
+
+// ==========================================
+// PDFS E ETIQUETAS
+// ==========================================
+function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
+function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
+
+function desenharCabecalhoPDF(doc, titulo) {
+    doc.setFillColor(217, 4, 41); doc.rect(0, 0, 210, 25, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text("WALLER CLOTHING", 14, 12);
+    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(titulo, 14, 18);
+    doc.text(`Gerado: ${new Date().toLocaleDateString('pt-BR')}`, 160, 18);
+}
+
+function gerarPDFProducao(opcao) {
+    let statusSel = opcao === 'TODOS' ? ['PEDIDO FEITO', 'AGUARDANDO ESTAMPA'] : [opcao];
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    desenharCabecalhoPDF(doc, `ORDEM DE PRODUÇÃO: ${opcao}`);
+    let currentY = 35; let achou = false;
+
+    statusSel.forEach(status => {
+        const pend = todosPedidos.filter(p => p.statusAtualizado === status);
+        if (pend.length > 0) {
+            achou = true; doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(0, 0, 0); doc.text(`STATUS: ${status}`, 14, currentY); currentY += 5; 
+            let total=0; const count={};
+            pend.forEach(p => { p.itens.forEach(i => { let q=parseInt(i.quantidade)||1; total+=q; const k=`${i.codigoEstampa||'-'} | ${i.nomeEstampa||'-'} | ${i.tipoPeca} | ${i.cor} | ${i.tamanho}`; count[k]=(count[k]||0)+q; }); });
+            const rows = Object.keys(count).map(k => [...k.split(' | '), count[k]]).sort((a,b)=>a[0].localeCompare(b[0]));
+            doc.autoTable({ startY: currentY, head: [['Cód', 'Estampa', 'Peça', 'Cor', 'Tam', 'Qtd']], body: rows, foot: [[ { content: 'TOTAL:', colSpan: 5, styles: { halign: 'right'} }, { content: total.toString(), styles: { halign: 'center', fillColor:[217,4,41], textColor:[255,255,255] } } ]], theme: 'grid', headStyles: { fillColor: [0,0,0], textColor: [255,255,255] }, styles: { fontSize: 9 } });
+            currentY = doc.lastAutoTable.finalY + 15; 
+        }
+    });
+    if(!achou) { showToast("Vazio!", true); return; }
+    doc.save(`waller_OS_${opcao.replace(/ /g,'_')}.pdf`); fecharModalPDF();
+}
+
+function gerarEtiquetasEnvio() {
+    const prontos = todosPedidos.filter(p => p.statusAtualizado === 'ESTAMPA PRONTA' || p.statusAtualizado === 'PEDIDO ENVIADO');
+    if(!prontos.length) { showToast("Nenhum pedido pronto!", true); return; }
+    
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    let y = 20;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("ETIQUETAS DE ENVIO - WALLER CLOTHING", 14, y); y+=15;
+    
+    prontos.forEach((p, idx) => {
+        if(y > 250) { doc.addPage(); y = 20; }
+        doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(14, y, 180, 45);
+        doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text(`DESTINATÁRIO: ${p.nome}`, 20, y+10);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); 
+        doc.text(`Endereço: ${p.endereco || 'Não informado'}`, 20, y+20);
+        doc.text(`CEP: ${p.cep || 'Não informado'}`, 20, y+28);
+        doc.text(`Telefone: ${p.whatsapp}`, 20, y+36);
+        doc.setFont("helvetica", "bold"); doc.text(`Pedido #${p.numeroPedido}`, 150, y+36);
+        y += 55;
+    });
+    doc.save(`waller_etiquetas.pdf`); fecharModalPDF();
+}
+
+function gerarPDFFaturamento() {
+    let mes = document.getElementById('selectFaturamentoMes').value; if(mes==='ALL') return;
+    let pagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mes);
+    if(!pagos.length) { showToast("Sem vendas!", true); return; }
+    
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    desenharCabecalhoPDF(doc, `RELATÓRIO FINANCEIRO: ${mes}`);
+    
+    let soma = 0; let rows = pagos.map(p => { soma+=parseFloat(p.valorTotal); return [`#${p.numeroPedido}`, p.dataFormatada, p.nome, p.metodoPagamento, formatCurrency(p.valorTotal)]; });
+    doc.autoTable({ startY: 35, head: [['Pedido', 'Data', 'Cliente', 'Pgto', 'Valor']], body: rows, foot: [[ { content: 'TOTAL:', colSpan: 4, styles: { halign: 'right'} }, { content: formatCurrency(soma), styles: { halign: 'right', fillColor: [6,214,160], textColor:[0,0,0] } } ]], theme: 'grid', headStyles: { fillColor: [0,0,0] } });
+    doc.save(`waller_faturamento_${mes.replace('/','-')}.pdf`); fecharModalPDF();
 }
