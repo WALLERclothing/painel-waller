@@ -169,6 +169,3 @@ th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick
     .navbar h1 { font-size: 1.5rem; } .nav-actions { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
     .ficha-kpis { grid-template-columns: 1fr 1fr; }
-    .btn-primary-sticky-mobile { position: sticky; bottom: 10px; z-index: 50; }
-    .form-errors-row { grid-template-columns: 1fr; gap: 0.3rem; margin-top: -0.8rem; }
-}
