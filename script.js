@@ -20,6 +20,7 @@ let pedidosCache = [];
 let clientesExtrasCache = [];
 let clientesCache = [];
 let filtroAtual = 'TODOS';
+let pedidoEmEdicaoId = null; // Variável para controlar a edição de um pedido
 
 function upper(v) { return (v || '').toString().trim().toUpperCase(); }
 function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
@@ -101,7 +102,7 @@ function preencherEstampaPorCodigo() {
     if (encontrada.tipoPadrao && Array.from(el('tipoPeca').options).some((opt) => opt.value === encontrada.tipoPadrao)) {
         el('tipoPeca').value = encontrada.tipoPadrao;
     }
-    feedback.textContent = `Estampa encontrada: ${encontrada.nome}`;
+    feedback.textContent = `Encontrado: ${encontrada.nome} (Estoque: ${encontrada.estoque})`;
     feedback.classList.add('ok');
     feedback.classList.remove('warn');
 }
@@ -154,14 +155,14 @@ function removerDoCarrinho(index) {
     atualizarTelaCarrinho();
 }
 
+// LOGICA ALTERADA PARA SALVAR OU EDITAR O PEDIDO
 async function salvarPedidoCompleto() {
     const nome = upper(el('nome').value);
     if (!nome || carrinhoTemporario.length === 0) return alert('Preencha o nome do cliente e adicione pelo menos um item!');
 
     const statusBase = el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO';
 
-    await db.collection('pedidos').add({
-        numeroPedido: Math.floor(1000 + Math.random() * 9000).toString(),
+    const dadosPedido = {
         nome,
         whatsapp: upper(el('whatsapp').value),
         instagram: upper(el('instagram').value),
@@ -175,11 +176,22 @@ async function salvarPedidoCompleto() {
         metodoPagamento: el('metodoPagamento').value,
         statusPagamento: el('statusPagamento').value,
         itens: carrinhoTemporario,
-        status: statusBase,
-        dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
-    });
+        status: statusBase
+    };
 
-    alert('🔥 Pedido lançado com sucesso!');
+    if (pedidoEmEdicaoId) {
+        // Se estiver editando, atualiza o documento existente
+        await db.collection('pedidos').doc(pedidoEmEdicaoId).update(dadosPedido);
+        alert('🔥 Pedido atualizado com sucesso!');
+        pedidoEmEdicaoId = null;
+        el('btnSalvarPedido').textContent = 'GERAR ORDEM DE SERVIÇO';
+    } else {
+        // Se for novo, adiciona
+        dadosPedido.numeroPedido = Math.floor(1000 + Math.random() * 9000).toString();
+        dadosPedido.dataCriacao = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('pedidos').add(dadosPedido);
+        alert('🔥 Pedido lançado com sucesso!');
+    }
     
     // Limpar o formulário todo após o pedido ser salvo
     document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
@@ -192,6 +204,7 @@ async function salvarPedidoCompleto() {
     
     carrinhoTemporario = [];
     atualizarTelaCarrinho();
+    mudarAba('producao');
 }
 
 function filtrarCatalogo() {
@@ -206,6 +219,7 @@ function abrirModalCatalogo(codigo) {
     el('editCatalogoNome').value = item.nome;
     el('editCatalogoValor').value = formatCurrency(item.valor || 0);
     el('editCatalogoTipo').value = item.tipoPadrao || '';
+    el('editCatalogoEstoque').value = item.estoque || 0;
     el('modalCatalogo').style.display = 'flex';
 }
 function fecharModalCatalogo() { el('modalCatalogo').style.display = 'none'; }
@@ -217,7 +231,8 @@ async function salvarEdicaoCatalogo(e) {
         codigo,
         nome: upper(el('editCatalogoNome').value),
         valor: unmaskCurrency(el('editCatalogoValor').value),
-        tipoPadrao: upper(el('editCatalogoTipo').value)
+        tipoPadrao: upper(el('editCatalogoTipo').value),
+        estoque: parseInt(el('editCatalogoEstoque').value) || 0
     });
     fecharModalCatalogo();
 }
@@ -231,7 +246,10 @@ function renderCatalogo(lista = estampasCache) {
     }
 
     lista.forEach((est) => {
-        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">Excluir</button></div></article>`;
+        const estoqueMsg = est.estoque > 0 ? `📦 Estoque: ${est.estoque}` : '🔴 ESGOTADO';
+        const estoqueClass = est.estoque > 0 ? '' : 'stock-esgotado';
+        
+        container.innerHTML += `<article class="catalog-item"><div class="catalog-item-top"><p class="catalog-code">${est.codigo}</p><span class="catalog-tag">ESTAMPA</span></div><h3>${est.nome}</h3><p class="catalog-price">${formatCurrency(est.valor || 0)}</p><p class="catalog-stock ${estoqueClass}">${estoqueMsg}</p><details class="sanfona-tipo"><summary>Tipo padrão</summary><p>${est.tipoPadrao || 'NÃO DEFINIDO'}</p></details><div class="catalog-actions"><button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button><button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()">🗑️</button></div></article>`;
     });
 }
 
@@ -247,7 +265,6 @@ function statusOptionsSelecionado(atual) {
     return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join('');
 }
 
-// NOVA FUNÇÃO DO WHATSAPP SUPER ORGANIZADA
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome);
     let itensTexto = '';
@@ -286,6 +303,8 @@ function renderPedidosGrid(lista) {
 
     const grupos = STATUS_LIST.map((status) => ({ status, itens: lista.filter((p) => upper(p.status || 'PEDIDO FEITO') === status) }));
 
+    const svgWhats = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>`;
+
     grupos.forEach((grupo) => {
         container.innerHTML += `<section class="kanban-col"><header><h3>${grupo.status}</h3><span>${grupo.itens.length}</span></header><div class="kanban-cards">${grupo.itens.map((pedido) => `
             <article class="pedido-card-v2">
@@ -295,8 +314,8 @@ function renderPedidosGrid(lista) {
                 <p><strong>Data:</strong> ${formatDate(pedido.dataCriacao)}</p>
                 ${abrirSanfonaStatus(pedido.id, upper(pedido.status || 'PEDIDO FEITO'))}
                 <div class="pedido-actions">
-                    <a class="btn-whats" target="_blank" href="${linkWhatsPedido(pedido)}">WhatsApp</a>
-                    <button class="catalog-edit" onclick="abrirVisualizacaoClientePedido('${pedido.id}')">Ver Ficha</button>
+                    <a class="btn-whats" target="_blank" href="${linkWhatsPedido(pedido)}">${svgWhats}</a>
+                    <button class="catalog-edit" onclick="abrirFichaPedido('${pedido.id}')">Ver Ficha</button>
                     <button class="catalog-delete" onclick="excluirPedido('${pedido.id}')">🗑️</button>
                 </div>
             </article>`).join('')}</div></section>`;
@@ -374,35 +393,87 @@ function extrairClientesDosPedidos() {
     });
 }
 
+// FICHA DO CLIENTE
 function abrirVisualizacaoCliente(cliente) {
-    el('fichaClienteTitulo').textContent = `Ficha: ${cliente.nome || 'Cliente'}`;
+    const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
+    
+    el('fichaClienteTitulo').textContent = `Ficha Completa: ${cliente.nome || 'Cliente'}`;
     el('fichaClienteConteudo').innerHTML = `
         <div class="cliente-ficha-grid">
             <p><strong>WhatsApp:</strong> ${cliente.whatsapp || '-'}</p>
             <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
-            <p><strong>Documento:</strong> ${cliente.documento || '-'}</p>
+            <p><strong>Documento/CPF:</strong> ${cliente.documento || '-'}</p>
             <p><strong>Aniversário:</strong> ${cliente.aniversario || '-'}</p>
-            <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
-            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `• ${cliente.referencia}` : ''}</p>
+            <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} / ${cliente.estado || ''}</p>
+            <p><strong>Endereço:</strong> ${cliente.endereco || '-'} ${cliente.referencia ? `(Ref: ${cliente.referencia})` : ''}</p>
             <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
             <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
         </div>
-        <h3 class="form-section-title" style="margin-top:1rem;">Histórico de pedidos</h3>
+        <button class="btn-primary" style="margin-top: 1rem;" onclick="editarCliente('${idRef}'); fecharFichaCliente();">✏️ EDITAR DADOS DO CLIENTE</button>
+
+        <h3 class="form-section-title" style="margin-top:1.5rem;">Histórico de pedidos</h3>
         <div>${(cliente.historicoPedidos || []).map((p) => `<div class="item-carrinho"><div>#${p.numeroPedido} • ${formatDate(p.dataCriacao)} • ${p.status}</div><div>${formatCurrency(p.valorTotal || 0)}</div></div>`).join('') || 'Sem histórico'}</div>`;
     el('modalFichaCliente').style.display = 'flex';
-}
-
-function abrirVisualizacaoClientePedido(idPedido) {
-    const pedido = pedidosCache.find((p) => p.id === idPedido);
-    if (!pedido) return;
-    const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
-    const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === chave);
-    if (cliente) abrirVisualizacaoCliente(cliente);
 }
 
 function visualizarClientePorId(idRef) {
     const cliente = clientesCache.find((c) => (onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`) === idRef);
     if (cliente) abrirVisualizacaoCliente(cliente);
+}
+
+// NOVA FICHA DE PEDIDO COM BOTÃO DE EDIÇÃO
+function abrirFichaPedido(idPedido) {
+    const pedido = pedidosCache.find((p) => p.id === idPedido);
+    if (!pedido) return;
+
+    el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
+    el('fichaPedidoConteudo').innerHTML = `
+        <div class="cliente-ficha-grid" style="margin-bottom: 1rem;">
+            <p><strong>Cliente:</strong> ${pedido.nome || '-'}</p>
+            <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
+            <p><strong>Status:</strong> ${pedido.status || '-'}</p>
+            <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
+            <p><strong>Endereço:</strong> ${pedido.endereco || '-'}, ${pedido.cidade || '-'}/${pedido.estado || '-'}</p>
+            <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
+        </div>
+        <h3 class="form-section-title">Peças no pedido</h3>
+        <div style="margin-bottom: 1.5rem;">
+            ${(pedido.itens || []).map(i => `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${i.nomeEstampa || i.codigoEstampa}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`).join('')}
+        </div>
+        <button class="btn-primary" onclick="carregarPedidoParaEdicao('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
+    `;
+    el('modalFichaPedido').style.display = 'flex';
+}
+
+function fecharFichaPedido() { el('modalFichaPedido').style.display = 'none'; }
+
+function carregarPedidoParaEdicao(idPedido) {
+    const pedido = pedidosCache.find(p => p.id === idPedido);
+    if (!pedido) return;
+    
+    pedidoEmEdicaoId = pedido.id;
+
+    // Preenche os inputs do formulário
+    el('nome').value = pedido.nome || '';
+    el('whatsapp').value = pedido.whatsapp || '';
+    el('instagram').value = pedido.instagram || '';
+    el('cpf').value = pedido.documento || '';
+    el('cep').value = pedido.cep || '';
+    el('cidade').value = pedido.cidade || '';
+    el('estado').value = pedido.estado || '';
+    el('endereco').value = pedido.endereco || '';
+    el('referencia').value = pedido.referencia || '';
+    el('metodoPagamento').value = pedido.metodoPagamento || 'PIX';
+    el('statusPagamento').value = pedido.statusPagamento || 'PAGO';
+
+    // Preenche o carrinho
+    carrinhoTemporario = [...pedido.itens];
+    atualizarTelaCarrinho();
+
+    // Muda o texto do botão salvar e troca de tela
+    el('btnSalvarPedido').textContent = 'SALVAR ALTERAÇÕES DO PEDIDO';
+    fecharFichaPedido();
+    mudarAba('cadastro');
 }
 
 function fecharFichaCliente() { el('modalFichaCliente').style.display = 'none'; }
@@ -462,12 +533,11 @@ function renderClientes(lista = clientesCache) {
             <h3>${cliente.nome || 'SEM NOME'}</h3>
             ${destaque ? '<span class="niver-tag pulse">🎂 Aniversário próximo</span>' : ''}
             <p><strong>Whatsapp:</strong> ${cliente.whatsapp || '-'}</p>
-            <p><strong>Cidade:</strong> ${cliente.cidade || '-'} ${cliente.estado || ''}</p>
+            <p><strong>Cidade:</strong> ${cliente.cidade || '-'} / ${cliente.estado || ''}</p>
             <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span></div>
             <div class="pedido-actions">
-                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha</button>
-                <button class="catalog-edit" onclick="editarCliente('${idRef}')">Editar</button>
-                <button class="catalog-delete" onclick="excluirCliente('${idRef}')">Excluir</button>
+                <button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha Completa</button>
+                <button class="catalog-delete" onclick="excluirCliente('${idRef}')">🗑️</button>
             </div>
         </article>`;
     });
@@ -493,7 +563,8 @@ async function salvarNovaEstampa(e) {
         codigo: cod,
         nome: upper(el('cadNomeEstampa').value),
         valor: unmaskCurrency(el('cadValorEstampa').value),
-        tipoPadrao: upper(el('cadTipoPadrao').value)
+        tipoPadrao: upper(el('cadTipoPadrao').value),
+        estoque: parseInt(el('cadEstoqueEstampa').value) || 0
     });
     e.target.reset();
 }
@@ -513,7 +584,7 @@ function iniciarListeners() {
         estampasCache = [];
         snap.forEach((doc) => {
             const est = doc.data();
-            estampasCache.push({ codigo: upper(est.codigo), nome: upper(est.nome), valor: Number(est.valor) || 0, tipoPadrao: upper(est.tipoPadrao) });
+            estampasCache.push({ codigo: upper(est.codigo), nome: upper(est.nome), valor: Number(est.valor) || 0, tipoPadrao: upper(est.tipoPadrao), estoque: Number(est.estoque) || 0 });
         });
         renderCatalogo();
         el('carregandoEstampas').style.display = 'none';
