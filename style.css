@@ -1,0 +1,95 @@
+:root {
+    --black: #000000;
+    --white: #ffffff;
+    --red: #d90429;
+    --green: #06d6a0;
+    --gray: #f4f4f4;
+    --border-thick: 3px solid var(--black);
+}
+
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    background-color: var(--white); 
+    color: var(--black); 
+    margin: 0; 
+    background-image: radial-gradient(#e5e5e5 1px, transparent 1px); 
+    background-size: 20px 20px; 
+}
+
+.navbar { 
+    background-color: var(--black); 
+    color: var(--white); 
+    padding: 1.5rem 2rem; 
+    display: flex; 
+    justify-content: center; 
+    border-bottom: 5px solid var(--red); 
+}
+
+.navbar h1 { font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -1px; }
+
+.tab-menu { display: flex; gap: 1rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+
+.tab-btn { 
+    flex: 1; 
+    border: var(--border-thick); 
+    padding: 0.8rem; 
+    font-weight: 900; 
+    cursor: pointer; 
+    box-shadow: 4px 4px 0px var(--black); 
+    text-transform: uppercase; 
+}
+
+.tab-active { background: var(--black); color: var(--white); box-shadow: 4px 4px 0px var(--red); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+
+.card { 
+    background: var(--white); 
+    border: var(--border-thick); 
+    padding: 2rem; 
+    box-shadow: 8px 8px 0px var(--black); 
+    margin-bottom: 2rem; 
+}
+
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+.dash-card { border: var(--border-thick); padding: 1.5rem; box-shadow: 6px 6px 0px var(--black); }
+
+.dash-card span { font-size: 2rem; font-weight: 900; color: var(--red); }
+
+input, select { 
+    padding: 0.8rem; 
+    border: 2px solid var(--black); 
+    font-family: 'Montserrat'; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+}
+
+.btn-primary { 
+    background: var(--black); 
+    color: white; 
+    padding: 1.2rem; 
+    width: 100%; 
+    font-weight: 900; 
+    box-shadow: 5px 5px 0px var(--red); 
+    cursor: pointer; 
+}
+
+.grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+.pedido-card { border: 3px solid var(--black); box-shadow: 6px 6px 0px var(--black); background: white; }
+
+.status-aguardando { background: #ffbe0b; }
+.status-estampa-pronta { background: #3a86ff; color: white; }
+
+/* Modal */
+.modal-overlay { 
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.8); 
+    z-index: 1000; 
+    backdrop-filter: blur(3px); 
+    overflow-y: auto; 
+}
+.modal-box { background: white; border: var(--border-thick); padding: 2rem; margin: 2rem auto; width: 90%; max-width: 800px; }

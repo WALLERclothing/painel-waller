@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waller Clothing | Painel</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <h1>WALLER CLOTHING</h1>
+    <button class="btn-pdf" id="btnGerarPDF" onclick="gerarPDF()">Gerar PDF</button>
+</nav>
+
+<div class="tab-menu">
+    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
+    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Fila de Produção</button>
+    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
+</div>
+
+<div id="aba-cadastro" class="container">
+    <div class="card">
+        <h2 class="card-title">Lançar Drop / Pedido</h2>
+        <div class="form-section">
+            <div class="form-section-title">1. Dados do Cliente e Financeiro</div>
+            <div class="form-grid">
+                <input type="text" id="nome" placeholder="NOME DO CLIENTE">
+                <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15">
+            </div>
+            <div class="form-grid">
+                <input type="text" id="valorTotal" class="moeda" placeholder="VALOR TOTAL" readonly>
+                <select id="metodoPagamento">
+                    <option value="PIX">PIX</option>
+                    <option value="CARTÃO">CARTÃO</option>
+                    <option value="DINHEIRO">DINHEIRO / BOLETO</option>
+                </select>
+                <select id="statusPagamento">
+                    <option value="PAGO">💰 PAGO</option>
+                    <option value="PENDENTE">⏳ PENDENTE</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-section" style="border-bottom: none;">
+            <div class="form-section-title">2. Adicionar Peças</div>
+            <div class="form-grid">
+                <input type="text" id="codigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)">
+                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA">
+            </div>
+            <div class="form-grid">
+                <select id="tipoPeca">
+                    <option value="OVERSIZED">OVERSIZED</option>
+                    <option value="MOLETOM">MOLETOM</option>
+                    <option value="REGATA">REGATA</option>
+                    <option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option>
+                </select>
+                <select id="tamanho">
+                    <option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option>
+                </select>
+                <select id="cor">
+                    <option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option>
+                </select>
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN">
+                <input type="number" id="quantidade" value="1" min="1">
+            </div>
+            <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA</button>
+        </div>
+
+        <div id="carrinho-container">
+            <div class="form-section-title">Resumo:</div>
+            <div id="listaCarrinho"></div>
+        </div>
+        <button type="button" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+    </div>
+</div>
+
+<div id="aba-producao" class="container" style="display: none;">
+    <div class="dashboard-grid">
+        <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
+        <div class="dash-card"><h3>Fila de Estamparia</h3><span id="dashFilaEstampa">0</span></div>
+        <div class="dash-card"><h3>Envios Pendentes</h3><span id="dashEnviar">0</span></div>
+        <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
+    </div>
+
+    <h2 class="card-title">Fila de Produção <span id="carregando">Sincronizando...</span></h2>
+    <div class="filtros-container">
+        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR..." onkeyup="aplicarFiltros()">
+        <div class="botoes-filtro">
+            <button class="btn-filtro ativo" id="filtro-todos" onclick="setFiltroBtn('TODOS')">Ver Todos</button>
+            <button class="btn-filtro" id="filtro-pendente" onclick="setFiltroBtn('PENDENTE_PGTO')">⏳ Pendentes</button>
+            <button class="btn-filtro" id="filtro-estampa" onclick="setFiltroBtn('AGUARDANDO ESTAMPA')">👕 Fila Estampa</button>
+        </div>
+    </div>
+    <div class="grid-pedidos" id="gridPedidosContainer"></div>
+</div>
+
+<div id="aba-estampas" class="container" style="display: none;">
+    <div class="card">
+        <h2 class="card-title">Cadastrar Estampa</h2>
+        <form onsubmit="salvarNovaEstampa(event)">
+            <div class="form-grid">
+                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO" required>
+                <input type="text" id="cadNomeEstampa" placeholder="NOME" required>
+            </div>
+            <button type="submit" class="btn-add" style="background: var(--black); color: white;">+ CADASTRAR</button>
+        </form>
+    </div>
+    <div class="card">
+        <table>
+            <thead><tr><th>Código</th><th>Nome</th><th>Ações</th></tr></thead>
+            <tbody id="listaEstampas"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalEdicao" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
+        <h2 class="card-title">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
+        <input type="hidden" id="editId">
+        <div class="form-grid"><input type="text" id="editNome"><input type="text" id="editWhatsapp"></div>
+        <div id="editItensContainer"></div>
+        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
