@@ -197,13 +197,22 @@ function buscarClientePorWhatsapp(whatsappDigitado) {
 
 function preencherDadosClienteNoLancamento(perfil = {}, compras = {}) {
     const enderecoCompleto = perfil.endereco || compras.endereco || '';
-    let enderecoBase = enderecoCompleto;
-    let numero = '';
+    let enderecoBase = perfil.enderecoBase || compras.enderecoBase || enderecoCompleto;
+    let numero = perfil.numeroEnd || compras.numeroEnd || '';
+    let complemento = perfil.complementoEnd || compras.complementoEnd || '';
 
-    if(enderecoCompleto.includes(',')) {
+    if(!numero && enderecoCompleto.includes(',')) {
         let partes = enderecoCompleto.split(',');
         let ultimaParte = (partes.pop() || '').trim();
-        if(/^\d+[A-Za-z-]*$/.test(ultimaParte)) {
+
+        if(ultimaParte.includes(' - ')) {
+            const [numeroExtraido, ...resto] = ultimaParte.split(' - ');
+            if(/^\d+[A-Za-z-]*$/.test(numeroExtraido.trim())) {
+                numero = numeroExtraido.trim();
+                complemento = complemento || resto.join(' - ').trim();
+                enderecoBase = partes.join(',').trim();
+            }
+        } else if(/^\d+[A-Za-z-]*$/.test(ultimaParte)) {
             numero = ultimaParte;
             enderecoBase = partes.join(',').trim();
         }
@@ -213,6 +222,7 @@ function preencherDadosClienteNoLancamento(perfil = {}, compras = {}) {
     document.getElementById('cep').value = perfil.cep || compras.cep || '';
     document.getElementById('endereco').value = enderecoBase || enderecoCompleto;
     document.getElementById('numeroEnd').value = numero;
+    document.getElementById('complementoEnd').value = complemento;
 }
 
 function verificarClienteFiel() {
@@ -316,7 +326,10 @@ async function salvarPedidoCompleto() {
     let nome = document.getElementById('nome').value.toUpperCase();
     let whatsapp = document.getElementById('whatsapp').value;
     let cep = document.getElementById('cep').value;
-    let end = document.getElementById('endereco').value + ", " + document.getElementById('numeroEnd').value;
+    let enderecoBase = document.getElementById('endereco').value.trim();
+    let numeroEnd = document.getElementById('numeroEnd').value.trim();
+    let complementoEnd = document.getElementById('complementoEnd').value.trim();
+    let end = `${enderecoBase}, ${numeroEnd}${complementoEnd ? ` - ${complementoEnd}` : ''}`;
     let frete = unmaskCurrency(document.getElementById('valorFrete').value);
     let total = unmaskCurrency(document.getElementById('valorTotal').value);
 
@@ -331,19 +344,19 @@ async function salvarPedidoCompleto() {
 
     try {
         await db.collection("pedidos").add({
-            numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, cep: cep, endereco: end, valorFrete: frete,
+            numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, cep: cep, endereco: end, enderecoBase: enderecoBase, numeroEnd: numeroEnd, complementoEnd: complementoEnd, valorFrete: frete,
             valorTotal: total, metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value,
             itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end }, { merge: true });
+        db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, enderecoBase: enderecoBase, numeroEnd: numeroEnd, complementoEnd: complementoEnd }, { merge: true });
         carrinhoTemporario.forEach(item => {
             if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
                 db.collection("estampas").doc(item.codigoEstampa).update({ estoque: firebase.firestore.FieldValue.increment(-item.quantidade) });
             }
         });
 
-        document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
+        document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('complementoEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
         carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO"; showToast(`PEDIDO #${numGerado} SALVO!`);
     } catch (e) { showToast("Erro ao salvar", true); }
 }
