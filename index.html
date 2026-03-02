@@ -45,10 +45,15 @@
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Buscar Histórico)" maxlength="15" onblur="verificarClienteFiel()">
                 <input type="text" id="nome" placeholder="NOME DO CLIENTE">
             </div>
+            <div class="form-errors-row">
+                <small id="erroWhatsapp" class="field-error"></small>
+                <small id="erroNome" class="field-error"></small>
+            </div>
             <div class="form-grid" style="margin-bottom: 0;">
                 <input type="text" id="cep" placeholder="CEP (Autopreencher)" maxlength="9" onblur="buscarCEP(this.value)">
                 <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
-                <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.5;">
+                <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.4;">
+                <input type="text" id="complementoEnd" placeholder="COMPLEMENTO" style="flex: 0.9;">
             </div>
             
             <div class="form-grid" style="margin-top: 1rem;">
@@ -66,6 +71,9 @@
                 <datalist id="estampas-list"></datalist>
                 <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
             </div>
+            <div class="form-errors-row">
+                <small id="erroEstampa" class="field-error" style="grid-column: 1 / -1;"></small>
+            </div>
             <div class="form-grid">
                 <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
                 <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
@@ -80,8 +88,9 @@
         <div id="carrinho-container">
             <div class="form-section-title" style="margin-bottom: 0.5rem;">Resumo do Pedido:</div>
             <div id="listaCarrinho"></div>
+            <div id="resumoFinanceiro" class="resumo-financeiro"></div>
         </div>
-        <button type="button" id="btnGerarOrdem" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+        <button type="button" id="btnGerarOrdem" class="btn-primary btn-primary-sticky-mobile" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
     </div>
 </div>
 
@@ -101,7 +110,21 @@
     </div>
 
     <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
-        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NO KANBAN (NOME, ZAP OU NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
+        <div class="form-grid" style="margin-bottom:0;">
+            <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NO KANBAN (NOME, ZAP OU NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
+            <select id="filtroKanbanStatus" onchange="filtrarKanban()">
+                <option value="TODOS">STATUS: TODOS</option>
+                <option value="PEDIDO FEITO">PEDIDO FEITO</option>
+                <option value="AGUARDANDO ESTAMPA">AGUARDANDO ESTAMPA</option>
+                <option value="ESTAMPA PRONTA">ESTAMPA PRONTA</option>
+                <option value="PEDIDO ENVIADO">PEDIDO ENVIADO</option>
+            </select>
+            <select id="filtroKanbanPagamento" onchange="filtrarKanban()">
+                <option value="TODOS">PGTO: TODOS</option>
+                <option value="PAGO">PAGO</option>
+                <option value="PENDENTE">PENDENTE</option>
+            </select>
+        </div>
     </div>
 
     <div class="kanban-board">
@@ -161,7 +184,7 @@
     <div class="card">
         <h2 class="card-title">Top Clientes da Waller</h2>
         <table>
-            <thead><tr><th>Cliente / Contato</th><th>Pedidos</th><th>Última Compra</th><th>Ticket Médio</th><th>Total Gasto</th><th>Ficha</th></tr></thead>
+            <thead><tr><th>Cliente / Contato</th><th>Pedidos</th><th>Última Compra</th><th>Ticket Médio</th><th>Total Gasto</th><th>Próxima Ação</th><th>Ficha</th></tr></thead>
             <tbody id="listaClientesCRM"></tbody>
         </table>
     </div>
@@ -172,9 +195,11 @@
         <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
         <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
         
-        <div style="background:var(--gray); padding:1rem; border:var(--border-thick); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-            <div><strong style="font-size:1.2rem; color:var(--black);" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
-            <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
+        <div class="ficha-kpis">
+            <div class="ficha-kpi"><strong id="fichaQtdPedidos">0</strong><span>Pedidos</span></div>
+            <div class="ficha-kpi"><strong id="fichaTotalGasto">R$ 0,00</strong><span>Total Gasto</span></div>
+            <div class="ficha-kpi"><strong id="fichaTicketMedio">R$ 0,00</strong><span>Ticket Médio</span></div>
+            <div class="ficha-kpi"><strong id="fichaUltimaCompra">-</strong><span>Última Compra</span></div>
         </div>
 
         <div class="form-grid">
@@ -182,15 +207,28 @@
             <input type="text" id="fichaWhatsapp" placeholder="WHATSAPP" disabled style="flex:1;">
         </div>
         <div class="form-grid">
+            <input type="email" id="fichaEmail" placeholder="E-MAIL" style="flex:1; text-transform:none;">
             <input type="text" id="fichaInsta" placeholder="@INSTAGRAM" style="flex:1;">
             <input type="text" id="fichaDataNasc" placeholder="DATA NASCIMENTO (DD/MM/AAAA)" style="flex:1;">
         </div>
         <div class="form-grid">
             <input type="text" id="fichaCEP" placeholder="CEP" style="flex:0.5;">
-            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:2;">
+            <input type="text" id="fichaEndereco" placeholder="ENDEREÇO COMPLETO E NÚMERO" style="flex:1.8;">
+            <input type="text" id="fichaCidade" placeholder="CIDADE" style="flex:1;">
+            <input type="text" id="fichaUF" placeholder="UF" maxlength="2" style="flex:0.3;">
+        </div>
+        <div class="form-grid">
+            <input type="text" id="fichaTamanhoPref" placeholder="TAMANHO PREFERIDO" style="flex:1;">
+            <input type="text" id="fichaCorPref" placeholder="COR PREFERIDA" style="flex:1;">
+            <input type="text" id="fichaUltimoContato" placeholder="ÚLTIMO CONTATO (DD/MM/AAAA)" style="flex:1;">
         </div>
         
         <textarea id="fichaObs" placeholder="OBSERVAÇÕES (Tamanhos preferidos, estilo, reclamações, etc)"></textarea>
+
+        <div class="ficha-historico-box">
+            <div class="form-section-title" style="margin-bottom:0.6rem;">Histórico Recente</div>
+            <div id="fichaHistoricoPedidos" class="ficha-historico-lista">Sem pedidos para este cliente.</div>
+        </div>
         
         <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR FICHA</button>
     </div>
