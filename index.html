@@ -250,11 +250,37 @@
         <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
         <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
         <input type="hidden" id="editId">
-        <div class="form-grid" style="margin-bottom: 1rem;"><input type="text" id="editNome" placeholder="NOME"><input type="text" id="editWhatsapp" placeholder="WHATSAPP"></div>
-        <div class="form-grid" style="margin-bottom: 2rem;"><input type="text" id="editValorTotal" class="moeda" placeholder="SOMA TOTAL" readonly style="color: var(--red); background: var(--gray);"><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
+        
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group"><label>NOME DO CLIENTE</label><input type="text" id="editNome"></div>
+            <div class="input-group"><label>WHATSAPP</label><input type="text" id="editWhatsapp"></div>
+        </div>
+        
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group">
+                <label>FRETE COBRADO DO CLIENTE</label>
+                <input type="text" id="editValorFrete" class="moeda" oninput="recalcularSomaEdicao()">
+            </div>
+            <div class="input-group">
+                <label style="color: var(--text-muted);">FRETE REAL PAGO (CORREIOS)</label>
+                <input type="text" id="editValorFreteReal" class="moeda" style="border-color: var(--text-muted);">
+            </div>
+        </div>
+
+        <div class="form-grid" style="margin-bottom: 2rem;">
+            <div class="input-group">
+                <label>NOVO TOTAL COBRADO</label>
+                <input type="text" id="editValorTotal" class="moeda" readonly style="color: var(--red); background: var(--gray);">
+            </div>
+            <div class="input-group">
+                <label>STATUS DE PAGAMENTO</label>
+                <select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
+            </div>
+        </div>
+        
         <div class="form-section-title">PEÇAS DO PEDIDO (Apenas Visualização)</div>
         <div id="editItensContainer"></div>
-        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES</button>
+        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES (Recalcula Lucro)</button>
     </div>
 </div>
 
@@ -266,7 +292,6 @@
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA</button>
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 SÓ FILA ESTAMPA</button>
             <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()">📦 ETIQUETAS PRONTOS</button>
-            
             <button class="btn-pdf-opcao" onclick="gerarPDFLucroLiquido()" style="grid-column: 1 / -1; border-color: var(--green); background: var(--green); color: var(--black); font-size: 1rem;">💰 RELATÓRIO MENSAL DE LUCRO LÍQUIDO</button>
         </div>
     </div>
