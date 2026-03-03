@@ -136,7 +136,7 @@ function marcarNotificacaoLida(id) { let notif = historicoNotificacoes.find(n =>
 function toggleNotificacoes() { let p = document.getElementById('painelNotificacoes'); p.style.display = p.style.display === 'none' ? 'flex' : 'none'; }
 
 // ==========================================
-// ATALHOS DE TECLADO E STARTUP
+// ATALHOS DE TECLADO E STARTUP DA VITRINE
 // ==========================================
 window.onload = () => { if(isVitrine) { document.body.classList.add('modo-vitrine'); mudarAba('estampas'); document.title = "Catálogo - Waller Clothing"; } };
 
@@ -329,10 +329,15 @@ async function sincronizarClienteEmMassa(whatsapp, dadosObj) {
 }
 
 // ==========================================
-// 🚀 INTEGRAÇÃO MELHOR ENVIO VIA TÚNEL VERCEL
+// 🚀 INTEGRAÇÃO MELHOR ENVIO HÍBRIDA (VERCEL / LOCAL)
 // ==========================================
-const ME_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYjE1MjVlZTlhNGI2ZTM0ODNmOGEzY2UyMGRmYTg1YzE0YjRmYjU0MDY0OWIwYjNkYTJhY2YzZDY2MDQ5YzcwOTM5NDE2YmE5NjIzYjE1ODgiLCJpYXQiOjE3NzI1NjAzODkuNTk0MDk2LCJuYmYiOjE3NzI1NjAzODkuNTk0MDk4LCJleHAiOjE4MDQwOTYzODkuNTgwODE4LCJzdWIiOiJhMTM2YTBlYi05ZjRkLTQxMTAtYTU2YS1hMjUyOWIzMmNkMzkiLCJzY29wZXMiOlsiY2FydC1yZWFkIiwiY2FydC13cml0ZSIsImNvbXBhbmllcy1yZWFkIiwiY29tcGFuaWVzLXdyaXRlIiwiY291cG9ucy1yZWFkIiwiY291cG9ucy13cml0ZSIsIm5vdGlmaWNhdGlvbnMtcmVhZCIsIm9yZGVycy1yZWFkIiwicHJvZHVjdHMtcmVhZCIsInByb2R1Y3RzLWRlc3Ryb3kiLCJwcm9kdWN0cy13cml0ZSIsInB1cmNoYXNlcy1yZWFkIiwic2hpcHBpbmctY2FsY3VsYXRlIiwic2hpcHBpbmctY2FuY2VsIiwic2hpcHBpbmctY2hlY2tvdXQiLCJzaGlwcGluZy1jb21wYW5pZXMiLCJzaGlwcGluZy1nZW5lcmF0ZSIsInNoaXBwaW5nLXByZXZpZXciLCJzaGlwcGluZy1wcmludCIsInNoaXBwaW5nLXNoYXJlIiwic2hpcHBpbmctdHJhY2tpbmciLCJlY29tbWVyY2Utc2hpcHBpbmciLCJ0cmFuc2FjdGlvbnMtcmVhZCIsInVzZXJzLXJlYWQiLCJ1c2Vycy13cml0ZSIsIndlYmhvb2tzLXJlYWQiLCJ3ZWJob29rcy13cml0ZSIsIndlYmhvb2tzLWRlbGV0ZSIsInRkZWFsZXItd2ViaG9vayJdfQ.RtNnI6gQsUbSmE58avCarbQtkpV6WCO7mSVrJXmr4ux57Aa8ex4afyxADl7Xcs8vBOkpMQoxCuhfcYYuGY09vPt4Y2gnHaFsom3Fym2s5b--yvCFiSciIJlSS7n1Jl_8Hs8hb7YRseC0BcjphqWg6-V5fG8GqIUtwZrnPWnZ4yiTM06Kiuk3nnJcJi6lCDQuYgTGW-QlDZ9xviXX3FtQZBykmTkbk3wbFyQ3kgX9n2nmgsmEkYe42UMXDrYNGYkkYfPOfPi-KP8Zx-sePv2DILv00_-u-XAtA0AAUafL-kh9rAuCu8tEMlEAEHazJIZE7Y_PCQF0zmlOOsX8OneMhX8WWFsiMVcloqIpl2XDIHmVi5CJN6CV2f2bTl8S9IfAtqXNRj8eUzSy777DXFn3KxZuZcjXy1AlnxCxRQ60qVYoy3C5BiOkrlAyCAB8Pjo_w6zJV9UiruNnsxdqzSakU5nx84-EaXfcGJP-8pMZdILK8LlZEoNrFNS0JMe3BXeyOjMHaeRCOfWHlWnzTF5e2yRhGd24XRjTMQnGAHSrEeDKpSlLMdzA3rsv90ebGY9VHsue4ZaiGmdMRAMJCJAdXZ69r3IYuBKTVENrrEBpU-8qSG_JUQd6qZ9XWnZtV2zXpuScAD9rTbDQWDQJvOHfZdHGiWHj9Mde4-h8q0qgtg8";
+const ME_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYjE1MjVlZTlhNGI2ZTM0ODNmOGEzY2UyMGRmYTg1YzE0YjRmYjU0MDY0OWIwYjNkYTJhY2YzZDY2MDQ5YzcwOTM5NDE2YmE5NjIzYjE1ODgiLCJpYXQiOjE3NzI1NjAzODkuNTk0MDk2LCJuYmYiOjE3NzI1NjAzODkuNTk0MDk4LCJleHAiOjE4MDQwOTYzODkuNTgwODE4LCJzdWIiOiJhMTM2YTBlYi05ZjRkLTQxMTAtYTU2YS1hMjUyOWIzMmNkMzkiLCJzY29wZXMiOlsiY2FydC1yZWFkIiwiY2FydC13cml0ZSIsImNvbXBhbmllcy1yZWFkIiwiY29tcGFuaWVzLXdyaXRlIiwiY291cG9ucy1yZWFkIiwiY291cG9ucy13cml0ZSIsIm5vdGlmaWNhdGlvbnMtcmVhZCIsIm9yZGVycy1yZWFkIiwicHJvZHVjdHMtcmVhZCIsInByb2R1Y3RzLWRlc3Ryb3kiLCJwcm9kdWN0cy13cml0ZSIsInByb2R1Y3RzLWRlc3Ryb3kiLCJwcm9kdWN0cy13cml0ZSIsInB1cmNoYXNlcy1yZWFkIiwic2hpcHBpbmctY2FsY3VsYXRlIiwic2hpcHBpbmctY2FuY2VsIiwic2hpcHBpbmctY2hlY2tvdXQiLCJzaGlwcGluZy1jb21wYW5pZXMiLCJzaGlwcGluZy1nZW5lcmF0ZSIsInNoaXBwaW5nLXByZXZpZXciLCJzaGlwcGluZy1wcmludCIsInNoaXBwaW5nLXNoYXJlIiwic2hpcHBpbmctdHJhY2tpbmciLCJlY29tbWVyY2Utc2hpcHBpbmciLCJ0cmFuc2FjdGlvbnMtcmVhZCIsInVzZXJzLXJlYWQiLCJ1c2Vycy13cml0ZSIsIndlYmhvb2tzLXJlYWQiLCJ3ZWJob29rcy13cml0ZSIsIndlYmhvb2tzLWRlbGV0ZSIsInRkZWFsZXItd2ViaG9vayJdfQ.RtNnI6gQsUbSmE58avCarbQtkpV6WCO7mSVrJXmr4ux57Aa8ex4afyxADl7Xcs8vBOkpMQoxCuhfcYYuGY09vPt4Y2gnHaFsom3Fym2s5b--yvCFiSciIJlSS7n1Jl_8Hs8hb7YRseC0BcjphqWg6-V5fG8GqIUtwZrnPWnZ4yiTM06Kiuk3nnJcJi6lCDQuYgTGW-QlDZ9xviXX3FtQZBykmTkbk3wbFyQ3kgX9n2nmgsmEkYe42UMXDrYNGYkkYfPOfPi-KP8Zx-sePv2DILv00_-u-XAtA0AAUafL-kh9rAuCu8tEMlEAEHazJIZE7Y_PCQF0zmlOOsX8OneMhX8WWFsiMVcloqIpl2XDIHmVi5CJN6CV2f2bTl8S9IfAtqXNRj8eUzSy777DXFn3KxZuZcjXy1AlnxCxRQ60qVYoy3C5BiOkrlAyCAB8Pjo_w6zJV9UiruNnsxdqzSakU5nx84-EaXfcGJP-8pMZdILK8LlZEoNrFNS0JMe3BXeyOjMHaeRCOfWHlWnzTF5e2yRhGd24XRjTMQnGAHSrEeDKpSlLMdzA3rsv90ebGY9VHsue4ZaiGmdMRAMJCJAdXZ69r3IYuBKTVENrrEBpU-8qSG_JUQd6qZ9XWnZtV2zXpuScAD9rTbDQWDQJvOHfZdHGiWHj9Mde4-h8q0qgtg8";
 const ME_CPF_ORIGEM = "43737606838"; 
+
+// Inteligência que detecta se você está no PC ou na Vercel
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+const ME_CALC_URL = isLocalhost ? 'https://corsproxy.io/?https://www.melhorenvio.com.br/api/v2/me/shipment/calculate' : '/api/me/shipment/calculate';
+const ME_CART_URL = isLocalhost ? 'https://corsproxy.io/?https://www.melhorenvio.com.br/api/v2/me/cart' : '/api/me/cart';
 
 async function cotarFrete() {
     let cepDestino = document.getElementById('cep').value.replace(/\D/g, '');
@@ -355,14 +360,21 @@ async function cotarFrete() {
     };
 
     try {
-        // ROTA LIMPA USANDO O TÚNEL DA VERCEL DIRETAMENTE
-        let res = await fetch('/api/me/shipment/calculate', {
+        let res = await fetch(ME_CALC_URL, {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': `Bearer ${ME_TOKEN}` },
             body: JSON.stringify(payload)
         });
 
-        let data = await res.json();
+        let texto = await res.text();
+        
+        // Verifica se a Vercel devolveu erro HTML (Falta o vercel.json)
+        if (texto.includes('<html') || texto.includes('<!DOCTYPE')) {
+            lista.innerHTML = '<div style="text-align:center; color:var(--red); padding:20px; font-weight:900;">⚠️ A Vercel bloqueou o acesso aos Correios.<br>Verifique se o arquivo vercel.json foi salvo na raiz do seu GitHub!</div>';
+            return;
+        }
+
+        let data = JSON.parse(texto);
 
         if (res.ok && Array.isArray(data)) {
             let html = '';
@@ -389,18 +401,23 @@ async function cotarFrete() {
             lista.innerHTML = `<div style="text-align:center; color:var(--red); padding:20px; font-weight:900;">O MelhorEnvio rejeitou a consulta.<br><span style="font-size:0.8rem; color:#666;">${errMsg}</span></div>`;
         }
     } catch(e) {
-        lista.innerHTML = '<div style="text-align:center; color:var(--red); padding:20px; font-weight:900;">⚠️ Falha de Conexão. Verifique se o arquivo vercel.json está no GitHub.</div>';
+        lista.innerHTML = '<div style="text-align:center; color:var(--red); padding:20px; font-weight:900;">⚠️ Falha grave de conexão com o servidor.</div>';
     }
 }
 
 async function chamarApiCarrinhoME(payload) {
-    // ROTA LIMPA USANDO O TÚNEL DA VERCEL
-    let res = await fetch('/api/me/cart', {
+    let res = await fetch(ME_CART_URL, {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': `Bearer ${ME_TOKEN}` },
         body: JSON.stringify(payload)
     });
     let texto = await res.text();
+    
+    // Trava de segurança para avisar exatamente se for erro de Vercel/HTML
+    if (texto.includes('<html') || texto.includes('<!DOCTYPE')) {
+        return { ok: false, isVercelError: true, data: { error: "O arquivo vercel.json está faltando no GitHub." } };
+    }
+
     try {
         return { ok: res.ok, data: JSON.parse(texto) };
     } catch(e) {
@@ -423,7 +440,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
         return;
     }
 
-    showToast("Analisando volume da caixa e rotas... ⏳", false);
+    showToast("Analisando rotas e montando caixa... ⏳", false);
 
     let nomeCliente = p.nome ? p.nome.trim() : "Cliente";
     if(nomeCliente.split(' ').length < 2) nomeCliente += " Waller";
@@ -467,7 +484,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
             "volumes": [ { "weight": cubagem.weight, "width": cubagem.width, "height": cubagem.height, "length": cubagem.length } ],
             "options": { "insurance_value": 0, "receipt": false, "own_hand": false }
         };
-        let calcRes = await fetch('/api/me/shipment/calculate', {
+        let calcRes = await fetch(ME_CALC_URL, {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': `Bearer ${ME_TOKEN}` },
             body: JSON.stringify(calcPayload)
@@ -538,8 +555,9 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
     try {
         let response = await chamarApiCarrinhoME(payload);
-        let respString = JSON.stringify(response.data);
         
+        // Verifica se a API exigiu trocar de PAC para SEDEX (Isso resolve o erro da Imagem 3)
+        let respString = JSON.stringify(response.data);
         if (!response.ok && (respString.includes("Transportadora não atende") || respString.includes("Transportadora nao atende"))) {
             showToast("PAC Indisponível para essa região. Tentando forçar via SEDEX... 🔄", false);
             payload.service = 2; // Muda para SEDEX
@@ -549,10 +567,15 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
         if (response.ok && response.data.id) {
             showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
-            window.open("https://app.melhorenvio.com/carrinho", "_blank");
+            window.open("https://www.melhorenvio.com.br/painel", "_blank");
         } else {
+            // Este alerta resolve o mistério da Imagem 7!
+            if (response.isVercelError) {
+                alert("⚠️ ERRO DE SERVIDOR VERCEL:\n\nO seu site tentou se comunicar com o MelhorEnvio, mas a configuração 'vercel.json' não foi encontrada ou ainda não terminou de atualizar no GitHub.\n\nVerifique se você criou o arquivo vercel.json na raiz do GitHub e espere 2 minutos para tentar de novo.");
+                return;
+            }
+
             let detalhes = "Erro desconhecido.";
-            
             if(response.data.message === "Unauthenticated.") {
                 detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio.";
             } else if(response.data.errors) {
@@ -564,11 +587,10 @@ async function enviarParaMelhorEnvio(pedidoId) {
             } else {
                 detalhes = respString;
             }
-
-            alert(`❌ O MelhorEnvio rejeitou a etiqueta.\n\nMOTIVO:\n${detalhes}\n\nATENÇÃO: O CPF do cliente não pode ser inventado.`);
+            alert(`❌ O MelhorEnvio rejeitou a etiqueta.\n\nMOTIVO:\n${detalhes}\n\nEdite o pedido e corrija a informação.`);
         }
     } catch (e) {
-        alert("⚠️ Falha ao se conectar com o servidor do MelhorEnvio. O arquivo vercel.json está configurado corretamente?");
+        alert("⚠️ Falha crítica ao conectar com a API do MelhorEnvio.");
     }
 }
 
@@ -1152,188 +1174,6 @@ function enviarMensagemStatus(pedidoId) {
     
     let linkFinal = `https://wa.me/55${zap}?text=${encodeURIComponent(texto)}`; 
     window.open(linkFinal, '_blank');
-}
-
-// ==========================================
-// 🚀 INTEGRAÇÃO MELHOR ENVIO VIA TÚNEL VERCEL
-// ==========================================
-async function chamarApiCarrinhoME(payload) {
-    let res = await fetch('/api/me/cart', {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': `Bearer ${ME_TOKEN}` },
-        body: JSON.stringify(payload)
-    });
-    let texto = await res.text();
-    try {
-        return { ok: res.ok, data: JSON.parse(texto) };
-    } catch(e) {
-        return { ok: false, data: { error: "A resposta do MelhorEnvio falhou." } };
-    }
-}
-
-async function enviarParaMelhorEnvio(pedidoId) {
-    let p = todosPedidos.find(x => x.id === pedidoId); if(!p) return;
-
-    let cpfCliente = (p.cpf || '').replace(/\D/g,'');
-    if(cpfCliente.length !== 11) {
-        alert("⚠️ ERRO: O CPF do cliente precisa ter exatamente 11 números e ser VÁLIDO na Receita Federal.\nClique no Lápis ✏️ para editar o pedido e arrumar o CPF.");
-        return;
-    }
-
-    let cepDestino = (p.cep || '').replace(/\D/g, '');
-    if(cepDestino.length !== 8) {
-        alert("⚠️ ERRO: CEP do cliente inválido.");
-        return;
-    }
-
-    showToast("Analisando volume da caixa e rotas... ⏳", false);
-
-    let nomeCliente = p.nome ? p.nome.trim() : "Cliente";
-    if(nomeCliente.split(' ').length < 2) nomeCliente += " Waller";
-
-    let phoneLimpo = p.whatsapp ? p.whatsapp.replace(/\D/g, '') : '';
-    if(phoneLimpo.length < 10 || phoneLimpo.length > 11) phoneLimpo = "11999999999"; 
-
-    let emailCliente = p.email && p.email.includes('@') ? p.email.trim().toLowerCase() : "cliente@email.com";
-
-    let cidade = 'São Paulo'; let uf = 'SP'; let bairro = 'Centro'; 
-    let logradouro = p.endereco ? p.endereco.split(',')[0] : 'Rua Principal';
-    
-    try {
-        let reqCep = await fetch(`https://viacep.com.br/ws/${cepDestino}/json/`);
-        let resCep = await reqCep.json();
-        if(!resCep.erro) {
-            cidade = resCep.localidade; uf = resCep.uf;
-            bairro = resCep.bairro || bairro; logradouro = resCep.logradouro || logradouro;
-        }
-    } catch(e) {}
-
-    let matchNumero = p.endereco ? p.endereco.match(/,\s*(\d+)/) : null;
-    let numeroEnd = p.numeroEnd || p.complemento || "SN"; 
-    if(numeroEnd === "SN" && matchNumero) numeroEnd = matchNumero[1];
-    if(!numeroEnd || numeroEnd.trim() === '') numeroEnd = "SN";
-
-    let complementoEnvio = p.complemento ? p.complemento.trim() : "";
-
-    let cubagem = calcularCaixaEPeso(p.itens || []);
-    
-    let valorTotalPecas = 0;
-    (p.itens || []).forEach(i => { 
-        valorTotalPecas += (safeNum(i.valorUnitario) * parseInt(i.quantidade || 1));
-    });
-
-    let selectedServiceId = 1; 
-    try {
-        let calcPayload = {
-            "from": { "postal_code": "02475001" },
-            "to": { "postal_code": cepDestino },
-            "volumes": [ { "weight": cubagem.weight, "width": cubagem.width, "height": cubagem.height, "length": cubagem.length } ],
-            "options": { "insurance_value": 0, "receipt": false, "own_hand": false }
-        };
-        let calcRes = await fetch('/api/me/shipment/calculate', {
-            method: 'POST',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': `Bearer ${ME_TOKEN}` },
-            body: JSON.stringify(calcPayload)
-        });
-        let calcData = await calcRes.json();
-        if (Array.isArray(calcData)) {
-            let validServices = calcData.filter(s => !s.error && s.price && s.company.name.toUpperCase().includes('CORREIOS'));
-            if(validServices.length > 0) {
-                validServices.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
-                selectedServiceId = validServices[0].id; 
-            }
-        }
-    } catch(e) { console.warn("Erro ao buscar rota ideal"); }
-
-    let payload = {
-        "service": selectedServiceId, 
-        "from": {
-            "name": "Waller Clothing",
-            "phone": "11999999999",
-            "email": "contato@wallerclothing.com.br",
-            "document": ME_CPF_ORIGEM, 
-            "postal_code": "02475001",
-            "address": "Rua Conselheiro Moreira de Barros", 
-            "number": "100",
-            "district": "Santana", 
-            "city": "São Paulo",
-            "state_abbr": "SP",
-            "country_id": "BR"
-        },
-        "to": {
-            "name": nomeCliente,
-            "phone": phoneLimpo,
-            "email": emailCliente, 
-            "document": cpfCliente,
-            "address": logradouro,
-            "number": numeroEnd,
-            "complement": complementoEnvio, 
-            "district": bairro,
-            "city": cidade,
-            "state_abbr": uf,
-            "country_id": "BR",
-            "postal_code": cepDestino,
-            "note": "Pedido #" + (p.numeroPedido || '')
-        },
-        "products": [
-            {
-                "name": "Vestuário Waller",
-                "quantity": 1, 
-                "unitary_value": valorTotalPecas > 0 ? valorTotalPecas : 50.00
-            }
-        ],
-        "volumes": [
-            {
-                "height": cubagem.height,
-                "width": cubagem.width,
-                "length": cubagem.length,
-                "weight": cubagem.weight
-            }
-        ],
-        "options": {
-            "insurance_value": valorTotalPecas > 0 ? valorTotalPecas : 50.00,
-            "receipt": false,
-            "own_hand": false,
-            "reverse_attach": false,
-            "non_commercial": true
-        }
-    };
-
-    try {
-        let response = await chamarApiCarrinhoME(payload);
-        let respString = JSON.stringify(response.data);
-        
-        if (!response.ok && (respString.includes("Transportadora não atende") || respString.includes("Transportadora nao atende"))) {
-            showToast("PAC Indisponível para essa região. Tentando forçar via SEDEX... 🔄", false);
-            payload.service = 2; // Muda para SEDEX
-            response = await chamarApiCarrinhoME(payload);
-            respString = JSON.stringify(response.data);
-        }
-
-        if (response.ok && response.data.id) {
-            showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
-            window.open("https://app.melhorenvio.com/carrinho", "_blank");
-        } else {
-            console.error("MelhorEnvio Error Details:", response.data);
-            let detalhes = "Erro desconhecido.";
-            
-            if(response.data.message === "Unauthenticated.") {
-                detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio.";
-            } else if(response.data.errors) {
-                detalhes = Object.entries(response.data.errors).map(([k, v]) => `- ${k.toUpperCase()}: ${v.join(', ')}`).join('\n');
-            } else if (response.data.error) {
-                detalhes = response.data.error; 
-            } else if (response.data.message) {
-                detalhes = response.data.message;
-            } else {
-                detalhes = respString;
-            }
-
-            alert(`❌ O MelhorEnvio rejeitou a etiqueta.\n\nMOTIVO:\n${detalhes}\n\nATENÇÃO: O CPF do cliente não pode ser inventado.`);
-        }
-    } catch (e) {
-        alert("⚠️ Falha ao se conectar com o servidor do MelhorEnvio. O arquivo vercel.json está configurado corretamente?");
-    }
 }
 
 function abrirModalEdicao(id) {
