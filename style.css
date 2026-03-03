@@ -103,7 +103,7 @@ button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointe
 .item-tag-compacto { background: var(--white); border: 1px solid var(--border-color); border-left: 3px solid var(--red); padding: 6px; font-size: 0.7rem; }
 
 .pedido-footer { display: flex; border-top: var(--border-thick); }
-.pedido-footer button { flex: 1; padding: 0.5rem; font-size: 1rem; border: none; border-right: var(--border-thick); box-shadow: none; display: flex; justify-content: center; align-items: center; background: var(--gray); color: var(--black); }
+.pedido-footer button { flex: 1; padding: 0.5rem; font-size: 0.8rem; font-weight: 900; border: none; border-right: var(--border-thick); box-shadow: none; display: flex; justify-content: center; align-items: center; background: var(--gray); color: var(--black); }
 .pedido-footer button:last-child { border-right: none; }
 .pedido-footer button:hover { background: var(--black); color: var(--white); }
 
@@ -123,9 +123,12 @@ button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointe
 .crm-actions button:hover, .crm-actions a:hover { background: var(--black); color: var(--white); transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
 .tag-niver { background: #ffd700; color: #000; font-size: 0.65rem; padding: 3px 6px; border: 2px solid #000; }
 
+/* ESTOQUE DIRETO NA TELA DO CATÁLOGO */
 .grade-tamanhos { display: flex; gap: 8px; flex-wrap: wrap; }
-.grade-box { background: var(--gray); border: 1px solid var(--border-color); padding: 4px 8px; font-size: 0.8rem; font-weight: 800; min-width: 40px; text-align: center;}
-.grade-box span { color: var(--red); }
+.grade-box { background: var(--gray); border: 1px solid var(--border-color); padding: 4px 8px; font-size: 0.8rem; font-weight: 800; min-width: 45px; text-align: center; }
+.grade-box input { width: 100%; border: none; background: transparent; color: var(--red); font-weight: 900; text-align: center; font-size: 1.1rem; padding: 0; margin-top: 2px; outline: none; -moz-appearance: textfield; box-shadow: none;}
+.grade-box input:focus { border-bottom: 2px solid var(--red); }
+.grade-box input::-webkit-outer-spin-button, .grade-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* TABELAS E SELOS */
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-weight: 500; color: var(--black); }
@@ -135,6 +138,7 @@ th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick
 .btn-icone:hover { transform: translate(2px,2px); box-shadow: 1px 1px 0px var(--border-color); }
 
 .badge-soldout { background: var(--red); color: var(--bg-body); padding: 4px 8px; font-size: 0.65rem; font-weight: 900; border: var(--border-thick); display: inline-block; letter-spacing: 1px; vertical-align: middle; }
+.badge-vip { background: #ffd700; color: #000; padding: 3px 6px; font-size: 0.65rem; font-weight: 900; border: 2px solid #000; display: inline-block; margin-left: 5px; }
 
 /* TOAST E MODAIS */
 .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
