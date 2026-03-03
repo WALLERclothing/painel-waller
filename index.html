@@ -83,8 +83,8 @@
                 <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
             </div>
             <div class="form-grid">
-                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
-                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option><option value="U">U (ÚNICO)</option></select>
+                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
+                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option><option value="OUTRA">OUTRA</option></select>
                 
                 <input type="text" id="valorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 0.5;">
@@ -164,7 +164,7 @@
             <strong style="color: var(--red);">🔥 CURVA A (Mais Vendidos):</strong> <span id="dashBestSellersList">Carregando...</span>
         </div>
         <table>
-            <thead><tr><th style="width: 10%;">Cód</th><th style="width: 40%;">Produto / Preço</th><th style="width: 35%;">Estoque por Tamanho</th><th style="width: 15%;">Ações</th></tr></thead>
+            <thead><tr><th style="width: 10%;">Cód</th><th style="width: 40%;">Produto / Preço</th><th style="width: 40%;">Estoque por Tamanho</th><th style="width: 10%;">Ações</th></tr></thead>
             <tbody id="listaEstampas"></tbody>
         </table>
     </div>
@@ -191,18 +191,16 @@
                 <div class="input-group" style="flex: 1.5;"><label>NOME DO PRODUTO</label><input type="text" id="cadNomeEstampa" placeholder="Ex: GOOD VIBES" required></div>
                 <div class="input-group" style="flex: 1;">
                     <label>CATEGORIA</label>
-                    <select id="cadCategoriaEstampa"><option value="CAMISETA">CAMISETA</option><option value="MOLETOM">MOLETOM</option><option value="ACESSÓRIO">ACESSÓRIO</option><option value="OUTROS">OUTROS</option></select>
+                    <select id="cadCategoriaEstampa"><option value="CAMISETA">CAMISETA</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="OUTROS">OUTROS</option></select>
                 </div>
             </div>
             
-            <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">ESTOQUE (GRADE DE TAMANHOS)</div>
+            <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">ESTOQUE INICIAL (GRADE)</div>
             <div class="form-grid" style="gap: 5px;">
                 <div class="input-group"><label>P</label><input type="number" id="estP" value="0" min="0"></div>
                 <div class="input-group"><label>M</label><input type="number" id="estM" value="0" min="0"></div>
                 <div class="input-group"><label>G</label><input type="number" id="estG" value="0" min="0"></div>
                 <div class="input-group"><label>GG</label><input type="number" id="estGG" value="0" min="0"></div>
-                <div class="input-group"><label>XG</label><input type="number" id="estXG" value="0" min="0"></div>
-                <div class="input-group"><label>U (Único)</label><input type="number" id="estU" value="0" min="0" title="Para acessórios"></div>
             </div>
             
             <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">MARGEM DE LUCRO BRUTO</div>
