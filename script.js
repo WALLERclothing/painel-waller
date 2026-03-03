@@ -142,6 +142,7 @@ function carregarRascunho() {
 }
 if(el('aba-cadastro')) el('aba-cadastro').addEventListener('input', salvarRascunho);
 
+
 // ================= LANÇAR DROP / PEDIDO =================
 function autoPreencherCliente() {
     const numWhats = onlyDigits(el('whatsapp').value); if (!numWhats) return;
@@ -197,9 +198,10 @@ function adicionarAoCarrinho() {
     const estampa = estampasCache.find(e => e.codigo === cod);
     const stockAtual = estampa ? (estampa.estoque[tam] || 0) : 0;
     
+    // Agora não bloqueia! Apenas avisa se a venda ultrapassar o stock.
     if (qtd > stockAtual) {
         el('quantidade').classList.add('error-blink'); setTimeout(() => el('quantidade').classList.remove('error-blink'), 1500);
-        return showToast(`Apenas ${stockAtual} unidades de ${tam}!`, 'warning');
+        showToast(`Aviso: Venda forçada. O stock de ${tam} era apenas ${stockAtual}.`, 'warning');
     }
 
     carrinhoTemporario.push({ 
@@ -241,7 +243,7 @@ async function salvarPedidoCompleto() {
     const frete = unmaskCurrency(el('valorFrete').value);
     const desconto = unmaskCurrency(el('valorDesconto').value);
     const total = unmaskCurrency(el('valorTotal').value);
-    const lucroLiquido = total - frete - totalCusto; // O desconto já reduziu o total, então lucro baixa.
+    const lucroLiquido = total - frete - totalCusto;
 
     const dadosPedido = {
         nome, whatsapp: upper(el('whatsapp').value), instagram: upper(el('instagram').value), documento: upper(el('cpf').value), cep: upper(el('cep').value), cidade: upper(el('cidade').value),
@@ -784,6 +786,7 @@ function gerarPDFClientes() {
     doc.autoTable({ startY: 20, head: [['Nome', 'WhatsApp', 'Cidade', 'Total Gasto']], body: clientesCache.map((c) => [c.nome, c.whatsapp, c.cidade, formatCurrency(c.totalGasto)]) });
     doc.save(`Lista-Clientes.pdf`); fecharModalRelatorios(); showToast('PDF Gerado!');
 }
+
 function gerarPDFFaturamentoMensal() {
     const mesFiltro = el('mesDash').value;
     if(!mesFiltro) return showToast("Selecione o mês no Dashboard!", "warning");
@@ -812,20 +815,50 @@ function gerarPDFFaturamentoMensal() {
 function gerarEtiquetasEmMassa() {
     if(pedidosSelecionados.length === 0) return showToast("Selecione pedidos primeiro", "warning");
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [100, 150] });
+    // Formato A4 padrão para etiquetas
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    let labelCount = 0;
 
     pedidosSelecionados.forEach((id, index) => {
         const p = pedidosCache.find(x => x.id === id); if(!p) return;
-        if (index > 0) doc.addPage();
-        doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("WALLER CLOTHING", 50, 15, {align: "center"});
-        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text("DESTINATÁRIO:", 10, 30);
-        doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text(p.nome || 'Cliente', 10, 37);
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(`${p.endereco || ''} ${p.complemento ? '- '+p.complemento : ''}`, 10, 45, {maxWidth: 80});
-        doc.text(`${p.cidade || ''} / ${p.estado || ''}`, 10, 55); doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text(`CEP: ${p.cep || '00000-000'}`, 10, 65);
-        doc.setLineDash([2, 2], 0); doc.line(10, 75, 90, 75); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.text(`Pedido #${p.numeroPedido} - ${getItensResumo(p.itens)}`, 10, 85, {maxWidth: 80});
+        
+        if (labelCount > 0 && labelCount % 4 === 0) {
+            doc.addPage();
+        }
+
+        // Divide a folha A4 em 4 quadrantes (2 colunas, 2 linhas)
+        const posOnPage = labelCount % 4; 
+        const col = posOnPage % 2; 
+        const row = Math.floor(posOnPage / 2); 
+
+        const offsetX = col * 105;
+        const offsetY = row * 148.5;
+
+        // Borda de corte opcional
+        doc.setDrawColor(200);
+        doc.setLineDash([], 0);
+        doc.rect(offsetX, offsetY, 105, 148.5);
+
+        doc.setFont("helvetica", "bold"); doc.setFontSize(14); 
+        doc.text("WALLER CLOTHING", offsetX + 52.5, offsetY + 15, {align: "center"});
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); 
+        doc.text("DESTINATÁRIO:", offsetX + 10, offsetY + 30);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(12); 
+        doc.text(p.nome || 'Cliente', offsetX + 10, offsetY + 37);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); 
+        doc.text(`${p.endereco || ''} ${p.complemento ? '- '+p.complemento : ''}`, offsetX + 10, offsetY + 45, {maxWidth: 85});
+        doc.text(`${p.cidade || ''} / ${p.estado || ''}`, offsetX + 10, offsetY + 55); 
+        doc.setFont("helvetica", "bold"); doc.setFontSize(12); 
+        doc.text(`CEP: ${p.cep || '00000-000'}`, offsetX + 10, offsetY + 65);
+        doc.setLineDash([2, 2], 0); doc.line(offsetX + 10, offsetY + 75, offsetX + 95, offsetY + 75); 
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); 
+        doc.text(`Pedido #${p.numeroPedido} - ${getItensResumo(p.itens)}`, offsetX + 10, offsetY + 85, {maxWidth: 85});
+        
+        labelCount++;
     });
-    doc.save(`Etiquetas-Waller-${new Date().getTime()}.pdf`);
-    showToast(`${pedidosSelecionados.length} Etiquetas geradas!`);
+
+    doc.save(`Etiquetas-A4-Waller-${new Date().getTime()}.pdf`);
+    showToast(`${pedidosSelecionados.length} Etiquetas geradas em A4!`);
     pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); fecharModalRelatorios();
 }
 
@@ -908,6 +941,11 @@ if(el('cadValorEstampa')) el('cadValorEstampa').addEventListener('blur', () => {
 if(el('cadCustoEstampa')) el('cadCustoEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadCustoEstampa').value); if(val>0) el('cadCustoEstampa').value = formatCurrency(val); });
 if(el('editCatalogoValor')) el('editCatalogoValor').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoValor').value); if(val>0) el('editCatalogoValor').value = formatCurrency(val); });
 if(el('editCatalogoCusto')) el('editCatalogoCusto').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoCusto').value); if(val>0) el('editCatalogoCusto').value = formatCurrency(val); });
+if(el('editPedValorTotal')) el('editPedValorTotal').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedValorTotal').value); if(val>0) el('editPedValorTotal').value = formatCurrency(val); });
+if(el('editPedFrete')) el('editPedFrete').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedFrete').value); if(val>0) el('editPedFrete').value = formatCurrency(val); });
+if(el('editPedDesconto')) el('editPedDesconto').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedDesconto').value); if(val>0) el('editPedDesconto').value = formatCurrency(val); });
+if(el('valorFrete')) el('valorFrete').addEventListener('blur', () => { const val = unmaskCurrency(el('valorFrete').value); if(val>0) el('valorFrete').value = formatCurrency(val); });
+if(el('valorDesconto')) el('valorDesconto').addEventListener('blur', () => { const val = unmaskCurrency(el('valorDesconto').value); if(val>0) el('valorDesconto').value = formatCurrency(val); });
 
 setupAutoFields('whatsapp', 'instagram', 'cpf', 'cep', 'cidade', 'estado', 'endereco');
 setupAutoFields('clienteWhatsapp', 'clienteInstagram', 'clienteDocumento', 'clienteCep', 'clienteCidade', 'clienteEstado', 'clienteEndereco');
