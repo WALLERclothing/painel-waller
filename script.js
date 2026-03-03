@@ -49,14 +49,13 @@ function aplicarMascaraEPular(e) {
 function aplicarMascaraCepEPular(e) {
     let v = e.target.value.replace(/\D/g, ''); // só pega números
     
-    // Formata na tela: 12345-678
     if (v.length > 5) {
         e.target.value = v.slice(0, 5) + '-' + v.slice(5, 8);
     } else {
         e.target.value = v;
     }
 
-    // Se completou os 8 números do CEP brasileiro, pula e busca o endereço!
+    // Se completou os 8 números do CEP, pula para o número e busca o endereço
     if (v.length === 8) {
         buscarCEP(v); 
         document.getElementById('numeroEnd').focus();
@@ -77,7 +76,7 @@ async function buscarCEP(cep) {
                 
                 document.getElementById('valorFrete').value = formatCurrency(valorCalculado);
                 atualizarTelaCarrinho(); 
-                showToast("CEP Encontrado e Frete Calculado!", false);
+                showToast("CEP Encontrado!", false);
             } else { showToast("CEP Inválido", true); }
         } catch(e) { showToast("Erro ao buscar CEP", true); }
     }
@@ -94,6 +93,18 @@ function toggleItens(id) {
     let isHidden = lista.style.display === 'none';
     lista.style.display = isHidden ? 'flex' : 'none';
     seta.innerHTML = isHidden ? '▲' : '▼';
+}
+
+function toggleGrafico() {
+    let cont = document.getElementById('container-grafico');
+    let seta = document.getElementById('seta-grafico');
+    if(cont.style.display === 'none') {
+        cont.style.display = 'block';
+        seta.innerText = '▲';
+    } else {
+        cont.style.display = 'none';
+        seta.innerText = '▼';
+    }
 }
 
 // ==========================================
@@ -196,7 +207,7 @@ function salvarNovaEstampa(e) {
 function excluirEstampa(id) { if(confirm(`Apagar estampa?`)) db.collection("estampas").doc(id).delete(); }
 
 // ==========================================
-// CRM: DADOS DE CLIENTES E ALERTA CHURN
+// CRM: DADOS DE CLIENTES E EXCLUSÃO NA HORA
 // ==========================================
 let clientesCadastrados = {};
 db.collection("clientes").onSnapshot(snap => {
@@ -251,14 +262,17 @@ function salvarFichaCliente() {
     }, {merge: true}).then(() => { showToast("Ficha Atualizada!"); fecharFichaCliente(); });
 }
 
+// Novo sistema de exclusão na hora (Soft Delete)
 function excluirFichaCliente(whatsapp) {
-    if(confirm(`Tem certeza que deseja APAGAR a ficha de ${whatsapp}?`)) {
-        db.collection("clientes").doc(whatsapp).delete().then(() => showToast("Ficha Excluída!", true));
+    if(confirm(`Tem certeza que deseja OCULTAR a ficha de ${whatsapp} do CRM?`)) {
+        // Marca o cliente como apagado para ele sumir instantaneamente da tela do CRM
+        db.collection("clientes").doc(whatsapp).set({ apagadoCRM: true }, { merge: true })
+        .then(() => { showToast("Ficha Removida do CRM!", true); });
     }
 }
 
 // ==========================================
-// LANÇAMENTO DE PEDIDO (MATEMÁTICA DO LUCRO)
+// LANÇAMENTO DE PEDIDO 
 // ==========================================
 let todosPedidos = []; let carrinhoTemporario = []; 
 
@@ -340,7 +354,10 @@ async function salvarPedidoCompleto() {
             itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        db.collection("clientes").doc(whatsapp).set({ whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, complemento: compl }, { merge: true });
+        // Grava no CRM automaticamente. O apagadoCRM: delete() faz ele voltar pro CRM se ele tivesse sido apagado antes
+        db.collection("clientes").doc(whatsapp).set({ 
+            whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, complemento: compl, apagadoCRM: firebase.firestore.FieldValue.delete() 
+        }, { merge: true });
         
         carrinhoTemporario.forEach(item => {
             if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
@@ -354,7 +371,7 @@ async function salvarPedidoCompleto() {
 }
 
 // ==========================================
-// KANBAN, GRÁFICOS E CURVA ABC (CORRIGIDO)
+// KANBAN, GRÁFICOS E CURVA ABC
 // ==========================================
 let chartInstancia = null; 
 
@@ -400,10 +417,9 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
     renderizarGrafico(vendasPorMes);
 });
 
-// Proteções contra o erro que quebrou o sistema:
 function renderizarGrafico(vendas) {
     const canvas = document.getElementById('graficoVendas');
-    if(!canvas) return; // Se a tela não achar o gráfico, ele cancela e não trava nada.
+    if(!canvas) return; 
     
     let labels = Object.keys(vendas).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aA,mA-1)-new Date(aB,mB-1); }).slice(-6);
     let dados = labels.map(mes => vendas[mes]);
@@ -436,7 +452,13 @@ function renderizarCRM() {
         combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
     });
 
-    let crmList = Object.entries(combinados).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
+    // Filtra para remover os clientes que foram marcados como "apagados"
+    let crmList = Object.entries(combinados)
+        .filter(c => {
+            let dadosCadastrados = clientesCadastrados[c[0]];
+            return !dadosCadastrados || !dadosCadastrados.apagadoCRM;
+        })
+        .sort((a,b) => b[1].totalGasto - a[1].totalGasto);
     
     document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => {
         let zapLimpo = c[0].replace(/\D/g,'');
@@ -622,7 +644,7 @@ function salvarAlteracoesEdicao() {
 }
 
 // ==========================================
-// PDFS E ETIQUETAS
+// PDFS, ETIQUETAS E RELATÓRIO DE LUCRO
 // ==========================================
 function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
 function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
@@ -678,7 +700,7 @@ function gerarEtiquetasEnvio() {
 }
 
 function gerarPDFFaturamento() {
-    let mes = document.getElementById('selectFaturamentoMes').value; if(mes==='ALL') return;
+    let mes = document.getElementById('selectFaturamentoMes').value; if(mes==='ALL') { showToast("Selecione um mês!", true); return;}
     let pagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mes);
     if(!pagos.length) { showToast("Sem vendas!", true); return; }
     
@@ -688,4 +710,74 @@ function gerarPDFFaturamento() {
     let soma = 0; let rows = pagos.map(p => { soma+=parseFloat(p.valorTotal); return [`#${p.numeroPedido}`, p.dataFormatada, p.nome, p.metodoPagamento, formatCurrency(p.valorTotal)]; });
     doc.autoTable({ startY: 35, head: [['Pedido', 'Data', 'Cliente', 'Pgto', 'Valor']], body: rows, foot: [[ { content: 'TOTAL:', colSpan: 4, styles: { halign: 'right'} }, { content: formatCurrency(soma), styles: { halign: 'right', fillColor: [6,214,160], textColor:[0,0,0] } } ]], theme: 'grid', headStyles: { fillColor: [0,0,0] } });
     doc.save(`waller_faturamento_${mes.replace('/','-')}.pdf`); fecharModalPDF();
+}
+
+// NOVO: RELATÓRIO PDF DE LUCRO DETALHADO
+function gerarPDFLucroLiquido() {
+    let mes = document.getElementById('selectFaturamentoMes').value; 
+    if(mes === 'ALL') { showToast("Selecione um mês específico na tela de Kanban primeiro!", true); return; }
+    
+    let pagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mes);
+    if(!pagos.length) { showToast("Sem vendas pagas neste mês!", true); return; }
+
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    desenharCabecalhoPDF(doc, `RELATÓRIO DE LUCRO LÍQUIDO: ${mes}`);
+
+    let qtdVendas = pagos.length;
+    let somaFaturamento = 0; let somaCustoPecas = 0; let somaEmbalagem = 0; let somaDescontos = 0;
+    let somaFreteCobrado = 0; let somaFreteReal = 0; let somaLucroLiquido = 0; let qtdPecasVendidas = 0;
+
+    pagos.forEach(p => {
+        somaFaturamento += parseFloat(p.valorTotal || 0);
+        somaCustoPecas += parseFloat(p.custoTotalPedido || 0);
+        somaEmbalagem += parseFloat(p.custoEmbalagem || 0);
+        somaDescontos += parseFloat(p.valorDesconto || 0);
+        somaFreteCobrado += parseFloat(p.valorFrete || 0);
+        somaFreteReal += parseFloat(p.valorFreteReal || 0);
+        somaLucroLiquido += parseFloat(p.lucroTotalPedido || 0);
+        if(p.itens) p.itens.forEach(i => qtdPecasVendidas += parseInt(i.quantidade||1));
+    });
+
+    let balancoFrete = somaFreteCobrado - somaFreteReal;
+
+    doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(193, 18, 31);
+    doc.text("1. RESUMO FINANCEIRO GERAL", 14, 35);
+    
+    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0);
+    doc.text(`Total de Pedidos Pagos: ${qtdVendas} pedidos`, 14, 45);
+    doc.text(`Total de Peças Vendidas: ${qtdPecasVendidas} peças`, 110, 45);
+
+    doc.text(`(+) Faturamento Bruto: ${formatCurrency(somaFaturamento)}`, 14, 55);
+    doc.text(`(-) Custo de Produção (Peças): ${formatCurrency(somaCustoPecas)}`, 14, 62);
+    doc.text(`(-) Custo de Embalagens: ${formatCurrency(somaEmbalagem)}`, 14, 69);
+    doc.text(`(-) Descontos Concedidos: ${formatCurrency(somaDescontos)}`, 14, 76);
+    
+    doc.text(`Frete Recebido do Cliente: ${formatCurrency(somaFreteCobrado)}`, 110, 55);
+    doc.text(`Frete Pago na Transportadora: ${formatCurrency(somaFreteReal)}`, 110, 62);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Balanço do Frete: ${formatCurrency(balancoFrete)}`, 110, 69);
+    doc.setFont("helvetica", "normal");
+
+    // CAIXA DE LUCRO
+    doc.setFillColor(6, 214, 160); doc.rect(14, 82, 180, 10, 'F');
+    doc.setFont("helvetica", "bold"); doc.setTextColor(0, 0, 0);
+    doc.text(`LUCRO LÍQUIDO FINAL DO MÊS: ${formatCurrency(somaLucroLiquido)}`, 18, 89);
+
+    doc.setTextColor(193, 18, 31);
+    doc.text("2. DETALHAMENTO POR PEDIDO", 14, 105);
+
+    let rows = pagos.map(p => [
+        `#${p.numeroPedido}`, p.nome.split(' ')[0],
+        formatCurrency(p.valorTotal), formatCurrency(p.custoTotalPedido), 
+        formatCurrency(p.valorDesconto), formatCurrency(p.lucroTotalPedido)
+    ]);
+
+    doc.autoTable({ 
+        startY: 110, 
+        head: [['Pedido', 'Cliente', 'Faturamento', 'Custo Peças', 'Desconto', 'Lucro Gerado']], 
+        body: rows, 
+        theme: 'grid', headStyles: { fillColor: [17,17,17] }, styles: { fontSize: 8 } 
+    });
+
+    doc.save(`waller_lucro_detalhado_${mes.replace('/','-')}.pdf`); fecharModalPDF();
 }
