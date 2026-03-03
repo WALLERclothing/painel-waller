@@ -117,7 +117,7 @@
 </div>
 
 <div id="aba-producao" class="container" style="display: none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; flex-wrap: wrap; gap:10px;">
         <h2 class="card-title" style="margin:0;">Dashboard Financeiro</h2>
         <input type="month" id="mesDash" class="moeda" style="width:160px; font-size:0.9rem; padding:0.4rem; background:#1a1a1a; color:#fff;" title="Filtrar dados pelo mês">
     </div>
@@ -128,8 +128,6 @@
         <div class="dash-card"><h3>Faturamento Bruto</h3><span id="dashFaturamento">R$ 0,00</span></div>
         <div class="dash-card" style="border-color:#166534;"><h3>Lucro Líquido Real</h3><span id="dashLucro" style="color:#166534;">R$ 0,00</span></div>
     </div>
-    
-    <h2 class="card-title" style="margin-top:20px;">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com banco...</span></h2>
     
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
@@ -333,7 +331,8 @@
             <div class="form-section-title">Itens Deste Pedido</div>
             <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #333; border-radius: 8px;"></div>
             
-            <input type="hidden" id="editPedValorTotal"> <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: var(--accent);">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
+            <input type="hidden" id="editPedValorTotal">
+            <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: var(--accent);">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
         </div>
         <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
     </div>
