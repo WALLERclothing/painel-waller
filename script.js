@@ -567,7 +567,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
         if (response.ok && response.data.id) {
             showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
-            window.open("https://melhorenvio.com.br/carrinho", "_blank");
+            window.open("https://www.melhorenvio.com.br/painel", "_blank");
         } else {
             // Este alerta resolve o mistério da Imagem 7!
             if (response.isVercelError) {
@@ -1537,4 +1537,3 @@ async function gerarPDFLucroLiquido() {
 
     doc.save(`waller_DRE_${dtIniStr}_a_${dtFimStr}.pdf`); fecharModalPDF();
 }
-
