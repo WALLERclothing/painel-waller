@@ -33,6 +33,51 @@ function getSafeDate(val) {
 }
 
 // ==========================================
+// 📦 INTELIGÊNCIA DE CUBAGEM (CÁLCULO DE CAIXA DINÂMICA)
+// ==========================================
+function calcularCaixaEPeso(itens) {
+    if (!itens || itens.length === 0) return { weight: 0.3, length: 20, width: 15, height: 5 }; // Caixa mínima padrão
+    
+    let pesoTotal = 0;
+    let pontuacaoVolume = 0;
+
+    itens.forEach(item => {
+        let qtd = parseInt(item.quantidade || 1);
+        let tipo = (item.tipoPeca || '').toUpperCase();
+
+        if (tipo === 'MOLETOM') {
+            pesoTotal += (0.6 * qtd);
+            pontuacaoVolume += (6 * qtd);
+        } else if (tipo === 'OVERSIZED') {
+            pesoTotal += (0.35 * qtd);
+            pontuacaoVolume += (3 * qtd);
+        } else if (tipo === 'REGATA') {
+            pesoTotal += (0.15 * qtd);
+            pontuacaoVolume += (1 * qtd);
+        } else { // CAMISETA TRADICIONAL e outros
+            pesoTotal += (0.25 * qtd);
+            pontuacaoVolume += (2 * qtd);
+        }
+    });
+
+    // Dimensionamento inteligente baseado no volume de roupas
+    let l = 20, w = 15, h = 5; // Caixa P (Até 2 camisetas ou 4 regatas)
+    
+    if (pontuacaoVolume > 20) {
+        l = 40; w = 30; h = 20; // Caixa GG (Muitas peças)
+    } else if (pontuacaoVolume > 10) {
+        l = 30; w = 25; h = 15; // Caixa G (Ex: 2 moletons)
+    } else if (pontuacaoVolume > 4) {
+        l = 25; w = 20; h = 10; // Caixa M (Ex: 3 a 5 camisetas)
+    }
+
+    // Correios não aceitam peso zerado. Mínimo técnico de e-commerce é 300g (0.3kg)
+    pesoTotal = pesoTotal < 0.3 ? 0.3 : parseFloat(pesoTotal.toFixed(2));
+
+    return { weight: pesoTotal, length: l, width: w, height: h };
+}
+
+// ==========================================
 // MOTOR DE ÁUDIO E NOTIFICAÇÕES INTELIGENTES
 // ==========================================
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -94,7 +139,7 @@ function marcarNotificacaoLida(id) { let notif = historicoNotificacoes.find(n =>
 function toggleNotificacoes() { let p = document.getElementById('painelNotificacoes'); p.style.display = p.style.display === 'none' ? 'flex' : 'none'; }
 
 // ==========================================
-// ATALHOS DE TECLADO E STARTUP
+// ATALHOS DE TECLADO E STARTUP DA VITRINE
 // ==========================================
 window.onload = () => { if(isVitrine) { document.body.classList.add('modo-vitrine'); mudarAba('estampas'); document.title = "Catálogo - Waller Clothing"; } };
 
@@ -218,8 +263,6 @@ async function buscarCEP(cep) {
 // ==========================================
 // 🚀 MOTOR DE SINCRONIZAÇÃO ABSOLUTA E AUTOCOMPLETAR
 // ==========================================
-
-// Preenche listas suspensas (Datalist) ao carregar os clientes
 function atualizarListasDeSugestao() {
     let htmlNomes = '';
     let htmlWhats = '';
@@ -231,7 +274,6 @@ function atualizarListasDeSugestao() {
     let lw = document.getElementById('listaWhats'); if(lw) lw.innerHTML = htmlWhats;
 }
 
-// Puxa a ficha inteira se você digitar o NOME ou o WHATS
 function autocompletarCliente(termo, tipo) {
     if (!termo || termo.length < 3) return;
     let cEncontrado = null;
@@ -267,7 +309,6 @@ function autocompletarCliente(termo, tipo) {
 
 function verificarClienteFiel() { autocompletarCliente(document.getElementById('whatsapp').value, 'whatsapp'); }
 
-// Sincroniza uma alteração no endereço em TODOS os pedidos passados e no CRM Mestre
 async function sincronizarClienteEmMassa(whatsapp, dadosObj) {
     if(!whatsapp || whatsapp.length < 10) return;
     
@@ -310,15 +351,13 @@ async function cotarFrete() {
     lista.innerHTML = '<div style="text-align:center; padding:20px; font-weight:900;">Buscando fretes reais no MelhorEnvio... ⏳</div>';
     document.getElementById('modalFrete').style.display = 'flex';
     
-    let qtdTotalPecas = carrinhoTemporario.reduce((acc, item) => acc + parseInt(item.quantidade), 0);
-    let pesoEstimado = qtdTotalPecas > 0 ? (qtdTotalPecas * 0.3) : 0.3; 
-    let alturaCaixa = qtdTotalPecas > 2 ? 15 : 5; 
+    let cubagem = calcularCaixaEPeso(carrinhoTemporario);
 
     const payload = {
         "from": { "postal_code": "02475001" },
         "to": { "postal_code": cepDestino },
         "volumes": [
-            { "weight": pesoEstimado, "width": 20, "height": alturaCaixa, "length": 25 }
+            { "weight": cubagem.weight, "width": cubagem.width, "height": cubagem.height, "length": cubagem.length }
         ],
         "options": { "insurance_value": 0, "receipt": false, "own_hand": false }
     };
@@ -349,7 +388,7 @@ async function cotarFrete() {
                 <div class="frete-card" onclick="selecionarFrete(${valorCalculado})">
                     <div style="display:flex; flex-direction:column;">
                         <span style="font-weight:900;">${icon} ${serv.company.name} - ${serv.name}</span>
-                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Chega em até ${serv.delivery_time} dias úteis</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Chega em até ${serv.delivery_time} dias úteis (Caixa: ${cubagem.length}x${cubagem.width}x${cubagem.height})</span>
                     </div>
                     <span style="color:var(--green); font-weight:900; font-size: 1.2rem;">${formatCurrency(valorCalculado)}</span>
                 </div>`;
@@ -396,7 +435,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
         return;
     }
 
-    showToast("Analisando rotas e montando caixa... ⏳", false);
+    showToast("Analisando volume da caixa e rotas... ⏳", false);
 
     let nomeCliente = p.nome ? p.nome.trim() : "Cliente";
     if(nomeCliente.split(' ').length < 2) nomeCliente += " Waller";
@@ -425,21 +464,19 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
     let complementoEnvio = p.complemento ? p.complemento.trim() : "";
 
-    let qtdTotalPecas = 0; let valorTotalPecas = 0;
+    let cubagem = calcularCaixaEPeso(p.itens || []);
+    
+    let valorTotalPecas = 0;
     (p.itens || []).forEach(i => { 
-        qtdTotalPecas += parseInt(i.quantidade || 1); 
         valorTotalPecas += (safeNum(i.valorUnitario) * parseInt(i.quantidade || 1));
     });
-    
-    let pesoEstimado = qtdTotalPecas > 0 ? (qtdTotalPecas * 0.3) : 0.3; 
-    let alturaCaixa = qtdTotalPecas > 2 ? 15 : 5;
 
-    let selectedServiceId = 1; // Padrão
+    let selectedServiceId = 1; // Padrão PAC
     try {
         let calcPayload = {
             "from": { "postal_code": "02475001" },
             "to": { "postal_code": cepDestino },
-            "volumes": [ { "weight": pesoEstimado, "width": 20, "height": alturaCaixa, "length": 25 } ],
+            "volumes": [ { "weight": cubagem.weight, "width": cubagem.width, "height": cubagem.height, "length": cubagem.length } ],
             "options": { "insurance_value": 0, "receipt": false, "own_hand": false }
         };
         let calcRes = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://www.melhorenvio.com.br/api/v2/me/shipment/calculate?t=' + Date.now()), {
@@ -490,16 +527,16 @@ async function enviarParaMelhorEnvio(pedidoId) {
         "products": [
             {
                 "name": "Vestuário Waller",
-                "quantity": qtdTotalPecas || 1,
+                "quantity": 1, // Pode manter 1 pacote para a etiqueta
                 "unitary_value": valorTotalPecas > 0 ? valorTotalPecas : 50.00
             }
         ],
         "volumes": [
             {
-                "height": alturaCaixa,
-                "width": 20,
-                "length": 25,
-                "weight": pesoEstimado
+                "height": cubagem.height,
+                "width": cubagem.width,
+                "length": cubagem.length,
+                "weight": cubagem.weight
             }
         ],
         "options": {
@@ -523,7 +560,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
         }
 
         if (response.ok && response.data.id) {
-            showToast("Carrinho ME gerado com sucesso! 🎉", false);
+            showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
             window.open("https://app.melhorenvio.com/carrinho", "_blank");
         } else {
             console.error("MelhorEnvio Error Details:", response.data);
@@ -619,7 +656,7 @@ if(!isVitrine) {
         clientesCadastrados = {}; 
         snap.forEach(doc => clientesCadastrados[doc.id] = doc.data()); 
         renderizarCRM(); 
-        atualizarListasDeSugestao(); // Alimenta o autocompletar
+        atualizarListasDeSugestao(); 
     }); 
 }
 let mapaClientes = {}; 
@@ -1163,7 +1200,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
         return;
     }
 
-    showToast("Analisando rotas e montando caixa... ⏳", false);
+    showToast("Analisando volume da caixa e rotas... ⏳", false);
 
     let nomeCliente = p.nome ? p.nome.trim() : "Cliente";
     if(nomeCliente.split(' ').length < 2) nomeCliente += " Waller";
@@ -1192,21 +1229,19 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
     let complementoEnvio = p.complemento ? p.complemento.trim() : "";
 
-    let qtdTotalPecas = 0; let valorTotalPecas = 0;
+    let cubagem = calcularCaixaEPeso(p.itens || []);
+    
+    let valorTotalPecas = 0;
     (p.itens || []).forEach(i => { 
-        qtdTotalPecas += parseInt(i.quantidade || 1); 
         valorTotalPecas += (safeNum(i.valorUnitario) * parseInt(i.quantidade || 1));
     });
-    
-    let pesoEstimado = qtdTotalPecas > 0 ? (qtdTotalPecas * 0.3) : 0.3; 
-    let alturaCaixa = qtdTotalPecas > 2 ? 15 : 5;
 
-    let selectedServiceId = 1; // Padrão
+    let selectedServiceId = 1; // Padrão PAC
     try {
         let calcPayload = {
             "from": { "postal_code": "02475001" },
             "to": { "postal_code": cepDestino },
-            "volumes": [ { "weight": pesoEstimado, "width": 20, "height": alturaCaixa, "length": 25 } ],
+            "volumes": [ { "weight": cubagem.weight, "width": cubagem.width, "height": cubagem.height, "length": cubagem.length } ],
             "options": { "insurance_value": 0, "receipt": false, "own_hand": false }
         };
         let calcRes = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://www.melhorenvio.com.br/api/v2/me/shipment/calculate?t=' + Date.now()), {
@@ -1257,16 +1292,16 @@ async function enviarParaMelhorEnvio(pedidoId) {
         "products": [
             {
                 "name": "Vestuário Waller",
-                "quantity": qtdTotalPecas || 1,
+                "quantity": 1, // Mantido 1 para a etiqueta aceitar sem erros
                 "unitary_value": valorTotalPecas > 0 ? valorTotalPecas : 50.00
             }
         ],
         "volumes": [
             {
-                "height": alturaCaixa,
-                "width": 20,
-                "length": 25,
-                "weight": pesoEstimado
+                "height": cubagem.height,
+                "width": cubagem.width,
+                "length": cubagem.length,
+                "weight": cubagem.weight
             }
         ],
         "options": {
@@ -1290,7 +1325,7 @@ async function enviarParaMelhorEnvio(pedidoId) {
         }
 
         if (response.ok && response.data.id) {
-            showToast("Carrinho ME gerado com sucesso! 🎉", false);
+            showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
             window.open("https://app.melhorenvio.com/carrinho", "_blank");
         } else {
             console.error("MelhorEnvio Error Details:", response.data);
