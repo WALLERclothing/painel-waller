@@ -8,6 +8,10 @@
 
 body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; background-image: radial-gradient(#1a1a1a 1px, transparent 1px); background-size: 18px 18px; transition: box-shadow 0.3s; }
 
+/* CLASSE DOS LABELS (TÍTULOS DOS CAMPOS) */
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+.input-group label { font-size: 0.7rem; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-left: 2px;}
+
 /* RECURSOS UX */
 .bestseller-grid { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 0.5rem; padding-bottom: 5px; }
 .bestseller-card { background: #1a1a1a; color: #fff; padding: 10px 15px; border-radius: 8px; display: flex; gap: 10px; align-items: center; min-width: 210px; border: 1px solid #333; border-left: 4px solid var(--accent); }
