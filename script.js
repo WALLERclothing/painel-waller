@@ -14,7 +14,7 @@ if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 // ================= OFFLINE PERSISTENCE (PWA) =================
 firebase.firestore().enablePersistence()
   .catch((err) => {
-      if (err.code == 'failed-precondition') console.log('Múltiplas abas, offline limit.');
+      if (err.code == 'failed-precondition') console.log('Múltiplas abas abertas.');
       else if (err.code == 'unimplemented') console.log('Browser não suporta offline.');
   });
 const db = firebase.firestore();
@@ -25,24 +25,30 @@ let estampasCache = []; let carrinhoTemporario = []; let carrinhoEdicao = [];
 let pedidosCache = []; let clientesCache = []; let filtroAtual = 'TODOS';
 let pedidoEmEdicaoId = null; let pedidosSelecionados = [];
 
-// ================= FUNÇÕES DE APOIO E UX =================
+// ================= FUNÇÕES DE APOIO, PROTEÇÃO E UX =================
 function upper(v) { return (v || '').toString().trim().toUpperCase(); }
 function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
 function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
 function unmaskCurrency(value) { if (!value) return 0; return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
+function escapeStr(v) { return String(v || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); } // PROTEÇÃO CONTRA CRASH
+
 function formatDate(dateValue) { 
     if (!dateValue) return '-'; 
-    if (typeof dateValue === 'string' && dateValue.includes('-')) { return new Date(dateValue + 'T12:00:00').toLocaleDateString('pt-BR'); } 
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue); 
-    if(isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('pt-BR'); 
+    try {
+        if (typeof dateValue === 'string' && dateValue.includes('-')) { return new Date(dateValue + 'T12:00:00').toLocaleDateString('pt-BR'); } 
+        const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue); 
+        if(isNaN(date.getTime())) return '-';
+        return date.toLocaleDateString('pt-BR'); 
+    } catch(e) { return '-'; }
 }
+
 function getItensResumo(itens = []) { 
     if (!itens || !Array.isArray(itens)) return 'Sem itens'; 
     return itens.map((item) => {
         if(!item) return ''; return `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa}`;
     }).filter(Boolean).join(' • ') || 'Sem itens'; 
 }
+
 function primeiroNome(nome = '') { return (nome.trim().split(' ')[0] || 'cliente'); }
 
 function showToast(msg, type = 'success') {
@@ -73,13 +79,13 @@ function setupAutoFields(idWhats, idInsta, idCpf, idCep, idCidade, idEstado, idE
     });
 }
 
-// ATALHOS GLOBAIS (UX)
+// ATALHOS GLOBAIS DE TECLADO (ALT+N e ALT+B)
 document.addEventListener('keydown', (e) => {
     if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); el('nome').focus(); }
     if (e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); mudarAba('producao'); el('inputBusca').focus(); }
 });
 
-// SOM MECÂNICO
+// SOM MECÂNICO PARA KANBAN
 function playMechSound() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -103,7 +109,10 @@ function mudarAba(aba) {
     el('tabClientesBtn').classList.toggle('tab-active', aba === 'clientes');
 }
 
-// RASCUNHO AUTO-SAVE
+function alternarTema() { const dark = document.body.classList.toggle('dark-mode'); localStorage.setItem('temaWaller', dark ? 'dark' : 'light'); el('btnTema').textContent = dark ? 'Tema claro' : 'Tema escuro'; }
+function carregarTema() { if (localStorage.getItem('temaWaller') === 'dark') { document.body.classList.add('dark-mode'); el('btnTema').textContent = 'Tema claro'; } }
+
+// ================= AUTO-SAVE RASCUNHO =================
 function salvarRascunho() {
     try {
         const data = {
@@ -240,7 +249,32 @@ async function salvarPedidoCompleto() {
     showToast('🚀 Pedido gerado e stock atualizado!'); limparLancarDrop(false); mudarAba('producao');
 }
 
-// ================= EDIÇÃO DE PEDIDO =================
+// ================= EDIÇÃO DE PEDIDO BLINDADA =================
+function abrirFichaPedido(idPedido) {
+    const pedido = pedidosCache.find((p) => p.id === idPedido); if (!pedido) return;
+    el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
+    el('fichaPedidoConteudo').innerHTML = `
+        <div class="cliente-ficha-grid" style="margin-bottom: 1rem;">
+            <p><strong>Cliente:</strong> ${escapeStr(pedido.nome) || '-'}</p>
+            <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
+            <p><strong>Status:</strong> ${pedido.status || '-'}</p>
+            <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
+            <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${pedido.estado || '-'}</p>
+            <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
+        </div>
+        <h3 class="form-section-title">Peças no pedido</h3>
+        <div style="margin-bottom: 1.5rem;">
+            ${(pedido.itens || []).map(i => {
+                if(!i) return '';
+                return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${i.nomeEstampa || i.codigoEstampa}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
+            }).join('')}
+        </div>
+        <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
+    `;
+    el('modalFichaPedido').style.display = 'flex';
+}
+function fecharFichaPedido() { el('modalFichaPedido').style.display = 'none'; }
+
 function abrirModalEditarPedido(idPedido) {
     const pedido = pedidosCache.find(p => p.id === idPedido); if (!pedido) return;
     pedidoEmEdicaoId = pedido.id;
@@ -273,6 +307,7 @@ function atualizarTelaCarrinhoEdicao() {
     let soma = 0; el('listaCarrinhoEdicao').innerHTML = '';
     if(carrinhoEdicao.length === 0) el('listaCarrinhoEdicao').innerHTML = '<p style="color:#d90429; font-size:0.8rem; margin:0;">Pedido ficará sem itens se salvo assim.</p>';
     carrinhoEdicao.forEach((p, index) => {
+        if(!p) return;
         soma += p.quantidade * p.valorUnitario;
         el('listaCarrinhoEdicao').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
     });
@@ -281,7 +316,7 @@ function atualizarTelaCarrinhoEdicao() {
 function removerDoCarrinhoEdicao(index) { carrinhoEdicao.splice(index, 1); atualizarTelaCarrinhoEdicao(); }
 async function salvarEdicaoPedidoDefinitiva() {
     if (!pedidoEmEdicaoId) return;
-    let totalCusto = 0; carrinhoEdicao.forEach(i => totalCusto += (i.custoUnitario || 0) * i.quantidade);
+    let totalCusto = 0; carrinhoEdicao.forEach(i => { if(i) totalCusto += (i.custoUnitario || 0) * i.quantidade });
     const lucroLiquido = unmaskCurrency(el('editPedValorTotal').value) - unmaskCurrency(el('editPedFrete').value) - totalCusto;
 
     const dadosEditados = {
@@ -354,10 +389,10 @@ async function avancarSelecionados() {
     if(pedidosSelecionados.length === 0) return;
     const target = el('bulkStatusTarget').value;
     for(let id of pedidosSelecionados) { await db.collection('pedidos').doc(id).update({ status: target }); }
-    showToast(`${pedidosSelecionados.length} pedidos movidos!`); playMechSound(); pedidosSelecionados = []; el('bulkBar').style.display = 'none';
+    showToast(`${pedidosSelecionados.length} pedidos movidos!`); playMechSound(); pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros();
 }
 
-function excluirPedido(id) { if (confirm('Excluir este pedido?')) db.collection('pedidos').doc(id).delete(); }
+function excluirPedido(id) { if (confirm('Tem certeza que deseja excluir este pedido?')) db.collection('pedidos').doc(id).delete(); }
 
 function drag(ev, id) { ev.dataTransfer.setData("text", id); }
 function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
@@ -390,7 +425,7 @@ function renderPedidosGrid(lista) {
                     <span><input type="checkbox" class="chk-bulk" ${checked} onchange="toggleSelecao('${pedido.id}')"> <strong>#${pedido.numeroPedido}</strong></span>
                     <span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span>
                 </div>
-                <p><strong><span class="copy-text" title="Copiar Nome" onclick="copiarTexto('${(pedido.nome||'').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">${pedido.nome || 'SEM NOME'}</span></strong></p>
+                <p><strong><span class="copy-text" title="Copiar Nome" onclick="copiarTexto('${escapeStr(pedido.nome)}')">${escapeStr(pedido.nome) || 'SEM NOME'}</span></strong></p>
                 <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
                 <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
                 ${grupo.status === 'AGUARDANDO PAGAMENTO' ? `<button class="btn-cobrar" onclick="enviarCobranca('${pedido.id}')">💸 Cobrar Pix</button>` : ''}
@@ -399,6 +434,7 @@ function renderPedidosGrid(lista) {
                     ${pedido.rastreio ? `<button class="btn-action-icon" title="Rastreio Correios" onclick="enviarRastreio('${pedido.id}')">${iBx}</button>` : ''}
                     <button class="btn-action-icon" title="Ver Detalhes" onclick="abrirFichaPedido('${pedido.id}')">${iOl}</button>
                     ${isUltimo ? `<button class="btn-action-icon" style="color:#0ea5e9; border-color:#0ea5e9;" title="Pedir Feedback" onclick="enviarFeedback('${pedido.id}')">${iFb}</button>` : `<button class="btn-action-icon" title="Avançar Fase" onclick="avancarPedido('${pedido.id}', '${grupo.status}')">${iAv}</button>`}
+                    <button class="btn-action-icon btn-delete-icon" title="Excluir" onclick="excluirPedido('${pedido.id}')">${iLx}</button>
                 </div>
             </article>`; }).join('')}</div></section>`;
     });
@@ -443,12 +479,14 @@ function atualizarDashboard(lista) {
 // ================= CLIENTES E VIPs =================
 function aniversarioProximo(dataIso) {
     if (!dataIso) return false;
-    const hoje = new Date(); const data = new Date(`${dataIso}T12:00:00`); 
-    if(isNaN(data.getTime())) return false;
-    let niverEsteAno = new Date(hoje.getFullYear(), data.getMonth(), data.getDate());
-    let diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
-    if (diff < 0) { niverEsteAno = new Date(hoje.getFullYear() + 1, data.getMonth(), data.getDate()); diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000); }
-    return diff >= 0 && diff <= 15;
+    try {
+        const hoje = new Date(); const data = new Date(`${dataIso}T12:00:00`); 
+        if(isNaN(data.getTime())) return false;
+        let niverEsteAno = new Date(hoje.getFullYear(), data.getMonth(), data.getDate());
+        let diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
+        if (diff < 0) { niverEsteAno = new Date(hoje.getFullYear() + 1, data.getMonth(), data.getDate()); diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000); }
+        return diff >= 0 && diff <= 15;
+    } catch(e) { return false; }
 }
 
 function extrairClientesDosPedidos() {
@@ -502,18 +540,18 @@ function abrirVisualizacaoCliente(cliente) {
     el('fichaClienteTitulo').textContent = `Ficha Completa: ${cliente.nome || 'Cliente'}`;
     el('fichaClienteConteudo').innerHTML = `
         <div class="cliente-ficha-grid">
-            <p><strong>Nome:</strong> <span class="copy-text" onclick="copiarTexto('${(cliente.nome||'').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">${cliente.nome || '-'}</span> ${getSeloVip(cliente.totalGasto)}</p>
+            <p><strong>Nome:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.nome)}')">${escapeStr(cliente.nome) || '-'}</span> ${getSeloVip(cliente.totalGasto)}</p>
             <p><strong>WhatsApp:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.whatsapp}')">${cliente.whatsapp || '-'}</span></p>
             <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
             <p><strong>CPF/CNPJ:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.documento}')">${cliente.documento || '-'}</span></p>
             <p><strong>CEP:</strong> ${cliente.cep || '-'}</p>
             <p><strong>Aniversário:</strong> ${cliente.aniversario ? formatDate(cliente.aniversario) : '-'}</p>
             <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} / ${cliente.estado || ''}</p>
-            <p><strong>Endereço:</strong> <span class="copy-text" onclick="copiarTexto('${(cliente.endereco||'').replace(/'/g, "\\'")}, ${cliente.complemento||''}')">${cliente.endereco || '-'} ${cliente.complemento ? ` - ${cliente.complemento}` : ''}</span></p>
+            <p><strong>Endereço:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.endereco)}, ${escapeStr(cliente.complemento)}')">${escapeStr(cliente.endereco) || '-'} ${cliente.complemento ? ` - ${escapeStr(cliente.complemento)}` : ''}</span></p>
             <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
             <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
         </div>
-        ${cliente.notasPrivadas ? `<div style="margin-top:10px; padding:10px; background:#1a1a1a; border-left:4px solid #f59e0b; border-radius:4px;"><small style="color:#f59e0b; font-weight:bold;">Notas Internas:</small><p style="margin:0; font-size:0.85rem; color:#ccc;">${cliente.notasPrivadas.replace(/</g, '&lt;')}</p></div>` : ''}
+        ${cliente.notasPrivadas ? `<div style="margin-top:10px; padding:10px; background:#1a1a1a; border-left:4px solid #f59e0b; border-radius:4px;"><small style="color:#f59e0b; font-weight:bold;">Notas Internas:</small><p style="margin:0; font-size:0.85rem; color:#ccc;">${escapeStr(cliente.notasPrivadas)}</p></div>` : ''}
         ${cliente.blacklist ? `<div style="margin-top:10px; padding:10px; background:#450a0a; border-left:4px solid #dc2626; border-radius:4px; color:#fff; font-weight:bold;">⚠️ CLIENTE NA BLACKLIST</div>` : ''}
         <div style="display:flex; gap:0.5rem; margin-top:1rem;">
             <button class="btn-primary" onclick="editarCliente('${idRef}'); fecharFichaCliente();">EDITAR DADOS</button>
@@ -561,7 +599,7 @@ function renderClientes() {
         const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
         const destaque = aniversarioProximo(cliente.aniversario);
         container.innerHTML += `<article class="cliente-card ${destaque ? 'cliente-alerta' : ''}" style="${cliente.blacklist ? 'border-color:#dc2626;' : ''}">
-            <h3>${cliente.nome || 'SEM NOME'}</h3>
+            <h3>${escapeStr(cliente.nome) || 'SEM NOME'}</h3>
             ${getSeloVip(cliente.totalGasto)} 
             ${destaque ? '<span class="niver-tag pulse" style="margin-left:5px;">🎂 Aniversário</span>' : ''}
             ${cliente.aniversarioWaller ? '<span class="niver-tag pulse" style="margin-left:5px; background:#16a34a; color:#fff;">🎈 1 Ano de Marca</span>' : ''}
@@ -574,39 +612,41 @@ function renderClientes() {
 }
 function filtrarClientes() { const busca = upper(el('filtroClientes').value); renderClientes(); }
 
-// ================= CATÁLOGO E INLINE STOCK E BEST SELLERS =================
+// ================= CATÁLOGO, ESTOQUE E BEST SELLERS =================
 function calcularBestSellers() {
-    if (!pedidosCache.length || !estampasCache.length) return;
-    let contagem = {};
-    pedidosCache.forEach(p => {
-        (p.itens || []).forEach(i => {
-            if(!i) return;
-            if(!contagem[i.codigoEstampa]) contagem[i.codigoEstampa] = 0;
-            contagem[i.codigoEstampa] += Number(i.quantidade) || 1;
+    try {
+        if (!pedidosCache.length || !estampasCache.length) return;
+        let contagem = {};
+        pedidosCache.forEach(p => {
+            (p.itens || []).forEach(i => {
+                if(!i) return;
+                if(!contagem[i.codigoEstampa]) contagem[i.codigoEstampa] = 0;
+                contagem[i.codigoEstampa] += Number(i.quantidade) || 1;
+            });
         });
-    });
 
-    let arrayRanking = Object.entries(contagem).map(([codigo, qtd]) => {
-        const prod = estampasCache.find(e => e.codigo === codigo);
-        return { codigo, qtd, nome: prod ? prod.nome : 'Produto Desconhecido' };
-    });
+        let arrayRanking = Object.entries(contagem).map(([codigo, qtd]) => {
+            const prod = estampasCache.find(e => e.codigo === codigo);
+            return { codigo, qtd, nome: prod ? prod.nome : 'Produto Desconhecido' };
+        });
 
-    arrayRanking.sort((a, b) => b.qtd - a.qtd);
-    const top5 = arrayRanking.slice(0, 5);
+        arrayRanking.sort((a, b) => b.qtd - a.qtd);
+        const top5 = arrayRanking.slice(0, 5);
 
-    const container = el('bestSellersContainer');
-    if(!container) return;
-    if(top5.length === 0) { container.innerHTML = '<p class="catalog-empty">Sem vendas suficientes ainda.</p>'; return; }
+        const container = el('bestSellersContainer');
+        if(!container) return;
+        if(top5.length === 0) { container.innerHTML = '<p class="catalog-empty">Sem vendas suficientes ainda.</p>'; return; }
 
-    container.innerHTML = top5.map((item, idx) => `
-        <div class="bestseller-card">
-            <div class="bs-medal">#${idx+1}</div>
-            <div style="line-height:1.2;">
-                <strong>${item.nome}</strong><br>
-                <small style="color:var(--muted);">${item.codigo} • ${item.qtd} vendidos</small>
+        container.innerHTML = top5.map((item, idx) => `
+            <div class="bestseller-card">
+                <div class="bs-medal">#${idx+1}</div>
+                <div style="line-height:1.2;">
+                    <strong>${escapeStr(item.nome)}</strong><br>
+                    <small style="color:var(--muted);">${item.codigo} • ${item.qtd} vendidos</small>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } catch(e) { console.error("Erro BestSellers:", e); }
 }
 
 function abrirModalNovaEstampa() { el('modalNovaEstampa').style.display = 'flex'; }
@@ -663,7 +703,7 @@ function renderCatalogo(lista = estampasCache) {
 
         container.innerHTML += `<article class="catalog-item ${isEsgotado ? 'item-esgotado' : ''}">
             <div class="catalog-item-top"><p class="catalog-code"><span class="copy-text" onclick="copiarTexto('${est.codigo}')">${est.codigo}</span></p></div>
-            <h3>${est.nome}</h3>
+            <h3>${escapeStr(est.nome)}</h3>
             <p class="catalog-price">${formatCurrency(est.valor || 0)}</p>
             <p class="catalog-stock" style="color:var(--muted); font-size:0.75rem;">Custo: ${formatCurrency(est.custo || 0)} | Tipo: ${est.tipoPadrao || 'Não definido'}</p>
             <div class="stock-grid">${pills}</div>
@@ -675,7 +715,7 @@ function renderCatalogo(lista = estampasCache) {
     });
 }
 
-// ================= RELATÓRIOS, ETIQUETAS E STICKERS PDF =================
+// ================= RELATÓRIOS E PDF EM MASSA =================
 function abrirModalRelatorios() { el('modalRelatorios').style.display = 'flex'; }
 function fecharModalRelatorios() { el('modalRelatorios').style.display = 'none'; }
 
@@ -779,11 +819,11 @@ function iniciarListeners() {
     });
 }
 
-// RETIRA O LOADER E INICIA
+// INICIALIZAÇÃO E REMOÇÃO DO GLITCH (SE EXISTIR)
 setTimeout(() => {
     const glitch = el('glitchOverlay');
     if(glitch) { glitch.style.opacity = '0'; setTimeout(() => glitch.style.display = 'none', 500); }
-}, 1500);
+}, 500); // Removido rápido para não atrapalhar o uso
 
 if(el('codigoEstampa')) el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
 if(el('cadValorEstampa')) el('cadValorEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadValorEstampa').value); if(val>0) el('cadValorEstampa').value = formatCurrency(val); });
@@ -796,5 +836,6 @@ setupAutoFields('whatsapp', 'instagram', 'cpf', 'cep', 'cidade', 'estado', 'ende
 setupAutoFields('clienteWhatsapp', 'clienteInstagram', 'clienteDocumento', 'clienteCep', 'clienteCidade', 'clienteEstado', 'clienteEndereco');
 setupAutoFields('editPedWhatsapp', 'editPedInstagram', 'editPedCpf', 'editPedCep', 'editPedCidade', 'editPedEstado', 'editPedEndereco');
 
+carregarTema();
 carregarRascunho();
 iniciarListeners();
