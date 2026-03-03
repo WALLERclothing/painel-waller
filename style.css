@@ -56,7 +56,6 @@ body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); 
 .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .form-grid > * { flex: 1; min-width: 180px; }
 
-/* Adicionado Labels para Modais ficarem mais claros */
 .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
 .input-group label { font-size: 0.75rem; font-weight: 900; color: var(--red); text-transform: uppercase; }
 
