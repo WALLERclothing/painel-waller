@@ -1,6 +1,13 @@
 // ==========================================
-// THEME & TOASTS
+// ATALHOS DE TECLADO E THEME
 // ==========================================
+document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); }
+    if (e.altKey && e.key.toLowerCase() === 'c') { e.preventDefault(); mudarAba('clientes'); }
+    if (e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); mudarAba('producao'); }
+    if (e.altKey && e.key.toLowerCase() === 'e') { e.preventDefault(); mudarAba('estampas'); }
+});
+
 function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light'); }
 function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -20,7 +27,7 @@ function showToast(msg, isError = false) {
 }
 
 // ==========================================
-// UTILITÁRIOS, FRETE E MÁSCARAS INTELIGENTES
+// UTILITÁRIOS E FRETE
 // ==========================================
 function unmaskCurrency(value) {
     if (!value) return 0; if (typeof value === 'number') return value;
@@ -42,24 +49,16 @@ function aplicarMascaraEPular(e) {
     else if(v.length <= 6) e.target.value = `(${v.slice(0,2)}) ${v.slice(2)}`; 
     else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; 
     else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
-
-    if (e.target.value.length === 15) { document.getElementById('nome').focus(); }
+    if (e.target.value.length === 15) { 
+        if(e.target.id === 'whatsapp') document.getElementById('nome').focus(); 
+    }
 }
 
 function aplicarMascaraCepEPular(e) {
-    let v = e.target.value.replace(/\D/g, ''); // só pega números
-    
-    if (v.length > 5) {
-        e.target.value = v.slice(0, 5) + '-' + v.slice(5, 8);
-    } else {
-        e.target.value = v;
-    }
-
-    // Se completou os 8 números do CEP, pula para o número e busca o endereço
-    if (v.length === 8) {
-        buscarCEP(v); 
-        document.getElementById('numeroEnd').focus();
-    }
+    let v = e.target.value.replace(/\D/g, ''); 
+    if (v.length > 5) e.target.value = v.slice(0, 5) + '-' + v.slice(5, 8);
+    else e.target.value = v;
+    if (v.length === 8) { buscarCEP(v); document.getElementById('numeroEnd').focus(); }
 }
 
 async function buscarCEP(cep) {
@@ -70,11 +69,8 @@ async function buscarCEP(cep) {
             let data = await res.json();
             if(!data.erro) {
                 document.getElementById('endereco').value = `${data.logradouro}, Bairro: ${data.bairro} - ${data.localidade}/${data.uf}`;
-                
                 const tabelaFrete = { 'SP': 15.00, 'RJ': 20.00, 'MG': 20.00, 'ES': 20.00, 'PR': 25.00, 'SC': 25.00, 'RS': 25.00, 'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00 };
-                let valorCalculado = tabelaFrete[data.uf] || 35.00;
-                
-                document.getElementById('valorFrete').value = formatCurrency(valorCalculado);
+                document.getElementById('valorFrete').value = formatCurrency(tabelaFrete[data.uf] || 35.00);
                 atualizarTelaCarrinho(); 
                 showToast("CEP Encontrado!", false);
             } else { showToast("CEP Inválido", true); }
@@ -90,21 +86,15 @@ function mudarAba(aba) {
 function toggleItens(id) {
     let lista = document.getElementById('itens-' + id);
     let seta = document.getElementById('seta-' + id);
-    let isHidden = lista.style.display === 'none';
-    lista.style.display = isHidden ? 'flex' : 'none';
-    seta.innerHTML = isHidden ? '▲' : '▼';
+    if(lista.style.display === 'none') { lista.style.display = 'flex'; seta.innerHTML = '▲'; } 
+    else { lista.style.display = 'none'; seta.innerHTML = '▼'; }
 }
 
 function toggleGrafico() {
     let cont = document.getElementById('container-grafico');
     let seta = document.getElementById('seta-grafico');
-    if(cont.style.display === 'none') {
-        cont.style.display = 'block';
-        seta.innerText = '▲';
-    } else {
-        cont.style.display = 'none';
-        seta.innerText = '▼';
-    }
+    if(cont.style.display === 'none') { cont.style.display = 'block'; seta.innerText = '▲'; } 
+    else { cont.style.display = 'none'; seta.innerText = '▼'; }
 }
 
 // ==========================================
@@ -115,51 +105,51 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ==========================================
-// CATÁLOGO: CUSTO E PREÇO DE VENDA
+// CATÁLOGO: ESTOQUE POR GRADE DE TAMANHOS
 // ==========================================
 let catalogoEstampas = {}; 
-db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
+db.collection("estampas").where("apagado", "!=", true).onSnapshot((querySnapshot) => {
     document.getElementById('listaEstampas').innerHTML = '';
     let datalist = document.getElementById('estampas-list'); datalist.innerHTML = '';
     catalogoEstampas = {}; 
     
     querySnapshot.forEach((doc) => {
         let est = doc.data(); 
-        let estoque = est.estoque || 0; 
         let cat = est.categoria || 'CAMISETA';
         let custo = est.custo || 0;
         let preco = est.precoVenda || 0;
         
-        catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque, categoria: cat, custo: custo, precoVenda: preco };
+        // Garante que o estoque é um objeto com as grades
+        let e = est.estoqueGrade || { P:0, M:0, G:0, GG:0, XG:0, U:0 };
         
+        catalogoEstampas[est.codigo] = { nome: est.nome, estoque: e, categoria: cat, custo: custo, precoVenda: preco };
         datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
         
-        let badgeSoldOut = estoque <= 0 ? `<span class="badge-soldout">SOLD OUT</span>` : '';
-        let resumoFinanceiro = `Custo: ${formatCurrency(custo)} | Venda: ${formatCurrency(preco)}`;
+        // Soma total para o Badge Sold Out
+        let totalEstoque = parseInt(e.P)+parseInt(e.M)+parseInt(e.G)+parseInt(e.GG)+parseInt(e.XG)+parseInt(e.U);
+        let badgeSoldOut = totalEstoque <= 0 ? `<br><span class="badge-soldout" style="margin: 5px 0 0 0;">SOLD OUT</span>` : '';
         
         document.getElementById('listaEstampas').innerHTML += `
         <tr>
             <td><strong>${est.codigo}</strong></td>
-            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} • ${resumoFinanceiro}</div></td>
+            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} • Venda: ${formatCurrency(preco)}</div>${badgeSoldOut}</td>
             <td>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', -1)">-</button>
-                    <span style="font-weight:900; font-size:1.1rem; width:30px; text-align:center; color:${estoque <= 0 ? 'var(--red)' : 'var(--black)'}">${estoque}</span>
-                    <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', 1)">+</button>
-                    ${badgeSoldOut}
+                <div class="grade-tamanhos">
+                    <div class="grade-box">P <br><span>${e.P}</span></div>
+                    <div class="grade-box">M <br><span>${e.M}</span></div>
+                    <div class="grade-box">G <br><span>${e.G}</span></div>
+                    <div class="grade-box">GG<br><span>${e.GG}</span></div>
+                    <div class="grade-box">XG<br><span>${e.XG}</span></div>
+                    <div class="grade-box">U <br><span>${e.U}</span></div>
                 </div>
             </td>
             <td style="display:flex; gap:5px;">
-                <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque}, '${cat}', ${custo}, ${preco})">✏️</button>
-                <button class="btn-icone" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
+                <button class="btn-icone" title="Editar / Ajustar Estoque" onclick="prepararEdicaoEstampa('${est.codigo}')">✏️</button>
+                <button class="btn-icone" title="Apagar Produto" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
             </td>
         </tr>`;
     });
 });
-
-function ajustarEstoqueRapido(id, delta) {
-    db.collection("estampas").doc(id).update({ estoque: firebase.firestore.FieldValue.increment(delta) });
-}
 
 function autocompletarEstampa(val) {
     let code = val.toUpperCase().trim();
@@ -173,19 +163,26 @@ function abrirModalEstampa() { document.getElementById('modalEstampa').style.dis
 function fecharModalEstampa() {
     document.getElementById('modalEstampa').style.display = 'none';
     document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
-    document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadEstoque').value = '0';
+    document.getElementById('cadNomeEstampa').value = ''; 
+    document.getElementById('estP').value = '0'; document.getElementById('estM').value = '0'; document.getElementById('estG').value = '0'; document.getElementById('estGG').value = '0'; document.getElementById('estXG').value = '0'; document.getElementById('estU').value = '0';
     document.getElementById('cadCusto').value = ''; document.getElementById('cadPreco').value = '';
     document.getElementById('cadCategoriaEstampa').value = 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = '';
     document.getElementById('tituloModalEstampa').innerText = 'CADASTRAR PRODUTO'; document.getElementById('btnSalvarEstampa').innerText = 'SALVAR PRODUTO';
 }
 
-function prepararEdicaoEstampa(c, n, e, cat, custo, preco) {
-    document.getElementById('cadCodigoEstampa').value = c; document.getElementById('cadCodigoEstampa').disabled = true;
-    document.getElementById('cadNomeEstampa').value = n; document.getElementById('cadEstoque').value = e;
-    document.getElementById('cadCusto').value = formatCurrency(custo); document.getElementById('cadPreco').value = formatCurrency(preco);
-    document.getElementById('cadCategoriaEstampa').value = cat || 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = c;
+function prepararEdicaoEstampa(cod) {
+    let p = catalogoEstampas[cod];
+    document.getElementById('cadCodigoEstampa').value = cod; document.getElementById('cadCodigoEstampa').disabled = true;
+    document.getElementById('cadNomeEstampa').value = p.nome; 
     
-    document.getElementById('tituloModalEstampa').innerText = 'EDITAR PRODUTO: ' + c;
+    document.getElementById('estP').value = p.estoque.P || 0; document.getElementById('estM').value = p.estoque.M || 0;
+    document.getElementById('estG').value = p.estoque.G || 0; document.getElementById('estGG').value = p.estoque.GG || 0;
+    document.getElementById('estXG').value = p.estoque.XG || 0; document.getElementById('estU').value = p.estoque.U || 0;
+    
+    document.getElementById('cadCusto').value = formatCurrency(p.custo); document.getElementById('cadPreco').value = formatCurrency(p.precoVenda);
+    document.getElementById('cadCategoriaEstampa').value = p.categoria || 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = cod;
+    
+    document.getElementById('tituloModalEstampa').innerText = 'EDITAR PRODUTO: ' + cod;
     document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR PRODUTO';
     abrirModalEstampa();
 }
@@ -195,19 +192,26 @@ function salvarNovaEstampa(e) {
     let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim();
     let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim();
     let cat = document.getElementById('cadCategoriaEstampa').value;
-    let est = parseInt(document.getElementById('cadEstoque').value) || 0;
+    
+    let grade = {
+        P: parseInt(document.getElementById('estP').value) || 0, M: parseInt(document.getElementById('estM').value) || 0,
+        G: parseInt(document.getElementById('estG').value) || 0, GG: parseInt(document.getElementById('estGG').value) || 0,
+        XG: parseInt(document.getElementById('estXG').value) || 0, U: parseInt(document.getElementById('estU').value) || 0
+    };
+    
     let custo = unmaskCurrency(document.getElementById('cadCusto').value);
     let preco = unmaskCurrency(document.getElementById('cadPreco').value);
     let docId = document.getElementById('editEstampaCodigoOriginal').value || cod;
 
-    db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, categoria: cat, estoque: est, custo: custo, precoVenda: preco }, { merge: true })
-    .then(() => { fecharModalEstampa(); showToast("Produto Salvo!"); });
+    db.collection("estampas").doc(docId).set({ 
+        codigo: docId, nome: nom, categoria: cat, estoqueGrade: grade, custo: custo, precoVenda: preco, apagado: false 
+    }, { merge: true }).then(() => { fecharModalEstampa(); showToast("Produto Salvo!"); });
 }
 
-function excluirEstampa(id) { if(confirm(`Apagar estampa?`)) db.collection("estampas").doc(id).delete(); }
+function excluirEstampa(id) { if(confirm(`Mandar estampa para a lixeira?`)) db.collection("estampas").doc(id).update({ apagado: true }); }
 
 // ==========================================
-// CRM: DADOS DE CLIENTES E EXCLUSÃO NA HORA
+// CRM: EXCLUSÃO REAL-TIME, TAGS E NOVO CLIENTE
 // ==========================================
 let clientesCadastrados = {};
 db.collection("clientes").onSnapshot(snap => {
@@ -230,11 +234,21 @@ function verificarClienteFiel() {
     } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
 }
 
+function abrirFichaNova() {
+    document.getElementById('fichaWhatsapp').value = ''; document.getElementById('fichaWhatsapp').disabled = false;
+    document.getElementById('fichaNome').value = ''; document.getElementById('fichaInsta').value = '';
+    document.getElementById('fichaDataNasc').value = ''; document.getElementById('fichaCEP').value = '';
+    document.getElementById('fichaEndereco').value = ''; document.getElementById('fichaComplemento').value = '';
+    document.getElementById('fichaObs').value = ''; document.getElementById('fichaTag').value = 'NORMAL';
+    document.getElementById('fichaQtdPedidos').innerText = '0'; document.getElementById('fichaTotalGasto').innerText = 'R$ 0,00';
+    document.getElementById('modalFichaCliente').style.display = 'flex';
+}
+
 function abrirFichaCliente(whatsapp) {
     let dadosCompra = mapaClientes[whatsapp] || { qtd: 0, totalGasto: 0 };
     let perfil = clientesCadastrados[whatsapp] || {};
 
-    document.getElementById('fichaWhatsapp').value = whatsapp;
+    document.getElementById('fichaWhatsapp').value = whatsapp; document.getElementById('fichaWhatsapp').disabled = true;
     document.getElementById('fichaNome').value = perfil.nome || dadosCompra.nome || '';
     document.getElementById('fichaInsta').value = perfil.insta || '';
     document.getElementById('fichaDataNasc').value = perfil.dataNasc || '';
@@ -242,6 +256,7 @@ function abrirFichaCliente(whatsapp) {
     document.getElementById('fichaEndereco').value = perfil.endereco || dadosCompra.endereco || '';
     document.getElementById('fichaComplemento').value = perfil.complemento || '';
     document.getElementById('fichaObs').value = perfil.obs || '';
+    document.getElementById('fichaTag').value = perfil.tag || 'NORMAL';
     
     document.getElementById('fichaQtdPedidos').innerText = dadosCompra.qtd;
     document.getElementById('fichaTotalGasto').innerText = formatCurrency(dadosCompra.totalGasto);
@@ -253,26 +268,30 @@ function fecharFichaCliente() { document.getElementById('modalFichaCliente').sty
 
 function salvarFichaCliente() {
     let w = document.getElementById('fichaWhatsapp').value;
+    if(!w || w.length < 10) { showToast("Digite um Whatsapp Válido", true); return; }
+    
     db.collection("clientes").doc(w).set({
         whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(),
         insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value,
         cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
-        complemento: document.getElementById('fichaComplemento').value,
-        obs: document.getElementById('fichaObs').value
-    }, {merge: true}).then(() => { showToast("Ficha Atualizada!"); fecharFichaCliente(); });
+        complemento: document.getElementById('fichaComplemento').value, tag: document.getElementById('fichaTag').value,
+        obs: document.getElementById('fichaObs').value, apagadoCRM: false
+    }, {merge: true}).then(() => { showToast("Ficha Salva!"); fecharFichaCliente(); });
 }
 
-// Novo sistema de exclusão na hora (Soft Delete)
 function excluirFichaCliente(whatsapp) {
-    if(confirm(`Tem certeza que deseja OCULTAR a ficha de ${whatsapp} do CRM?`)) {
-        // Marca o cliente como apagado para ele sumir instantaneamente da tela do CRM
-        db.collection("clientes").doc(whatsapp).set({ apagadoCRM: true }, { merge: true })
-        .then(() => { showToast("Ficha Removida do CRM!", true); });
+    if(confirm(`Ocultar a ficha de ${whatsapp} da tela de CRM?`)) {
+        // Salva na hora no Firebase
+        db.collection("clientes").doc(whatsapp).set({ apagadoCRM: true }, { merge: true }).then(() => {
+            showToast("Cliente removido do CRM!");
+            // Apaga da tela imediatamente
+            renderizarCRM(); 
+        });
     }
 }
 
 // ==========================================
-// LANÇAMENTO DE PEDIDO 
+// LANÇAMENTO DE PEDIDO (Baixa Estoque Específico)
 // ==========================================
 let todosPedidos = []; let carrinhoTemporario = []; 
 
@@ -280,13 +299,17 @@ function adicionarAoCarrinho() {
     const cod = document.getElementById('codigoEstampa').value.toUpperCase().trim();
     const nom = document.getElementById('nomeEstampa').value.toUpperCase().trim();
     const tip = document.getElementById('tipoPeca').value;
-    const tam = document.getElementById('tamanho').value;
+    const tam = document.getElementById('tamanho').value; // P, M, G...
     const cor = document.getElementById('cor').value;
     const val = unmaskCurrency(document.getElementById('valorUnitario').value);
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
 
     if(!cod || !nom) { showToast("Preencha código e nome!", true); return; }
-    if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Estoque baixo!", true); }
+    
+    if(catalogoEstampas[cod]) {
+        let estDisponivel = catalogoEstampas[cod].estoque[tam] || 0;
+        if(estDisponivel < qtd) showToast(`Aviso: Estoque baixo para o tamanho ${tam}!`, true); 
+    }
 
     const custoProduto = catalogoEstampas[cod] ? catalogoEstampas[cod].custo : 0;
 
@@ -311,7 +334,6 @@ function atualizarTelaCarrinho() {
     
     let freteCobrado = unmaskCurrency(document.getElementById('valorFrete').value);
     let desconto = unmaskCurrency(document.getElementById('valorDesconto').value);
-    
     document.getElementById('valorTotal').value = formatCurrency(somaProdutos + freteCobrado - desconto);
     document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 }
@@ -319,6 +341,7 @@ function atualizarTelaCarrinho() {
 async function salvarPedidoCompleto() {
     let nome = document.getElementById('nome').value.toUpperCase();
     let whatsapp = document.getElementById('whatsapp').value;
+    let origem = document.getElementById('origemVenda').value;
     let cep = document.getElementById('cep').value;
     let end = document.getElementById('endereco').value + ", " + document.getElementById('numeroEnd').value;
     let compl = document.getElementById('complementoEnd').value;
@@ -331,8 +354,7 @@ async function salvarPedidoCompleto() {
 
     if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
 
-    let somaCustoPecas = 0;
-    let somaVendaPecas = 0;
+    let somaCustoPecas = 0; let somaVendaPecas = 0;
     carrinhoTemporario.forEach(item => { 
         somaCustoPecas += (item.custoUnitario * item.quantidade);
         somaVendaPecas += (item.valorUnitario * item.quantidade);
@@ -347,21 +369,23 @@ async function salvarPedidoCompleto() {
 
     try {
         await db.collection("pedidos").add({
-            numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, cep: cep, endereco: end, complemento: compl,
+            numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, origemVenda: origem, cep: cep, endereco: end, complemento: compl,
             valorFrete: freteCobrado, valorFreteReal: freteReal, custoEmbalagem: embalagem, valorDesconto: desconto, valorTotal: totalCobrado, 
-            custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado,
+            custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado, apagado: false,
             metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value,
             itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Grava no CRM automaticamente. O apagadoCRM: delete() faz ele voltar pro CRM se ele tivesse sido apagado antes
+        // Grava no CRM automaticamente (Desfaz o apagadoCRM se ele tinha sido apagado)
         db.collection("clientes").doc(whatsapp).set({ 
-            whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, complemento: compl, apagadoCRM: firebase.firestore.FieldValue.delete() 
+            whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, complemento: compl, apagadoCRM: false 
         }, { merge: true });
         
+        // Baixa o estoque do tamanho específico da grade
         carrinhoTemporario.forEach(item => {
             if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
-                db.collection("estampas").doc(item.codigoEstampa).update({ estoque: firebase.firestore.FieldValue.increment(-item.quantidade) });
+                let campoTamanho = "estoqueGrade." + item.tamanho;
+                db.collection("estampas").doc(item.codigoEstampa).update({ [campoTamanho]: firebase.firestore.FieldValue.increment(-item.quantidade) });
             }
         });
 
@@ -375,9 +399,9 @@ async function salvarPedidoCompleto() {
 // ==========================================
 let chartInstancia = null; 
 
-db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
+db.collection("pedidos").where("apagado", "!=", true).orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
     todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
-    let met = { pedMes: 0, faturamento: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
+    let met = { pedMes: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
 
     let vendasPorMes = {}; 
 
@@ -399,8 +423,9 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
         
         if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
+        // CRM Stats
         if(p.whatsapp) {
-            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, complemento: p.complemento, ultimaCompra: d };
+            if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, ultimaCompra: d };
             mapaClientes[p.whatsapp].qtd++;
             if(d > mapaClientes[p.whatsapp].ultimaCompra) mapaClientes[p.whatsapp].ultimaCompra = d;
             if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
@@ -420,26 +445,22 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
 function renderizarGrafico(vendas) {
     const canvas = document.getElementById('graficoVendas');
     if(!canvas) return; 
-    
     let labels = Object.keys(vendas).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aA,mA-1)-new Date(aB,mB-1); }).slice(-6);
     let dados = labels.map(mes => vendas[mes]);
 
     const ctx = canvas.getContext('2d');
     if (chartInstancia) chartInstancia.destroy(); 
-
     chartInstancia = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ label: 'Faturamento Bruto (R$)', data: dados, backgroundColor: '#c1121f', borderWidth: 2, borderColor: '#111111' }] },
+        type: 'line',
+        data: { labels: labels, datasets: [{ label: 'Faturamento Bruto (R$)', data: dados, backgroundColor: '#2a9d8f', borderColor: '#111111', borderWidth: 2, tension: 0.1, fill: true }] },
         options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
     });
 }
 
 function renderizarBestSellers(freq) {
     let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,5); 
-    
     let elDash = document.getElementById('dashBestSellers');
     if(elDash) elDash.innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas';
-    
     let elCat = document.getElementById('dashBestSellersList');
     if(elCat) elCat.innerHTML = sortable.length ? sortable.map(x => `${x[0]} (${x[1]})`).join(' | ') : 'Sem histórico';
 }
@@ -452,27 +473,43 @@ function renderizarCRM() {
         combinados[w].nome = clientesCadastrados[w].nome || combinados[w].nome;
     });
 
-    // Filtra para remover os clientes que foram marcados como "apagados"
+    let mAtualNiver = String(new Date().getMonth() + 1).padStart(2, '0');
+
     let crmList = Object.entries(combinados)
         .filter(c => {
-            let dadosCadastrados = clientesCadastrados[c[0]];
-            return !dadosCadastrados || !dadosCadastrados.apagadoCRM;
+            let dc = clientesCadastrados[c[0]];
+            return !dc || dc.apagadoCRM !== true; // Bloqueia quem tá apagado
         })
         .sort((a,b) => b[1].totalGasto - a[1].totalGasto);
     
-    document.getElementById('listaClientesCRM').innerHTML = crmList.map(c => {
+    document.getElementById('listaClientesCRM').innerHTML = crmList.map((c, index) => {
         let zapLimpo = c[0].replace(/\D/g,'');
         let dataUc = c[1].ultimaCompra ? c[1].ultimaCompra.toLocaleDateString('pt-BR') : 'Sem dados';
         let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
-        let vipBadge = c[1].totalGasto >= 500 ? `<span class="badge-vip">VIP</span>` : '';
+        
+        let perfilCadastrado = clientesCadastrados[c[0]] || {};
+        let tagHtml = '';
+        if(perfilCadastrado.tag && perfilCadastrado.tag !== 'NORMAL') tagHtml = `<span class="badge-vip" style="background:#111; color:#fff;">${perfilCadastrado.tag}</span>`;
+        
+        // Pódio
+        let medalha = '';
+        if(index === 0) medalha = '🥇 '; else if(index === 1) medalha = '🥈 '; else if(index === 2) medalha = '🥉 ';
+
+        // Aniversário
+        let badgeNiver = '';
+        if(perfilCadastrado.dataNasc && perfilCadastrado.dataNasc.length === 5) {
+            let mesNasc = perfilCadastrado.dataNasc.split('/')[1];
+            if(mesNasc === mAtualNiver) badgeNiver = `<span class="tag-niver">🎂 NIVER MÊS</span>`;
+        }
         
         let diasSumido = c[1].ultimaCompra ? Math.floor((new Date() - c[1].ultimaCompra) / (1000 * 60 * 60 * 24)) : 0;
         let classeSumido = diasSumido > 90 ? 'sumido' : '';
-        let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido} dias)</span>` : '';
+        let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido}d)</span>` : '';
         
         return `
         <div class="crm-card ${classeSumido}">
-            <h3 class="crm-card-title">${c[1].nome} <div>${vipBadge} ${badgeSumido}</div></h3>
+            <h3 class="crm-card-title">${medalha}${c[1].nome}</h3>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px;">${tagHtml} ${badgeNiver} ${badgeSumido}</div>
             <div class="crm-card-subtitle">${c[0]}</div>
             
             <div class="crm-stats">
@@ -508,7 +545,7 @@ function renderizarKanban() {
             <div class="pedido-header">
                 <div class="header-linha-1">
                     <div class="id-container">
-                        <input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()" title="Selecionar pedido">
+                        <input type="checkbox" class="checkbox-bulk" value="${p.id}" onchange="checkBulk()">
                         <span class="pedido-id">#${p.numeroPedido}</span>
                     </div>
                     <span class="pedido-data">${p.dataFormatada}</span>
@@ -523,7 +560,7 @@ function renderizarKanban() {
             </div>
             <div class="pedido-footer">
                 <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️ EDITAR</button>
-                <button onclick="excluirPedido('${p.id}')" title="Excluir" style="color:var(--red); flex: 0.3;">❌</button>
+                <button onclick="excluirPedido('${p.id}')" title="Lixeira" style="color:var(--red); flex: 0.3;">❌</button>
             </div>
         </div>`;
         cols[p.statusAtualizado] += cardHtml;
@@ -542,9 +579,27 @@ function filtrarKanban() {
 
 function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
 function allowDrop(ev) { ev.preventDefault(); }
-function drop(ev, novoStatus) { ev.preventDefault(); db.collection("pedidos").doc(ev.dataTransfer.getData("text")).update({ status: novoStatus }); showToast("MOVIDO COM SUCESSO!"); }
+
+// Automação de WhatsApp ao arrastar pro Enviado
+function drop(ev, novoStatus) { 
+    ev.preventDefault(); 
+    let pedidoId = ev.dataTransfer.getData("text");
+    let pedido = todosPedidos.find(x => x.id === pedidoId);
+    
+    db.collection("pedidos").doc(pedidoId).update({ status: novoStatus }).then(() => {
+        showToast("MOVIDO COM SUCESSO!");
+        if(novoStatus === 'PEDIDO ENVIADO' && pedido) {
+            if(confirm(`Pedido Enviado! Deseja mandar o aviso automático de envio no WhatsApp para ${pedido.nome.split(' ')[0]}?`)) {
+                let zap = pedido.whatsapp.replace(/\D/g, '');
+                let msg = `Fala ${pedido.nome.split(' ')[0]}! O seu pedido da Waller Clothing acabou de ser enviado! 📦🚀 Logo logo chega aí.`;
+                window.open(`https://wa.me/55${zap}?text=${encodeURIComponent(msg)}`, '_blank');
+            }
+        }
+    });
+}
+
 function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
-function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
+function excluirPedido(id) { if (confirm("Mandar pedido para a lixeira?")) db.collection("pedidos").doc(id).update({apagado: true}); }
 
 let selecionados = [];
 function checkBulk() {
@@ -556,7 +611,7 @@ function limparBulk() { document.querySelectorAll('.checkbox-bulk').forEach(cb =
 function executarBulkUpdate() {
     let status = document.getElementById('bulk-status-select').value; let batch = db.batch();
     selecionados.forEach(id => { batch.update(db.collection("pedidos").doc(id), { status: status }); });
-    batch.commit().then(() => { showToast(`${selecionados.length} PEDIDOS ATUALIZADOS!`); limparBulk(); });
+    batch.commit().then(() => { showToast(`${selecionados.length} ATUALIZADOS!`); limparBulk(); });
 }
 
 function atualizarSelectFaturamento(mesesUnicos) {
@@ -598,53 +653,30 @@ function abrirModalEdicao(id) {
     let container = document.getElementById('editItensContainer'); container.innerHTML = '';
     p.itens.forEach((item) => { container.innerHTML += gerarHtmlLinhaEdicao(item); });
     document.getElementById('modalEdicao').style.display = 'flex';
-    recalcularSomaEdicao(); 
 }
 
 function gerarHtmlLinhaEdicao(item) {
     const t = item.tipoPeca; const tam = item.tamanho; const c = item.cor;
     return `
-    <div class="item-edit-wrapper" style="border: 2px dashed var(--border-color); padding: 15px; margin-bottom: 15px; background: var(--gray); position: relative;">
-        <button type="button" class="btn-remove-item" style="position: absolute; top: 10px; right: 10px;" onclick="this.closest('.item-edit-wrapper').remove(); recalcularSomaEdicao();">X REMOVER</button>
-        <div class="form-grid" style="margin-bottom: 10px; padding-right: 100px;">
-            <input type="text" class="edit-cod" value="${item.codigoEstampa}" placeholder="CÓDIGO" style="flex:0.5;">
-            <input type="text" class="edit-nom" value="${item.nomeEstampa}" placeholder="ESTAMPA" style="flex:1.5;">
-        </div>
-        <div class="form-grid">
-            <select class="edit-tip"><option value="OVERSIZED" ${t==='OVERSIZED'?'selected':''}>OVERSIZED</option><option value="MOLETOM" ${t==='MOLETOM'?'selected':''}>MOLETOM</option><option value="REGATA" ${t==='REGATA'?'selected':''}>REGATA</option><option value="CAMISETA TRADICIONAL" ${t==='CAMISETA TRADICIONAL'?'selected':''}>CAM. TRADICIONAL</option></select>
-            <select class="edit-tam"><option value="P" ${tam==='P'?'selected':''}>P</option><option value="M" ${tam==='M'?'selected':''}>M</option><option value="G" ${tam==='G'?'selected':''}>G</option><option value="GG" ${tam==='GG'?'selected':''}>GG</option><option value="XG" ${tam==='XG'?'selected':''}>XG</option></select>
-            <select class="edit-cor"><option value="PRETA" ${c==='PRETA'?'selected':''}>PRETA</option><option value="BRANCA" ${c==='BRANCA'?'selected':''}>BRANCA</option><option value="MESCLA" ${c==='MESCLA'?'selected':''}>MESCLA</option><option value="OFF-WHITE" ${c==='OFF-WHITE'?'selected':''}>OFF-WHITE</option></select>
-            <input type="text" class="edit-valor moeda" value="${formatCurrency(item.valorUnitario)}" placeholder="R$ UN" style="flex: 0.5;">
-            <input type="number" class="edit-qtd" value="${item.quantidade}" placeholder="QTD" min="1" style="flex: 0.3;">
-        </div>
+    <div style="border: 2px dashed var(--border-color); padding: 10px; margin-bottom: 10px; background: var(--gray);">
+        <div style="font-weight:900;">${item.quantidade}x ${t} [${item.codigoEstampa}]</div>
+        <div style="font-size:0.8rem;">${item.nomeEstampa} - Tam: ${tam} - Cor: ${c} - Preço: ${formatCurrency(item.valorUnitario)}</div>
     </div>`;
-}
-
-function recalcularSomaEdicao() {
-    let soma = 0; document.querySelectorAll('.item-edit-wrapper').forEach(row => { soma += (unmaskCurrency(row.querySelector('.edit-valor').value) * (parseInt(row.querySelector('.edit-qtd').value) || 1)); });
-    document.getElementById('editValorTotal').value = formatCurrency(soma);
 }
 
 function fecharModalEdicao() { document.getElementById('modalEdicao').style.display = 'none'; }
 
 function salvarAlteracoesEdicao() {
-    const id = document.getElementById('editId').value; let itens = [];
-    document.querySelectorAll('.item-edit-wrapper').forEach(row => {
-        itens.push({
-            codigoEstampa: row.querySelector('.edit-cod').value.toUpperCase().trim(), nomeEstampa: row.querySelector('.edit-nom').value.toUpperCase().trim(),
-            tipoPeca: row.querySelector('.edit-tip').value, tamanho: row.querySelector('.edit-tam').value, cor: row.querySelector('.edit-cor').value,
-            valorUnitario: unmaskCurrency(row.querySelector('.edit-valor').value), quantidade: parseInt(row.querySelector('.edit-qtd').value) || 1
-        });
-    });
-    if(itens.length === 0) { showToast("Precisa de pelo menos 1 peça.", true); return; }
+    const id = document.getElementById('editId').value;
     db.collection("pedidos").doc(id).update({
-        nome: document.getElementById('editNome').value.toUpperCase(), whatsapp: document.getElementById('editWhatsapp').value,
-        valorTotal: unmaskCurrency(document.getElementById('editValorTotal').value), metodoPagamento: document.getElementById('editMetodoPagamento').value, itens: itens 
+        nome: document.getElementById('editNome').value.toUpperCase(), 
+        whatsapp: document.getElementById('editWhatsapp').value,
+        metodoPagamento: document.getElementById('editMetodoPagamento').value
     }).then(() => { fecharModalEdicao(); showToast("Pedido Editado!"); });
 }
 
 // ==========================================
-// PDFS, ETIQUETAS E RELATÓRIO DE LUCRO
+// PDFS E RELATÓRIO DE LUCRO LÍQUIDO MENSAL
 // ==========================================
 function abrirModalPDF() { document.getElementById('modalPDF').style.display = 'flex'; }
 function fecharModalPDF() { document.getElementById('modalPDF').style.display = 'none'; }
@@ -699,29 +731,15 @@ function gerarEtiquetasEnvio() {
     doc.save(`waller_etiquetas.pdf`); fecharModalPDF();
 }
 
-function gerarPDFFaturamento() {
-    let mes = document.getElementById('selectFaturamentoMes').value; if(mes==='ALL') { showToast("Selecione um mês!", true); return;}
-    let pagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mes);
-    if(!pagos.length) { showToast("Sem vendas!", true); return; }
-    
-    const { jsPDF } = window.jspdf; const doc = new jsPDF();
-    desenharCabecalhoPDF(doc, `RELATÓRIO FINANCEIRO: ${mes}`);
-    
-    let soma = 0; let rows = pagos.map(p => { soma+=parseFloat(p.valorTotal); return [`#${p.numeroPedido}`, p.dataFormatada, p.nome, p.metodoPagamento, formatCurrency(p.valorTotal)]; });
-    doc.autoTable({ startY: 35, head: [['Pedido', 'Data', 'Cliente', 'Pgto', 'Valor']], body: rows, foot: [[ { content: 'TOTAL:', colSpan: 4, styles: { halign: 'right'} }, { content: formatCurrency(soma), styles: { halign: 'right', fillColor: [6,214,160], textColor:[0,0,0] } } ]], theme: 'grid', headStyles: { fillColor: [0,0,0] } });
-    doc.save(`waller_faturamento_${mes.replace('/','-')}.pdf`); fecharModalPDF();
-}
-
-// NOVO: RELATÓRIO PDF DE LUCRO DETALHADO
 function gerarPDFLucroLiquido() {
     let mes = document.getElementById('selectFaturamentoMes').value; 
-    if(mes === 'ALL') { showToast("Selecione um mês específico na tela de Kanban primeiro!", true); return; }
+    if(mes === 'ALL') { showToast("Selecione o mês na tela de Kanban primeiro!", true); return; }
     
     let pagos = todosPedidos.filter(p => p.statusPagamento === 'PAGO' && p.dataMesAno === mes);
-    if(!pagos.length) { showToast("Sem vendas pagas neste mês!", true); return; }
+    if(!pagos.length) { showToast("Sem vendas neste mês!", true); return; }
 
     const { jsPDF } = window.jspdf; const doc = new jsPDF();
-    desenharCabecalhoPDF(doc, `RELATÓRIO DE LUCRO LÍQUIDO: ${mes}`);
+    desenharCabecalhoPDF(doc, `RELATÓRIO MENSAL FINANCEIRO E DE LUCRO: ${mes}`);
 
     let qtdVendas = pagos.length;
     let somaFaturamento = 0; let somaCustoPecas = 0; let somaEmbalagem = 0; let somaDescontos = 0;
@@ -752,19 +770,16 @@ function gerarPDFLucroLiquido() {
     doc.text(`(-) Custo de Embalagens: ${formatCurrency(somaEmbalagem)}`, 14, 69);
     doc.text(`(-) Descontos Concedidos: ${formatCurrency(somaDescontos)}`, 14, 76);
     
-    doc.text(`Frete Recebido do Cliente: ${formatCurrency(somaFreteCobrado)}`, 110, 55);
-    doc.text(`Frete Pago na Transportadora: ${formatCurrency(somaFreteReal)}`, 110, 62);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Balanço do Frete: ${formatCurrency(balancoFrete)}`, 110, 69);
-    doc.setFont("helvetica", "normal");
+    doc.text(`Frete Recebido (Cliente): ${formatCurrency(somaFreteCobrado)}`, 110, 55);
+    doc.text(`Frete Pago (Correios/Transp): ${formatCurrency(somaFreteReal)}`, 110, 62);
+    doc.setFont("helvetica", "bold"); doc.text(`Balanço Logístico: ${formatCurrency(balancoFrete)}`, 110, 69); doc.setFont("helvetica", "normal");
 
     // CAIXA DE LUCRO
     doc.setFillColor(6, 214, 160); doc.rect(14, 82, 180, 10, 'F');
     doc.setFont("helvetica", "bold"); doc.setTextColor(0, 0, 0);
     doc.text(`LUCRO LÍQUIDO FINAL DO MÊS: ${formatCurrency(somaLucroLiquido)}`, 18, 89);
 
-    doc.setTextColor(193, 18, 31);
-    doc.text("2. DETALHAMENTO POR PEDIDO", 14, 105);
+    doc.setTextColor(193, 18, 31); doc.text("2. DETALHAMENTO DE LUCRO POR PEDIDO", 14, 105);
 
     let rows = pagos.map(p => [
         `#${p.numeroPedido}`, p.nome.split(' ')[0],
@@ -779,5 +794,5 @@ function gerarPDFLucroLiquido() {
         theme: 'grid', headStyles: { fillColor: [17,17,17] }, styles: { fontSize: 8 } 
     });
 
-    doc.save(`waller_lucro_detalhado_${mes.replace('/','-')}.pdf`); fecharModalPDF();
+    doc.save(`waller_lucro_${mes.replace('/','-')}.pdf`); fecharModalPDF();
 }
