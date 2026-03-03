@@ -108,24 +108,26 @@ const db = firebase.firestore();
 // CATÁLOGO: ESTOQUE POR GRADE DE TAMANHOS
 // ==========================================
 let catalogoEstampas = {}; 
-db.collection("estampas").where("apagado", "!=", true).onSnapshot((querySnapshot) => {
+db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
     document.getElementById('listaEstampas').innerHTML = '';
     let datalist = document.getElementById('estampas-list'); datalist.innerHTML = '';
     catalogoEstampas = {}; 
     
     querySnapshot.forEach((doc) => {
         let est = doc.data(); 
+        
+        // Bloqueio de segurança da Lixeira no JS
+        if(est.apagado === true) return; 
+
         let cat = est.categoria || 'CAMISETA';
         let custo = est.custo || 0;
         let preco = est.precoVenda || 0;
         
-        // Garante que o estoque é um objeto com as grades
         let e = est.estoqueGrade || { P:0, M:0, G:0, GG:0, XG:0, U:0 };
         
         catalogoEstampas[est.codigo] = { nome: est.nome, estoque: e, categoria: cat, custo: custo, precoVenda: preco };
         datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
         
-        // Soma total para o Badge Sold Out
         let totalEstoque = parseInt(e.P)+parseInt(e.M)+parseInt(e.G)+parseInt(e.GG)+parseInt(e.XG)+parseInt(e.U);
         let badgeSoldOut = totalEstoque <= 0 ? `<br><span class="badge-soldout" style="margin: 5px 0 0 0;">SOLD OUT</span>` : '';
         
@@ -211,7 +213,7 @@ function salvarNovaEstampa(e) {
 function excluirEstampa(id) { if(confirm(`Mandar estampa para a lixeira?`)) db.collection("estampas").doc(id).update({ apagado: true }); }
 
 // ==========================================
-// CRM: EXCLUSÃO REAL-TIME, TAGS E NOVO CLIENTE
+// CRM: EXCLUSÃO REAL-TIME E NOVO CLIENTE
 // ==========================================
 let clientesCadastrados = {};
 db.collection("clientes").onSnapshot(snap => {
@@ -281,17 +283,15 @@ function salvarFichaCliente() {
 
 function excluirFichaCliente(whatsapp) {
     if(confirm(`Ocultar a ficha de ${whatsapp} da tela de CRM?`)) {
-        // Salva na hora no Firebase
         db.collection("clientes").doc(whatsapp).set({ apagadoCRM: true }, { merge: true }).then(() => {
             showToast("Cliente removido do CRM!");
-            // Apaga da tela imediatamente
             renderizarCRM(); 
         });
     }
 }
 
 // ==========================================
-// LANÇAMENTO DE PEDIDO (Baixa Estoque Específico)
+// LANÇAMENTO DE PEDIDO
 // ==========================================
 let todosPedidos = []; let carrinhoTemporario = []; 
 
@@ -376,12 +376,10 @@ async function salvarPedidoCompleto() {
             itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Grava no CRM automaticamente (Desfaz o apagadoCRM se ele tinha sido apagado)
         db.collection("clientes").doc(whatsapp).set({ 
             whatsapp: whatsapp, nome: nome, cep: cep, endereco: end, complemento: compl, apagadoCRM: false 
         }, { merge: true });
         
-        // Baixa o estoque do tamanho específico da grade
         carrinhoTemporario.forEach(item => {
             if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) {
                 let campoTamanho = "estoqueGrade." + item.tamanho;
@@ -399,14 +397,19 @@ async function salvarPedidoCompleto() {
 // ==========================================
 let chartInstancia = null; 
 
-db.collection("pedidos").where("apagado", "!=", true).orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
+db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
     todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
     let met = { pedMes: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
 
     let vendasPorMes = {}; 
 
     querySnapshot.forEach((doc) => {
-        let p = doc.data(); p.id = doc.id; 
+        let p = doc.data(); 
+        
+        // Proteção da Lixeira no JS
+        if(p.apagado === true) return;
+
+        p.id = doc.id; 
         p.statusAtualizado = (p.status || 'PEDIDO FEITO').toUpperCase();
         if(p.statusAtualizado === 'PRONTA / ESTAMPADA') p.statusAtualizado = 'ESTAMPA PRONTA';
         
@@ -478,7 +481,7 @@ function renderizarCRM() {
     let crmList = Object.entries(combinados)
         .filter(c => {
             let dc = clientesCadastrados[c[0]];
-            return !dc || dc.apagadoCRM !== true; // Bloqueia quem tá apagado
+            return !dc || dc.apagadoCRM !== true; 
         })
         .sort((a,b) => b[1].totalGasto - a[1].totalGasto);
     
@@ -491,11 +494,9 @@ function renderizarCRM() {
         let tagHtml = '';
         if(perfilCadastrado.tag && perfilCadastrado.tag !== 'NORMAL') tagHtml = `<span class="badge-vip" style="background:#111; color:#fff;">${perfilCadastrado.tag}</span>`;
         
-        // Pódio
         let medalha = '';
         if(index === 0) medalha = '🥇 '; else if(index === 1) medalha = '🥈 '; else if(index === 2) medalha = '🥉 ';
 
-        // Aniversário
         let badgeNiver = '';
         if(perfilCadastrado.dataNasc && perfilCadastrado.dataNasc.length === 5) {
             let mesNasc = perfilCadastrado.dataNasc.split('/')[1];
@@ -580,7 +581,6 @@ function filtrarKanban() {
 function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
 function allowDrop(ev) { ev.preventDefault(); }
 
-// Automação de WhatsApp ao arrastar pro Enviado
 function drop(ev, novoStatus) { 
     ev.preventDefault(); 
     let pedidoId = ev.dataTransfer.getData("text");
@@ -589,7 +589,7 @@ function drop(ev, novoStatus) {
     db.collection("pedidos").doc(pedidoId).update({ status: novoStatus }).then(() => {
         showToast("MOVIDO COM SUCESSO!");
         if(novoStatus === 'PEDIDO ENVIADO' && pedido) {
-            if(confirm(`Pedido Enviado! Deseja mandar o aviso automático de envio no WhatsApp para ${pedido.nome.split(' ')[0]}?`)) {
+            if(confirm(`Mandar aviso automático de envio no WhatsApp para ${pedido.nome.split(' ')[0]}?`)) {
                 let zap = pedido.whatsapp.replace(/\D/g, '');
                 let msg = `Fala ${pedido.nome.split(' ')[0]}! O seu pedido da Waller Clothing acabou de ser enviado! 📦🚀 Logo logo chega aí.`;
                 window.open(`https://wa.me/55${zap}?text=${encodeURIComponent(msg)}`, '_blank');
