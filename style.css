@@ -108,14 +108,15 @@ button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointe
 .pgto-pendente { background-color: var(--white); color: var(--red); }
 .pgto-pago { background-color: var(--black); color: var(--green); }
 
-/* GRID DE CRM CLIENTES (NOVO) */
+/* GRID DE CRM CLIENTES */
 .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-.crm-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; gap: 10px; position: relative; }
-.crm-card-title { font-size: 1.2rem; font-weight: 900; color: var(--black); margin: 0; text-transform: uppercase; display: flex; justify-content: space-between; }
+.crm-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; gap: 10px; position: relative; transition: 0.2s; }
+.crm-card.sumido { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); } /* Alerta de Cliente Sumido */
+.crm-card-title { font-size: 1.2rem; font-weight: 900; color: var(--black); margin: 0; text-transform: uppercase; display: flex; justify-content: space-between; align-items: flex-start; }
 .crm-card-subtitle { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; }
 .crm-stats { display: flex; justify-content: space-between; background: var(--gray); padding: 10px; border: 1px dashed var(--border-color); font-size: 0.85rem; font-weight: 800; }
 .crm-actions { display: flex; gap: 10px; margin-top: 10px; }
-.crm-actions button, .crm-actions a { flex: 1; font-size: 0.8rem; padding: 0.6rem; text-align: center; text-decoration: none; border: var(--border-thick); font-weight: 900; background: var(--gray); color: var(--black); transition: 0.1s; }
+.crm-actions button, .crm-actions a { flex: 1; font-size: 0.8rem; padding: 0.6rem; text-align: center; text-decoration: none; border: var(--border-thick); font-weight: 900; background: var(--gray); color: var(--black); transition: 0.1s; cursor: pointer; }
 .crm-actions button:hover, .crm-actions a:hover { background: var(--black); color: var(--white); transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--red); }
 
 /* TABELAS E SELOS */
