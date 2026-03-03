@@ -14,7 +14,8 @@ if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 // ================= OFFLINE PERSISTENCE =================
 firebase.firestore().enablePersistence()
   .catch((err) => {
-      console.log('Aviso Offline:', err.code);
+      if (err.code == 'failed-precondition') console.log('Múltiplas abas abertas.');
+      else if (err.code == 'unimplemented') console.log('Browser não suporta offline.');
   });
 const db = firebase.firestore();
 
@@ -27,36 +28,21 @@ let pedidoEmEdicaoId = null; let pedidosSelecionados = [];
 // ================= FUNÇÕES DE BLINDAGEM E UX =================
 function upper(v) { return String(v || '').trim().toUpperCase(); }
 function onlyDigits(v) { return String(v || '').replace(/\D/g, ''); }
-
-function formatCurrency(num) { 
-    try {
-        let str = String(num || 0).replace(/[^\d.,-]/g, '').replace(',', '.');
-        let value = parseFloat(str);
-        if (isNaN(value)) value = 0;
-        return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`;
-    } catch(e) { return 'R$ 0,00'; }
-}
-
-function unmaskCurrency(value) { 
-    if (!value) return 0; 
-    let parsed = parseFloat(String(value).replace(/[^\d,-]/g, '').replace(',', '.'));
-    return isNaN(parsed) ? 0 : parsed;
-}
+function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
+function unmaskCurrency(value) { if (!value) return 0; return parseFloat(String(value).replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
 
 // Proteção contra dados quebrados no banco
 function escapeStr(v) { return String(v || '').replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 function safeItens(itens) { 
-    if (!itens || !Array.isArray(itens)) return []; 
-    return itens.filter(i => i !== null && typeof i === 'object'); 
+    if (!Array.isArray(itens)) return []; 
+    return itens.filter(i => i && typeof i === 'object'); 
 }
 
 function parseFirestoreDate(fbDate) {
     if (!fbDate) return null;
-    try {
-        if (fbDate.toDate && typeof fbDate.toDate === 'function') return fbDate.toDate();
-        if (fbDate.seconds) return new Date(fbDate.seconds * 1000);
-        const d = new Date(fbDate); return isNaN(d.getTime()) ? null : d;
-    } catch(e) { return null; }
+    if (fbDate.toDate && typeof fbDate.toDate === 'function') return fbDate.toDate();
+    if (fbDate.seconds) return new Date(fbDate.seconds * 1000);
+    const d = new Date(fbDate); return isNaN(d.getTime()) ? null : d;
 }
 
 function formatDate(dateValue) { 
@@ -101,6 +87,12 @@ function setupAutoFields(idWhats, idInsta, idCpf, idCep, idCidade, idEstado, idE
         }
     });
 }
+
+// ATALHOS GLOBAIS
+document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); el('nome').focus(); }
+    if (e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); mudarAba('producao'); el('inputBusca').focus(); }
+});
 
 // SOM MECÂNICO
 function playMechSound() {
@@ -232,7 +224,7 @@ function atualizarTelaCarrinho() {
         carrinhoTemporario.forEach((p, index) => {
             if(!p) return;
             somaItens += p.quantidade * p.valorUnitario;
-            el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div></div>`;
+            el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${escapeStr(p.tipoPeca)} (${escapeStr(p.tamanho)})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${escapeStr(p.cor)} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div></div>`;
         });
         
         const frete = unmaskCurrency(el('valorFrete')?el('valorFrete').value:0);
@@ -503,7 +495,7 @@ function renderPedidosGrid(lista) {
 
         const iWh = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>`;
         const iOl = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/></svg>`;
-        const iLx = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>`;
+        const iLx = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>`;
         const iAv = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/></svg>`;
         const iFb = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M5 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>`;
         const iBx = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0a.5.5 0 0 1 .447.224l4 8a.5.5 0 0 1-.447.67L8 1.118 4.003 8.894a.5.5 0 1 1-.894-.448l4-8A.5.5 0 0 1 8 0zM1 11a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3zm1.5.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-11z"/></svg>`;
@@ -526,7 +518,7 @@ function renderPedidosGrid(lista) {
                     </div>
                     <p><strong><span class="copy-text" title="Copiar Nome" onclick="copiarTexto('${escapeStr(pedido.nome)}')">${escapeStr(pedido.nome) || 'SEM NOME'}</span></strong></p>
                     <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
-                    <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || 'N/A'} (${pedido.statusPagamento || 'N/A'})</p>
+                    <p><strong>Pagamento:</strong> ${escapeStr(pedido.metodoPagamento) || 'N/A'} (${escapeStr(pedido.statusPagamento) || 'N/A'})</p>
                     <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
                     
                     ${grupo.status === 'AGUARDANDO PAGAMENTO' ? `<button class="btn-cobrar" onclick="enviarCobranca('${pedido.id}')">💸 Cobrar Pix</button>` : ''}
@@ -612,34 +604,38 @@ function extrairClientesDosPedidos() {
         const mapa = new Map();
         clientesPurosCache.forEach((c) => { 
             const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`; 
-            mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] }); 
+            if(chave) mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] }); 
         });
 
         pedidosCache.forEach((pedido) => {
             const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
             if (!chave) return;
             const base = mapa.get(chave) || { nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), complemento: upper(pedido.complemento), referencia: upper(pedido.referencia), aniversario: '', notasPrivadas: '', blacklist: false, totalPedidos: 0, totalGasto: 0, historicoPedidos: [], aniversarioWaller: false };
-            base.totalPedidos += 1; base.totalGasto += Number(pedido.valorTotal) || 0; base.historicoPedidos.push(pedido);
+            base.totalPedidos += 1; base.totalGasto += Number(pedido.valorTotal) || 0; 
+            if(!base.historicoPedidos) base.historicoPedidos = [];
+            base.historicoPedidos.push(pedido);
             if (!base.cep) base.cep = upper(pedido.cep); if (!base.endereco) base.endereco = upper(pedido.endereco); if (!base.cidade) base.cidade = upper(pedido.cidade);
             mapa.set(chave, base);
         });
 
         Array.from(mapa.values()).forEach(base => {
             base.aniversarioWaller = false;
-            if (base.historicoPedidos.length > 0) {
-                base.historicoPedidos.sort((a, b) => {
-                    const da = parseFirestoreDate(a.dataCriacao) || new Date(0);
-                    const db = parseFirestoreDate(b.dataCriacao) || new Date(0);
-                    return da.getTime() - db.getTime();
-                });
-                const dataPrim = parseFirestoreDate(base.historicoPedidos[0].dataCriacao);
-                if (dataPrim) {
-                    const hoje = new Date();
-                    const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
-                    const diffMonths = hoje.getMonth() - dataPrim.getMonth();
-                    const diffDays = Math.abs(hoje.getDate() - dataPrim.getDate());
-                    if (diffYears > 0 && diffMonths === 0 && diffDays <= 7) { base.aniversarioWaller = true; }
-                }
+            if (base.historicoPedidos && base.historicoPedidos.length > 0) {
+                try {
+                    base.historicoPedidos.sort((a, b) => {
+                        const da = parseFirestoreDate(a.dataCriacao) || new Date(0);
+                        const db = parseFirestoreDate(b.dataCriacao) || new Date(0);
+                        return da.getTime() - db.getTime();
+                    });
+                    const dataPrim = parseFirestoreDate(base.historicoPedidos[0].dataCriacao);
+                    if (dataPrim) {
+                        const hoje = new Date();
+                        const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
+                        const diffMonths = hoje.getMonth() - dataPrim.getMonth();
+                        const diffDays = Math.abs(hoje.getDate() - dataPrim.getDate());
+                        if (diffYears > 0 && diffMonths === 0 && diffDays <= 7) { base.aniversarioWaller = true; }
+                    }
+                } catch(e){}
             }
         });
 
@@ -648,7 +644,10 @@ function extrairClientesDosPedidos() {
             if(aNiv !== bNiv) return aNiv - bNiv; 
             return String(a.nome || '').localeCompare(String(b.nome || ''));
         });
-    } catch(e) { console.error("Erro extrairClientes:", e); }
+    } catch(e) { 
+        console.error("Erro extrairClientes:", e); 
+        clientesCache = [...clientesPurosCache];
+    }
 }
 
 function getSeloVip(total) {
@@ -661,7 +660,7 @@ function getSeloVip(total) {
 function abrirVisualizacaoCliente(cliente) {
     try {
         const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
-        const titulo = el('fichaClienteTitulo'); if(titulo) titulo.textContent = `Ficha Completa: ${cliente.nome || 'Cliente'}`;
+        const titulo = el('fichaClienteTitulo'); if(titulo) titulo.textContent = `Ficha Completa: ${escapeStr(cliente.nome) || 'Cliente'}`;
         const conteudo = el('fichaClienteConteudo');
         if(conteudo) {
             conteudo.innerHTML = `
@@ -683,7 +682,7 @@ function abrirVisualizacaoCliente(cliente) {
                     <button class="btn-primary" onclick="editarCliente('${idRef}'); fecharFichaCliente();">EDITAR DADOS</button>
                 </div>
                 <h3 class="form-section-title" style="margin-top:1.5rem;">Histórico de pedidos</h3>
-                <div>${(cliente.historicoPedidos || []).map((p) => `<div class="item-carrinho"><div>#${p.numeroPedido} • ${formatDate(p.dataCriacao)} • ${p.status}</div><div>${formatCurrency(p.valorTotal || 0)}</div></div>`).join('') || 'Sem histórico'}</div>`;
+                <div>${(cliente.historicoPedidos || []).map((p) => `<div class="item-carrinho"><div>#${p.numeroPedido} • ${formatDate(p.dataCriacao)} • ${escapeStr(p.status)}</div><div>${formatCurrency(p.valorTotal || 0)}</div></div>`).join('') || 'Sem histórico'}</div>`;
         }
         const modal = el('modalFichaCliente'); if(modal) modal.style.display = 'flex';
     } catch(e) { console.error("Erro render Ficha:", e); }
@@ -741,7 +740,7 @@ function renderClientes(lista = clientesCache) {
                 <div class="pedido-actions"><button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha Completa</button></div>
             </article>`;
         });
-    } catch(e) { console.error("Erro Clientes:", e); }
+    } catch(e) { console.error("Erro render Clientes:", e); }
 }
 
 function filtrarClientes() { 
@@ -945,12 +944,12 @@ function gerarEtiquetasEmMassa() {
         doc.setFontSize(10); doc.setFont("helvetica", "normal"); 
         doc.text("DESTINATÁRIO:", offsetX + 10, offsetY + 30);
         doc.setFont("helvetica", "bold"); doc.setFontSize(12); 
-        doc.text(p.nome || 'Cliente', offsetX + 10, offsetY + 37);
+        doc.text(escapeStr(p.nome) || 'Cliente', offsetX + 10, offsetY + 37);
         doc.setFont("helvetica", "normal"); doc.setFontSize(10); 
-        doc.text(`${p.endereco || ''} ${p.complemento ? '- '+p.complemento : ''}`, offsetX + 10, offsetY + 45, {maxWidth: 85});
-        doc.text(`${p.cidade || ''} / ${p.estado || ''}`, offsetX + 10, offsetY + 55); 
+        doc.text(`${escapeStr(p.endereco) || ''} ${p.complemento ? '- '+escapeStr(p.complemento) : ''}`, offsetX + 10, offsetY + 45, {maxWidth: 85});
+        doc.text(`${escapeStr(p.cidade) || ''} / ${escapeStr(p.estado) || ''}`, offsetX + 10, offsetY + 55); 
         doc.setFont("helvetica", "bold"); doc.setFontSize(12); 
-        doc.text(`CEP: ${p.cep || '00000-000'}`, offsetX + 10, offsetY + 65);
+        doc.text(`CEP: ${escapeStr(p.cep) || '00000-000'}`, offsetX + 10, offsetY + 65);
         doc.setLineDash([2, 2], 0); doc.line(offsetX + 10, offsetY + 75, offsetX + 95, offsetY + 75); 
         doc.setFont("helvetica", "normal"); doc.setFontSize(8); 
         doc.text(`Pedido #${p.numeroPedido} - ${getItensResumo(p.itens)}`, offsetX + 10, offsetY + 85, {maxWidth: 85});
@@ -976,7 +975,7 @@ function gerarStickersEmMassa() {
     pedidosSelecionados.forEach((id) => {
         const p = pedidosCache.find(x => x.id === id); if(!p) return;
         const nome = primeiroNome(p.nome).toUpperCase();
-        let insta = p.instagram ? p.instagram.trim() : '';
+        let insta = p.instagram ? escapeStr(p.instagram).trim() : '';
         if(insta && !insta.startsWith('@')) insta = '@' + insta;
 
         doc.setFont("helvetica", "bold"); doc.text(nome, x, y);
@@ -993,6 +992,7 @@ function gerarStickersEmMassa() {
 
 // ================= BLINDAGEM DOS LISTENERS DO FIREBASE =================
 function iniciarListeners() {
+    // Seta data atual no Dashboard
     const now = new Date();
     const mesDashEl = el('mesDash');
     if(mesDashEl) {
@@ -1005,10 +1005,10 @@ function iniciarListeners() {
             let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
         } catch(e) { console.error("Erro leitura Pedidos:", e); }
         
-        try { atualizarDashboard(pedidosCache); } catch(e) { console.error("Erro Dashboard:", e); }
-        try { aplicarFiltros(); } catch(e) { console.error("Erro Kanban:", e); }
-        try { extrairClientesDosPedidos(); renderClientes(); } catch(e) { console.error("Erro extrair Clientes dos Pedidos:", e); }
-        try { calcularBestSellers(); } catch(e) { console.error("Erro BestSellers:", e); }
+        try { atualizarDashboard(pedidosCache); } catch(e) {}
+        try { aplicarFiltros(); } catch(e) {}
+        try { extrairClientesDosPedidos(); renderClientes(); } catch(e) {}
+        try { calcularBestSellers(); } catch(e) {}
         
         const c = el('carregando'); if(c) c.style.display = 'none';
     });
@@ -1017,7 +1017,9 @@ function iniciarListeners() {
         try {
             let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); 
             clientesPurosCache = lidos; 
-            if(pedidosCache.length > 0) { extrairClientesDosPedidos(); renderClientes(); }
+            // AGORA OS CLIENTES RENDERIZAM MESMO SEM PEDIDOS NA BASE!
+            extrairClientesDosPedidos(); 
+            renderClientes();
         } catch(e) { console.error("Erro leitura Clientes:", e); }
     });
 
@@ -1034,8 +1036,8 @@ function iniciarListeners() {
             estampasCache = est; 
         } catch(e) { console.error("Erro leitura Catálogo:", e); }
 
-        try { renderCatalogo(); } catch(e) { console.error("Erro render Catálogo:", e); }
-        try { calcularBestSellers(); } catch(e) { console.error("Erro BestSellers (Catalogo):", e); }
+        try { renderCatalogo(); } catch(e) {}
+        try { calcularBestSellers(); } catch(e) {}
         const c = el('carregandoEstampas'); if(c) c.style.display = 'none';
     });
 }
