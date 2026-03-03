@@ -105,7 +105,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ==========================================
-// CATÁLOGO: ESTOQUE EM TEMPO REAL NA GRADE
+// CATÁLOGO: GRADE DE CARDS E ESTOQUE
 // ==========================================
 let catalogoEstampas = {}; 
 db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
@@ -126,25 +126,38 @@ db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
         datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
         
         let totalEstoque = parseInt(e.P)+parseInt(e.M)+parseInt(e.G)+parseInt(e.GG);
-        let badgeSoldOut = totalEstoque <= 0 ? `<br><span class="badge-soldout" style="margin: 5px 0 0 0;">SOLD OUT</span>` : '';
+        let badgeSoldOut = totalEstoque <= 0 ? `<span class="badge-soldout" style="position:absolute; top: -12px; right: -12px; font-size: 0.8rem; padding: 6px 12px;">SOLD OUT</span>` : '';
         
+        // CONSTRUÇÃO DO CARD DE CATÁLOGO
         document.getElementById('listaEstampas').innerHTML += `
-        <tr>
-            <td><strong>${est.codigo}</strong></td>
-            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} • Venda: ${formatCurrency(preco)}</div>${badgeSoldOut}</td>
-            <td>
+        <div class="catalog-card">
+            ${badgeSoldOut}
+            <div class="catalog-card-header">
+                <div>
+                    <h3 class="catalog-card-title">${est.nome}</h3>
+                    <div class="catalog-card-subtitle">[${est.codigo}] • ${cat}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="catalog-price">${formatCurrency(preco)}</div>
+                    <div class="catalog-cost">Custo: ${formatCurrency(custo)}</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 5px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: var(--red); margin-bottom: 5px; text-transform: uppercase;">AJUSTE RÁPIDO DE ESTOQUE:</div>
                 <div class="grade-tamanhos">
                     <div class="grade-box">P <input type="number" value="${e.P || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'P', this.value)"></div>
                     <div class="grade-box">M <input type="number" value="${e.M || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'M', this.value)"></div>
                     <div class="grade-box">G <input type="number" value="${e.G || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'G', this.value)"></div>
                     <div class="grade-box">GG<input type="number" value="${e.GG || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'GG', this.value)"></div>
                 </div>
-            </td>
-            <td style="display:flex; gap:5px;">
-                <button class="btn-icone" title="Editar Detalhes" onclick="prepararEdicaoEstampa('${est.codigo}')">✏️</button>
-                <button class="btn-icone" title="Apagar Produto" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
-            </td>
-        </tr>`;
+            </div>
+
+            <div class="crm-actions" style="margin-top: 15px;">
+                <button onclick="prepararEdicaoEstampa('${est.codigo}')" style="flex: 1;">✏️ EDITAR PRODUTO</button>
+                <button onclick="excluirEstampa('${doc.id}')" style="color:var(--red); flex: 0.3;">❌</button>
+            </div>
+        </div>`;
     });
 });
 
@@ -361,9 +374,7 @@ async function salvarPedidoCompleto() {
         somaVendaPecas += (item.valorUnitario * item.quantidade);
     });
     
-    // CORREÇÃO: Frete real = Frete cobrado se o frete real não foi preenchido.
     let freteRealCalculo = freteRealInput > 0 ? freteRealInput : freteCobrado;
-    
     let prejuizoFrete = freteRealCalculo > freteCobrado ? (freteRealCalculo - freteCobrado) : 0;
     let lucroSobraFrete = freteCobrado > freteRealCalculo ? (freteCobrado - freteRealCalculo) : 0;
     let lucroCalculado = (somaVendaPecas - somaCustoPecas) - desconto - embalagem - prejuizoFrete + lucroSobraFrete;
@@ -410,7 +421,7 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
     querySnapshot.forEach((doc) => {
         let p = doc.data(); 
         
-        if(p.apagado === true) return; // Esconde pedidos excluídos
+        if(p.apagado === true) return; 
 
         p.id = doc.id; 
         p.statusAtualizado = (p.status || 'PEDIDO FEITO').toUpperCase();
@@ -593,7 +604,6 @@ function drop(ev, novoStatus) {
 function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
 function excluirPedido(id) { if (confirm("Mandar pedido para a lixeira?")) db.collection("pedidos").doc(id).update({apagado: true}); }
 
-// MENSAGEM AUTOMÁTICA DO WHATSAPP DO KANBAN
 function enviarMensagemStatus(pedidoId) {
     let p = todosPedidos.find(x => x.id === pedidoId);
     if(!p) return;
@@ -642,7 +652,8 @@ function atualizarSelectFaturamento(mesesUnicos) {
 
 function calcularFaturamentoMensal() {
     let mes = document.getElementById('selectFaturamentoMes').value; 
-    let somaFaturamento = 0; let somaLucro = 0;
+    let somaFaturamento = 0;
+    let somaLucro = 0;
 
     todosPedidos.forEach(p => { 
         if(p.statusPagamento === 'PAGO' && p.dataMesAno === mes) {
@@ -656,7 +667,7 @@ function calcularFaturamentoMensal() {
 }
 
 // ==========================================
-// EDIÇÃO RÁPIDA (RECALCULA LUCRO NA HORA)
+// EDIÇÃO RÁPIDA DE PEDIDO
 // ==========================================
 function abrirModalEdicao(id) {
     const p = todosPedidos.find(x => x.id === id); if(!p) return;
