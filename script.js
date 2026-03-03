@@ -14,8 +14,7 @@ if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 // ================= OFFLINE PERSISTENCE =================
 firebase.firestore().enablePersistence()
   .catch((err) => {
-      if (err.code == 'failed-precondition') console.log('Múltiplas abas abertas.');
-      else if (err.code == 'unimplemented') console.log('Browser não suporta offline.');
+      console.log('Aviso Offline:', err.code);
   });
 const db = firebase.firestore();
 
@@ -28,21 +27,36 @@ let pedidoEmEdicaoId = null; let pedidosSelecionados = [];
 // ================= FUNÇÕES DE BLINDAGEM E UX =================
 function upper(v) { return String(v || '').trim().toUpperCase(); }
 function onlyDigits(v) { return String(v || '').replace(/\D/g, ''); }
-function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
-function unmaskCurrency(value) { if (!value) return 0; return parseFloat(String(value).replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
+
+function formatCurrency(num) { 
+    try {
+        let str = String(num || 0).replace(/[^\d.,-]/g, '').replace(',', '.');
+        let value = parseFloat(str);
+        if (isNaN(value)) value = 0;
+        return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`;
+    } catch(e) { return 'R$ 0,00'; }
+}
+
+function unmaskCurrency(value) { 
+    if (!value) return 0; 
+    let parsed = parseFloat(String(value).replace(/[^\d,-]/g, '').replace(',', '.'));
+    return isNaN(parsed) ? 0 : parsed;
+}
 
 // Proteção contra dados quebrados no banco
 function escapeStr(v) { return String(v || '').replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 function safeItens(itens) { 
-    if (!Array.isArray(itens)) return []; 
-    return itens.filter(i => i && typeof i === 'object'); 
+    if (!itens || !Array.isArray(itens)) return []; 
+    return itens.filter(i => i !== null && typeof i === 'object'); 
 }
 
 function parseFirestoreDate(fbDate) {
     if (!fbDate) return null;
-    if (fbDate.toDate && typeof fbDate.toDate === 'function') return fbDate.toDate();
-    if (fbDate.seconds) return new Date(fbDate.seconds * 1000);
-    const d = new Date(fbDate); return isNaN(d.getTime()) ? null : d;
+    try {
+        if (fbDate.toDate && typeof fbDate.toDate === 'function') return fbDate.toDate();
+        if (fbDate.seconds) return new Date(fbDate.seconds * 1000);
+        const d = new Date(fbDate); return isNaN(d.getTime()) ? null : d;
+    } catch(e) { return null; }
 }
 
 function formatDate(dateValue) { 
@@ -88,12 +102,6 @@ function setupAutoFields(idWhats, idInsta, idCpf, idCep, idCidade, idEstado, idE
     });
 }
 
-// ATALHOS GLOBAIS (ALT+N e ALT+B)
-document.addEventListener('keydown', (e) => {
-    if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); el('nome').focus(); }
-    if (e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); mudarAba('producao'); el('inputBusca').focus(); }
-});
-
 // SOM MECÂNICO
 function playMechSound() {
     try {
@@ -108,25 +116,26 @@ function playMechSound() {
 }
 
 function mudarAba(aba) {
-    el('aba-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
-    el('aba-producao').style.display = aba === 'producao' ? 'block' : 'none';
-    el('aba-estampas').style.display = aba === 'estampas' ? 'block' : 'none';
-    el('aba-clientes').style.display = aba === 'clientes' ? 'block' : 'none';
-    el('tabCadastroBtn').classList.toggle('tab-active', aba === 'cadastro');
-    el('tabProducaoBtn').classList.toggle('tab-active', aba === 'producao');
-    el('tabEstampasBtn').classList.toggle('tab-active', aba === 'estampas');
-    el('tabClientesBtn').classList.toggle('tab-active', aba === 'clientes');
+    if(el('aba-cadastro')) el('aba-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
+    if(el('aba-producao')) el('aba-producao').style.display = aba === 'producao' ? 'block' : 'none';
+    if(el('aba-estampas')) el('aba-estampas').style.display = aba === 'estampas' ? 'block' : 'none';
+    if(el('aba-clientes')) el('aba-clientes').style.display = aba === 'clientes' ? 'block' : 'none';
+    
+    if(el('tabCadastroBtn')) el('tabCadastroBtn').classList.toggle('tab-active', aba === 'cadastro');
+    if(el('tabProducaoBtn')) el('tabProducaoBtn').classList.toggle('tab-active', aba === 'producao');
+    if(el('tabEstampasBtn')) el('tabEstampasBtn').classList.toggle('tab-active', aba === 'estampas');
+    if(el('tabClientesBtn')) el('tabClientesBtn').classList.toggle('tab-active', aba === 'clientes');
 }
 
-function alternarTema() { const dark = document.body.classList.toggle('dark-mode'); localStorage.setItem('temaWaller', dark ? 'dark' : 'light'); el('btnTema').textContent = dark ? 'Tema claro' : 'Tema escuro'; }
-function carregarTema() { if (localStorage.getItem('temaWaller') === 'dark') { document.body.classList.add('dark-mode'); el('btnTema').textContent = 'Tema claro'; } }
+function alternarTema() { const dark = document.body.classList.toggle('dark-mode'); localStorage.setItem('temaWaller', dark ? 'dark' : 'light'); if(el('btnTema')) el('btnTema').innerHTML = dark ? '🌙 Tema claro' : '🌙 Tema escuro'; }
+function carregarTema() { if (localStorage.getItem('temaWaller') === 'dark') { document.body.classList.add('dark-mode'); if(el('btnTema')) el('btnTema').innerHTML = '🌙 Tema claro'; } }
 
 // ================= AUTO-SAVE RASCUNHO =================
 function salvarRascunho() {
     try {
         const data = {
-            nome: el('nome').value, whatsapp: el('whatsapp').value, instagram: el('instagram').value, cpf: el('cpf').value, cep: el('cep').value, cidade: el('cidade').value, estado: el('estado').value,
-            endereco: el('endereco').value, complemento: el('complemento').value, referencia: el('referencia').value, frete: el('valorFrete').value, desconto: el('valorDesconto').value, pag: el('metodoPagamento').value, status: el('statusPagamento').value, carrinho: carrinhoTemporario
+            nome: el('nome')?el('nome').value:'', whatsapp: el('whatsapp')?el('whatsapp').value:'', instagram: el('instagram')?el('instagram').value:'', cpf: el('cpf')?el('cpf').value:'', cep: el('cep')?el('cep').value:'', cidade: el('cidade')?el('cidade').value:'', estado: el('estado')?el('estado').value:'',
+            endereco: el('endereco')?el('endereco').value:'', complemento: el('complemento')?el('complemento').value:'', referencia: el('referencia')?el('referencia').value:'', frete: el('valorFrete')?el('valorFrete').value:'', desconto: el('valorDesconto')?el('valorDesconto').value:'', pag: el('metodoPagamento')?el('metodoPagamento').value:'', status: el('statusPagamento')?el('statusPagamento').value:'', carrinho: carrinhoTemporario
         };
         localStorage.setItem('wallerRascunho', JSON.stringify(data));
     } catch(e){}
@@ -136,31 +145,30 @@ function carregarRascunho() {
         const saved = localStorage.getItem('wallerRascunho');
         if (saved) {
             const data = JSON.parse(saved);
-            el('nome').value = data.nome || ''; el('whatsapp').value = data.whatsapp || ''; el('instagram').value = data.instagram || ''; el('cpf').value = data.cpf || ''; el('cep').value = data.cep || ''; el('cidade').value = data.cidade || ''; el('estado').value = data.estado || '';
-            el('endereco').value = data.endereco || ''; el('complemento').value = data.complemento || ''; el('referencia').value = data.referencia || ''; el('valorFrete').value = data.frete || ''; el('valorDesconto').value = data.desconto || ''; if(data.pag) el('metodoPagamento').value = data.pag; if(data.status) el('statusPagamento').value = data.status;
+            if(el('nome')) el('nome').value = data.nome || ''; if(el('whatsapp')) el('whatsapp').value = data.whatsapp || ''; if(el('instagram')) el('instagram').value = data.instagram || ''; if(el('cpf')) el('cpf').value = data.cpf || ''; if(el('cep')) el('cep').value = data.cep || ''; if(el('cidade')) el('cidade').value = data.cidade || ''; if(el('estado')) el('estado').value = data.estado || '';
+            if(el('endereco')) el('endereco').value = data.endereco || ''; if(el('complemento')) el('complemento').value = data.complemento || ''; if(el('referencia')) el('referencia').value = data.referencia || ''; if(el('valorFrete')) el('valorFrete').value = data.frete || ''; if(el('valorDesconto')) el('valorDesconto').value = data.desconto || ''; if(data.pag && el('metodoPagamento')) el('metodoPagamento').value = data.pag; if(data.status && el('statusPagamento')) el('statusPagamento').value = data.status;
             carrinhoTemporario = safeItens(data.carrinho); atualizarTelaCarrinho();
         }
     } catch(e){}
 }
 if(el('aba-cadastro')) el('aba-cadastro').addEventListener('input', salvarRascunho);
 
-
 // ================= LANÇAR DROP / PEDIDO =================
 function autoPreencherCliente() {
-    const numWhats = onlyDigits(el('whatsapp').value); if (!numWhats) return;
+    const numWhats = onlyDigits(el('whatsapp')?el('whatsapp').value:''); if (!numWhats) return;
     const clienteExistente = clientesCache.find(c => onlyDigits(c.whatsapp) === numWhats);
     if (clienteExistente) {
         if(clienteExistente.blacklist) {
             document.body.style.boxShadow = "inset 0 0 50px #dc2626"; showToast("⚠️ ATENÇÃO: CLIENTE NA BLACKLIST!", "error");
             setTimeout(() => document.body.style.boxShadow = "", 3000);
         } else {
-            el('whatsapp').style.borderColor = '#16a34a';
+            if(el('whatsapp')) el('whatsapp').style.borderColor = '#16a34a';
             if(clienteExistente.totalPedidos > 0) showToast(`Bem-vindo de volta! ${clienteExistente.totalPedidos + 1}ª compra.`, 'info');
-            setTimeout(() => el('whatsapp').style.borderColor = '#333', 1500);
+            setTimeout(() => { if(el('whatsapp')) el('whatsapp').style.borderColor = '#333'; }, 1500);
         }
-        if (!el('nome').value) el('nome').value = clienteExistente.nome || '';
-        el('instagram').value = clienteExistente.instagram || ''; el('cpf').value = clienteExistente.documento || ''; el('cep').value = clienteExistente.cep || ''; el('cidade').value = clienteExistente.cidade || ''; el('estado').value = clienteExistente.estado || '';
-        el('endereco').value = clienteExistente.endereco || ''; el('complemento').value = clienteExistente.complemento || ''; el('referencia').value = clienteExistente.referencia || '';
+        if (el('nome') && !el('nome').value) el('nome').value = clienteExistente.nome || '';
+        if(el('instagram')) el('instagram').value = clienteExistente.instagram || ''; if(el('cpf')) el('cpf').value = clienteExistente.documento || ''; if(el('cep')) el('cep').value = clienteExistente.cep || ''; if(el('cidade')) el('cidade').value = clienteExistente.cidade || ''; if(el('estado')) el('estado').value = clienteExistente.estado || '';
+        if(el('endereco')) el('endereco').value = clienteExistente.endereco || ''; if(el('complemento')) el('complemento').value = clienteExistente.complemento || ''; if(el('referencia')) el('referencia').value = clienteExistente.referencia || '';
         salvarRascunho();
     }
 }
@@ -168,68 +176,71 @@ function autoPreencherCliente() {
 function limparLancarDrop(manual = false) {
     if(manual && !confirm("Limpar todo o formulário?")) return;
     document.querySelectorAll('#aba-cadastro input').forEach(input => input.value = '');
-    el('metodoPagamento').value = 'PIX'; el('statusPagamento').value = 'PAGO'; el('tipoPeca').value = 'OVERSIZED';
-    el('tamanho').value = 'P'; el('cor').value = 'PRETA'; el('quantidade').value = 1; el('mensagemAutoPreenchimento').textContent = '';
-    el('custoOculto').value = '';
+    if(el('metodoPagamento')) el('metodoPagamento').value = 'PIX'; if(el('statusPagamento')) el('statusPagamento').value = 'PAGO'; if(el('tipoPeca')) el('tipoPeca').value = 'OVERSIZED';
+    if(el('tamanho')) el('tamanho').value = 'P'; if(el('cor')) el('cor').value = 'PRETA'; if(el('quantidade')) el('quantidade').value = 1; if(el('mensagemAutoPreenchimento')) el('mensagemAutoPreenchimento').textContent = '';
+    if(el('custoOculto')) el('custoOculto').value = '';
     carrinhoTemporario = []; atualizarTelaCarrinho(); localStorage.removeItem('wallerRascunho');
 }
 
 function preencherEstampaPorCodigo() {
+    if(!el('codigoEstampa')) return;
     const codigo = upper(el('codigoEstampa').value); el('codigoEstampa').value = codigo;
     const feedback = el('mensagemAutoPreenchimento');
-    if (!codigo) { feedback.textContent = ''; feedback.className = 'helper-text'; return; }
+    if (!codigo) { if(feedback){ feedback.textContent = ''; feedback.className = 'helper-text'; } return; }
 
     const encontrada = estampasCache.find((item) => item.codigo === codigo);
-    if (!encontrada) { feedback.textContent = 'Produto não encontrado.'; feedback.className = 'helper-text warn'; return; }
+    if (!encontrada) { if(feedback){ feedback.textContent = 'Produto não encontrado.'; feedback.className = 'helper-text warn'; } return; }
 
-    el('nomeEstampa').value = encontrada.nome; 
-    el('valorUnitario').value = formatCurrency(encontrada.valor || 0);
-    el('custoOculto').value = encontrada.custo || 0;
-    if (encontrada.tipoPadrao && Array.from(el('tipoPeca').options).some((opt) => opt.value === encontrada.tipoPadrao)) { el('tipoPeca').value = encontrada.tipoPadrao; }
+    if(el('nomeEstampa')) el('nomeEstampa').value = encontrada.nome; 
+    if(el('valorUnitario')) el('valorUnitario').value = formatCurrency(encontrada.valor || 0);
+    if(el('custoOculto')) el('custoOculto').value = encontrada.custo || 0;
+    if (encontrada.tipoPadrao && el('tipoPeca')) { el('tipoPeca').value = encontrada.tipoPadrao; }
     
-    const tamSelecionado = el('tamanho').value; const stockTam = encontrada.estoque[tamSelecionado] || 0;
-    feedback.textContent = `Encontrado: ${encontrada.nome} (Stock ${tamSelecionado}: ${stockTam})`;
-    feedback.className = `helper-text ${stockTam > 0 ? 'ok' : 'warn'}`;
+    const tamSelecionado = el('tamanho') ? el('tamanho').value : 'UN'; 
+    const stockTam = encontrada.estoque[tamSelecionado] || 0;
+    if(feedback) {
+        feedback.textContent = `Encontrado: ${encontrada.nome} (Stock ${tamSelecionado}: ${stockTam})`;
+        feedback.className = `helper-text ${stockTam > 0 ? 'ok' : 'warn'}`;
+    }
 }
 
 function adicionarAoCarrinho() {
-    const cod = upper(el('codigoEstampa').value); const nom = upper(el('nomeEstampa').value);
-    const tam = el('tamanho').value; const qtd = parseInt(el('quantidade').value, 10) || 1;
+    const cod = upper(el('codigoEstampa')?el('codigoEstampa').value:''); const nom = upper(el('nomeEstampa')?el('nomeEstampa').value:'');
+    const tam = el('tamanho')?el('tamanho').value:'UN'; const qtd = parseInt(el('quantidade')?el('quantidade').value:1, 10) || 1;
     if (!cod || !nom) return showToast('Preencha código e nome!', 'warning');
 
     const estampa = estampasCache.find(e => e.codigo === cod);
     const stockAtual = estampa ? (estampa.estoque[tam] || 0) : 0;
     
     if (qtd > stockAtual) {
-        el('quantidade').classList.add('error-blink'); setTimeout(() => el('quantidade').classList.remove('error-blink'), 1500);
+        if(el('quantidade')) { el('quantidade').classList.add('error-blink'); setTimeout(() => el('quantidade').classList.remove('error-blink'), 1500); }
         showToast(`Aviso: Venda forçada. O stock de ${tam} era apenas ${stockAtual}.`, 'warning');
     }
 
     carrinhoTemporario.push({ 
-        codigoEstampa: cod, nomeEstampa: nom, tipoPeca: el('tipoPeca').value, tamanho: tam, cor: el('cor').value, 
-        quantidade: qtd, valorUnitario: unmaskCurrency(el('valorUnitario').value), custoUnitario: Number(el('custoOculto').value) || 0
+        codigoEstampa: cod, nomeEstampa: nom, tipoPeca: el('tipoPeca')?el('tipoPeca').value:'', tamanho: tam, cor: el('cor')?el('cor').value:'', 
+        quantidade: qtd, valorUnitario: unmaskCurrency(el('valorUnitario')?el('valorUnitario').value:0), custoUnitario: Number(el('custoOculto')?el('custoOculto').value:0) || 0
     });
     atualizarTelaCarrinho(); salvarRascunho();
-    el('codigoEstampa').value = ''; el('nomeEstampa').value = ''; el('valorUnitario').value = ''; el('quantidade').value = 1; el('custoOculto').value = ''; el('mensagemAutoPreenchimento').textContent = '';
+    if(el('codigoEstampa')) el('codigoEstampa').value = ''; if(el('nomeEstampa')) el('nomeEstampa').value = ''; if(el('valorUnitario')) el('valorUnitario').value = ''; if(el('quantidade')) el('quantidade').value = 1; if(el('custoOculto')) el('custoOculto').value = ''; if(el('mensagemAutoPreenchimento')) el('mensagemAutoPreenchimento').textContent = '';
 }
 
 function atualizarTelaCarrinho() {
     try {
-        let somaItens = 0; el('listaCarrinho').innerHTML = '';
+        let somaItens = 0; if(!el('listaCarrinho')) return;
+        el('listaCarrinho').innerHTML = '';
         carrinhoTemporario.forEach((p, index) => {
             if(!p) return;
             somaItens += p.quantidade * p.valorUnitario;
-            el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-            </button></div></div>`;
+            el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button></div></div>`;
         });
         
-        const frete = unmaskCurrency(el('valorFrete').value);
-        const desconto = unmaskCurrency(el('valorDesconto').value);
+        const frete = unmaskCurrency(el('valorFrete')?el('valorFrete').value:0);
+        const desconto = unmaskCurrency(el('valorDesconto')?el('valorDesconto').value:0);
         let totalReal = somaItens + frete - desconto;
         if (totalReal < 0) totalReal = 0;
 
-        el('valorTotal').value = formatCurrency(totalReal);
+        if(el('valorTotal')) el('valorTotal').value = formatCurrency(totalReal);
     } catch(e) { console.error(e); }
 }
 
@@ -282,14 +293,14 @@ async function salvarPedidoCompleto() {
 function abrirFichaPedido(idPedido) {
     try {
         const pedido = pedidosCache.find((p) => p.id === idPedido); if (!pedido) return;
-        el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
-        el('fichaPedidoConteudo').innerHTML = `
+        if(el('fichaPedidoTitulo')) el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
+        if(el('fichaPedidoConteudo')) el('fichaPedidoConteudo').innerHTML = `
             <div class="cliente-ficha-grid" style="margin-bottom: 1rem;">
                 <p><strong>Cliente:</strong> ${escapeStr(pedido.nome) || '-'}</p>
-                <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
-                <p><strong>Status:</strong> ${pedido.status || '-'}</p>
-                <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
-                <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${pedido.estado || '-'}</p>
+                <p><strong>WhatsApp:</strong> ${escapeStr(pedido.whatsapp) || '-'}</p>
+                <p><strong>Status:</strong> ${escapeStr(pedido.status) || '-'}</p>
+                <p><strong>Pagamento:</strong> ${escapeStr(pedido.metodoPagamento) || '-'} (${escapeStr(pedido.statusPagamento) || '-'})</p>
+                <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${escapeStr(pedido.estado) || '-'}</p>
                 <p><strong>Desconto:</strong> ${formatCurrency(pedido.valorDesconto || 0)}</p>
                 <p><strong>Frete:</strong> ${formatCurrency(pedido.valorFrete || 0)}</p>
                 <p><strong>Total Final:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
@@ -298,15 +309,15 @@ function abrirFichaPedido(idPedido) {
             <div style="margin-bottom: 1.5rem;">
                 ${safeItens(pedido.itens).map(i => {
                     if(!i) return '';
-                    return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${escapeStr(i.nomeEstampa || i.codigoEstampa)}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
+                    return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${escapeStr(i.tipoPeca)} (${escapeStr(i.tamanho)})</strong> • ${escapeStr(i.nomeEstampa || i.codigoEstampa)}<br><small>Cor: ${escapeStr(i.cor)} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
                 }).join('')}
             </div>
             <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
         `;
-        el('modalFichaPedido').style.display = 'flex';
+        if(el('modalFichaPedido')) el('modalFichaPedido').style.display = 'flex';
     } catch(e) { console.error(e); showToast("Erro ao abrir pedido.", "error"); }
 }
-function fecharFichaPedido() { el('modalFichaPedido').style.display = 'none'; }
+function fecharFichaPedido() { if(el('modalFichaPedido')) el('modalFichaPedido').style.display = 'none'; }
 
 function abrirModalEditarPedido(idPedido) {
     try {
@@ -332,20 +343,26 @@ function abrirModalEditarPedido(idPedido) {
 function fecharModalEditarPedido() { const mod = el('modalEditarPedidoCompleto'); if(mod) mod.style.display = 'none'; pedidoEmEdicaoId = null; carrinhoEdicao = []; }
 
 function preencherEstampaPorCodigoEdicao() {
-    const codigo = upper(el('editPedCodigoEstampa').value); el('editPedCodigoEstampa').value = codigo; const feedback = el('mensagemAutoPreenchimentoEdicao');
-    if (!codigo) { feedback.textContent = ''; feedback.className = 'helper-text'; return; }
+    const codEl = el('editPedCodigoEstampa'); if(!codEl) return;
+    const codigo = upper(codEl.value); codEl.value = codigo; const feedback = el('mensagemAutoPreenchimentoEdicao');
+    if (!codigo) { if(feedback) {feedback.textContent = ''; feedback.className = 'helper-text';} return; }
     const encontrada = estampasCache.find((item) => item.codigo === codigo);
-    if (!encontrada) { feedback.textContent = 'Produto não encontrado.'; feedback.className = 'helper-text warn'; return; }
-    el('editPedNomeEstampa').value = encontrada.nome; el('editPedValorUnitario').value = formatCurrency(encontrada.valor || 0); el('editPedCustoOculto').value = encontrada.custo || 0;
-    if (encontrada.tipoPadrao && Array.from(el('editPedTipoPeca').options).some((opt) => opt.value === encontrada.tipoPadrao)) { el('editPedTipoPeca').value = encontrada.tipoPadrao; }
-    feedback.textContent = `Encontrado: ${encontrada.nome}`; feedback.className = 'helper-text ok';
+    if (!encontrada) { if(feedback) {feedback.textContent = 'Produto não encontrado.'; feedback.className = 'helper-text warn';} return; }
+    if(el('editPedNomeEstampa')) el('editPedNomeEstampa').value = encontrada.nome; 
+    if(el('editPedValorUnitario')) el('editPedValorUnitario').value = formatCurrency(encontrada.valor || 0); 
+    if(el('editPedCustoOculto')) el('editPedCustoOculto').value = encontrada.custo || 0;
+    if (encontrada.tipoPadrao && el('editPedTipoPeca')) { el('editPedTipoPeca').value = encontrada.tipoPadrao; }
+    if(feedback) { feedback.textContent = `Encontrado: ${encontrada.nome}`; feedback.className = 'helper-text ok'; }
 }
+
 function adicionarAoCarrinhoEdicaoInput() {
-    const cod = upper(el('editPedCodigoEstampa').value); const nom = upper(el('editPedNomeEstampa').value);
+    const cod = upper(el('editPedCodigoEstampa')?el('editPedCodigoEstampa').value:''); const nom = upper(el('editPedNomeEstampa')?el('editPedNomeEstampa').value:'');
     if (!cod || !nom) return showToast('Preencha código e nome do produto!', 'warning');
-    carrinhoEdicao.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: el('editPedTipoPeca').value, tamanho: el('editPedTamanho').value, cor: el('editPedCor').value, quantidade: parseInt(el('editPedQuantidade').value, 10) || 1, valorUnitario: unmaskCurrency(el('editPedValorUnitario').value), custoUnitario: Number(el('editPedCustoOculto').value) || 0 });
-    atualizarTelaCarrinhoEdicao(); el('editPedCodigoEstampa').value = ''; el('editPedNomeEstampa').value = ''; el('editPedValorUnitario').value = ''; el('editPedQuantidade').value = 1; el('editPedCustoOculto').value = ''; el('mensagemAutoPreenchimentoEdicao').textContent = '';
+    carrinhoEdicao.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: el('editPedTipoPeca')?el('editPedTipoPeca').value:'', tamanho: el('editPedTamanho')?el('editPedTamanho').value:'', cor: el('editPedCor')?el('editPedCor').value:'', quantidade: parseInt(el('editPedQuantidade')?el('editPedQuantidade').value:'1', 10) || 1, valorUnitario: unmaskCurrency(el('editPedValorUnitario')?el('editPedValorUnitario').value:0), custoUnitario: Number(el('editPedCustoOculto')?el('editPedCustoOculto').value:0) || 0 });
+    atualizarTelaCarrinhoEdicao(); 
+    if(el('editPedCodigoEstampa')) el('editPedCodigoEstampa').value = ''; if(el('editPedNomeEstampa')) el('editPedNomeEstampa').value = ''; if(el('editPedValorUnitario')) el('editPedValorUnitario').value = ''; if(el('editPedQuantidade')) el('editPedQuantidade').value = 1; if(el('editPedCustoOculto')) el('editPedCustoOculto').value = ''; if(el('mensagemAutoPreenchimentoEdicao')) el('mensagemAutoPreenchimentoEdicao').textContent = '';
 }
+
 function atualizarTelaCarrinhoEdicao() {
     try {
         let somaItens = 0; const container = el('listaCarrinhoEdicao');
@@ -355,7 +372,7 @@ function atualizarTelaCarrinhoEdicao() {
         carrinhoEdicao.forEach((p, index) => {
             if(!p) return;
             somaItens += p.quantidade * p.valorUnitario;
-            container.innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
+            container.innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${escapeStr(p.tipoPeca)} (${escapeStr(p.tamanho)})</strong> • ${escapeStr(p.nomeEstampa)}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
         });
         
         const freteEl = el('editPedFrete'); const descEl = el('editPedDesconto');
@@ -368,6 +385,7 @@ function atualizarTelaCarrinhoEdicao() {
         const dispTotalEl = el('displayEditTotal'); if(dispTotalEl) dispTotalEl.textContent = formatCurrency(totalReal);
     } catch(e) { console.error(e); }
 }
+
 function removerDoCarrinhoEdicao(index) { carrinhoEdicao.splice(index, 1); atualizarTelaCarrinhoEdicao(); }
 
 async function salvarEdicaoPedidoDefinitiva() {
@@ -399,7 +417,7 @@ function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome); let itensTexto = '';
     safeItens(pedido.itens).forEach(i => {
         if(!i) return;
-        itensTexto += `▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${escapeStr(i.nomeEstampa || i.codigoEstampa)}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`; 
+        itensTexto += `▪ ${i.quantidade || 1}x ${escapeStr(i.tipoPeca || 'PECA')} | ${escapeStr(i.nomeEstampa || i.codigoEstampa)}\n  Tamanho: ${escapeStr(i.tamanho || '-')} | Cor: ${escapeStr(i.cor || '-')}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`; 
     });
     let txt = `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* esta: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}`;
     if(pedido.valorFrete > 0) txt += `*FRETE:* ${formatCurrency(pedido.valorFrete)}\n`;
@@ -432,7 +450,7 @@ function statusClass(status) {
 }
 function statusOptionsSelecionado(atual) { return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join(''); }
 function abrirSanfonaStatus(id, statusAtual) { return `<details class="status-sanfona"><summary>Mudar Estado</summary><select id="status-select-${id}">${statusOptionsSelecionado(statusAtual)}</select><button class="btn-add" style="width:100%; margin-top:5px; background:#fff; color:#000;" onclick="salvarStatusPedido('${id}','status-select-${id}')">Salvar</button></details>`; }
-async function salvarStatusPedido(id, selectId) { const status = upper(el(selectId).value); await db.collection('pedidos').doc(id).update({ status }); showToast('Status atualizado!'); }
+async function salvarStatusPedido(id, selectId) { const sel = el(selectId); if(!sel) return; const status = upper(sel.value); await db.collection('pedidos').doc(id).update({ status }); showToast('Status atualizado!'); }
 
 async function confirmarPagamentoPedido(id) {
     if(!confirm('Confirmar pagamento deste pedido? Ele será movido para EM SEPARAÇÃO.')) return;
@@ -839,7 +857,7 @@ function renderCatalogo(lista = estampasCache) {
                 <div class="stock-grid">${pills}</div>
                 <div class="catalog-actions" style="margin-top:10px;">
                     <button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button>
-                    <button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                    <button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                 </div>
             </article>`;
         });
@@ -898,14 +916,18 @@ function gerarPDFFaturamentoMensal() {
 function gerarEtiquetasEmMassa() {
     if(pedidosSelecionados.length === 0) return showToast("Selecione pedidos primeiro", "warning");
     const { jsPDF } = window.jspdf;
+    // Formato A4 padrão
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     let labelCount = 0;
 
     pedidosSelecionados.forEach((id) => {
         const p = pedidosCache.find(x => x.id === id); if(!p) return;
         
-        if (labelCount > 0 && labelCount % 4 === 0) doc.addPage();
+        if (labelCount > 0 && labelCount % 4 === 0) {
+            doc.addPage();
+        }
 
+        // Divide a folha A4 em 4 quadrantes
         const posOnPage = labelCount % 4; 
         const col = posOnPage % 2; 
         const row = Math.floor(posOnPage / 2); 
@@ -913,7 +935,10 @@ function gerarEtiquetasEmMassa() {
         const offsetX = col * 105;
         const offsetY = row * 148.5;
 
-        doc.setDrawColor(200); doc.setLineDash([], 0); doc.rect(offsetX, offsetY, 105, 148.5);
+        // Borda de corte opcional
+        doc.setDrawColor(200);
+        doc.setLineDash([], 0);
+        doc.rect(offsetX, offsetY, 105, 148.5);
 
         doc.setFont("helvetica", "bold"); doc.setFontSize(14); 
         doc.text("WALLER CLOTHING", offsetX + 52.5, offsetY + 15, {align: "center"});
