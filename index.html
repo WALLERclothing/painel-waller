@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link rel="stylesheet" href="style.css">
 </head>
@@ -27,7 +28,7 @@
 
 <div class="tab-menu">
     <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
-    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Kanban Produção</button>
+    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Gestão & Kanban</button>
     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
     <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🤝 CRM Clientes</button>
 </div>
@@ -46,19 +47,24 @@
                 <input type="text" id="nome" placeholder="NOME DO CLIENTE">
             </div>
             <div class="form-grid" style="margin-bottom: 0;">
-                <input type="text" id="cep" placeholder="CEP (Autopreencher)" maxlength="9" onblur="buscarCEP(this.value)">
+                <input type="text" id="cep" placeholder="CEP (Apenas Números)" maxlength="9" oninput="aplicarMascaraCepEPular(event)">
                 <input type="text" id="endereco" placeholder="ENDEREÇO COMPLETO" style="flex: 2;">
                 <input type="text" id="numeroEnd" placeholder="Nº" style="flex: 0.5;">
                 <input type="text" id="complementoEnd" placeholder="COMPLEMENTO" style="flex: 1;">
             </div>
             
+            <div class="form-section-title" style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted);">Custos de Envio & Descontos</div>
+            <div class="form-grid">
+                <input type="text" id="valorFrete" class="moeda" placeholder="FRETE COBRADO DO CLIENTE (R$)" oninput="atualizarTelaCarrinho()" title="O que o cliente pagou de frete">
+                <input type="text" id="valorFreteReal" class="moeda" placeholder="CUSTO REAL DO FRETE (R$)" oninput="atualizarTelaCarrinho()" title="O que você pagou de fato nos Correios/Transportadora" style="border-color: var(--text-muted);">
+                <input type="text" id="custoEmbalagem" class="moeda" placeholder="CUSTO EMBALAGEM (R$)" value="R$ 4,50" oninput="atualizarTelaCarrinho()" title="Caixa, seda, adesivos, brindes">
+                <input type="text" id="valorDesconto" class="moeda" placeholder="DESCONTO APLICADO (R$)" oninput="atualizarTelaCarrinho()">
+            </div>
+            
             <div class="form-grid" style="margin-top: 1rem;">
-                <input type="text" id="valorFrete" class="moeda" placeholder="VALOR FRETE (R$)" oninput="atualizarTelaCarrinho()">
-                <input type="text" id="valorDesconto" class="moeda" placeholder="DESCONTO (R$)" oninput="atualizarTelaCarrinho()">
-                
                 <select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
                 <select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select>
-                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL (AUTO)" readonly style="color: var(--red); font-weight: 900; border-color: var(--red);">
+                <input type="text" id="valorTotal" class="moeda" placeholder="TOTAL COBRADO (AUTO)" readonly style="color: var(--red); font-weight: 900; border-color: var(--red);">
             </div>
         </div>
         
@@ -74,7 +80,7 @@
                 <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option><option value="XG">XG</option></select>
                 <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option></select>
                 
-                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ UN (PEÇA)" style="flex: 0.5;">
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 0.5;">
                 <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
             </div>
             <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
@@ -91,20 +97,24 @@
 <div id="aba-producao" class="container" style="display: none;">
     <div class="dashboard-grid">
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
-        <div class="dash-card"><h3>Top 3 Estampas</h3><div id="dashBestSellers" class="best-sellers-list">Carregando...</div></div>
         <div class="dash-card green-text">
             <div style="display:flex; justify-content:space-between; width:100%;">
-                <h3>Faturamento</h3>
+                <h3>Faturamento Bruto</h3>
                 <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem;">
                     <option value="ALL">...</option>
                 </select>
             </div>
             <span id="dashFaturamento">R$ 0,00</span>
         </div>
-        <div class="dash-card green-text">
-            <h3>Lucro Líquido</h3>
-            <span id="dashLucro" style="color: var(--black);">R$ 0,00</span>
+        <div class="dash-card green-text" style="background-color: var(--black);">
+            <h3 style="color: var(--white);">Lucro Líquido Real</h3>
+            <span id="dashLucro" style="color: var(--green);">R$ 0,00</span>
         </div>
+    </div>
+
+    <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h3 style="margin-top: 0; font-weight: 900; text-transform: uppercase; font-size: 1rem;">Desempenho Financeiro (Últimos Meses)</h3>
+        <canvas id="graficoVendas" height="80"></canvas>
     </div>
 
     <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
@@ -137,8 +147,12 @@
             <h2 class="card-title" style="margin: 0;">Catálogo e Estoque</h2>
             <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirModalEstampa()">+ NOVO PRODUTO</button>
         </div>
+        <div style="background: var(--gray); padding: 1rem; border: var(--border-thick); margin-bottom: 1.5rem;">
+            <strong style="color: var(--red);">🔥 CURVA A (Mais Vendidos):</strong> <span id="dashBestSellersList">Carregando...</span>
+        </div>
+        
         <table>
-            <thead><tr><th style="width: 15%;">Código</th><th style="width: 45%;">Nome e Categoria</th><th style="width: 25%;">Estoque (Ajuste)</th><th style="width: 15%;">Ações</th></tr></thead>
+            <thead><tr><th style="width: 15%;">Código</th><th style="width: 45%;">Nome e Financeiro</th><th style="width: 25%;">Estoque (Ajuste)</th><th style="width: 15%;">Ações</th></tr></thead>
             <tbody id="listaEstampas"></tbody>
         </table>
     </div>
@@ -146,7 +160,9 @@
 
 <div id="aba-clientes" class="container" style="display: none;">
     <div class="card">
-        <h2 class="card-title">Top Clientes da Waller</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="card-title" style="margin: 0;">Carteira de Clientes (CRM)</h2>
+        </div>
         <div id="listaClientesCRM" class="crm-grid"></div>
     </div>
 </div>
@@ -169,7 +185,11 @@
                     <option value="OUTROS">OUTROS</option>
                 </select>
                 <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
-                <input type="text" id="cadCusto" class="moeda" placeholder="CUSTO (R$)" required style="flex: 0.5;">
+            </div>
+            <div class="form-section-title" style="margin-top: 10px;">Margem de Lucro Bruto</div>
+            <div class="form-grid">
+                <input type="text" id="cadCusto" class="moeda" placeholder="CUSTO DE PRODUÇÃO (R$)" required>
+                <input type="text" id="cadPreco" class="moeda" placeholder="PREÇO DE VENDA (R$)" required>
             </div>
             <button type="submit" id="btnSalvarEstampa" class="btn-primary">SALVAR PRODUTO</button>
         </form>
