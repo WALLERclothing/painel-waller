@@ -95,6 +95,7 @@
 </div>
 
 <div id="aba-producao" class="container" style="display: none;">
+    
     <div class="dashboard-grid">
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
         <div class="dash-card green-text">
@@ -114,8 +115,13 @@
     </div>
 
     <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h3 style="margin-top: 0; font-weight: 900; text-transform: uppercase; font-size: 1rem;">Desempenho Financeiro (Últimos Meses)</h3>
-        <canvas id="graficoVendas" height="80"></canvas>
+        <div class="toggle-itens-btn" onclick="toggleGrafico()" style="font-size: 1rem; margin-bottom: 0; border: none; padding: 0;">
+            <span style="font-weight: 900; text-transform: uppercase;">📊 VER GRÁFICO DE DESEMPENHO</span>
+            <span id="seta-grafico">▼</span>
+        </div>
+        <div id="container-grafico" style="display: none; margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 20px;">
+            <canvas id="graficoVendas" height="80"></canvas>
+        </div>
     </div>
 
     <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
@@ -275,7 +281,7 @@
             <button class="btn-pdf-opcao" onclick="gerarPDFProducao('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA</button>
             
             <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()" style="grid-column: 1 / -1; border-color: var(--red); color: var(--red);">📦 GERAR ETIQUETAS DE ENVIO (PRONTOS)</button>
-            <button class="btn-pdf-opcao" onclick="gerarPDFFaturamento()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE FATURAMENTO MENSAL</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFLucroLiquido()" style="grid-column: 1 / -1; border-color: var(--green); color: var(--green);">💰 RELATÓRIO DE LUCRO (COMPLETO)</button>
         </div>
     </div>
 </div>
