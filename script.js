@@ -20,7 +20,7 @@ function showToast(msg, isError = false) {
 }
 
 // ==========================================
-// UTILITÁRIOS, FRETE E MASCARAS
+// UTILITÁRIOS, FRETE E MÁSCARAS INTELIGENTES
 // ==========================================
 function unmaskCurrency(value) {
     if (!value) return 0; if (typeof value === 'number') return value;
@@ -43,9 +43,17 @@ function aplicarMascaraEPular(e) {
     else if(v.length <= 10) e.target.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`; 
     else e.target.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
 
-    // Pula para o campo "nome" se atingir 15 caracteres: (XX) XXXXX-XXXX
-    if (e.target.value.length === 15) {
-        document.getElementById('nome').focus();
+    if (e.target.value.length === 15) { document.getElementById('nome').focus(); }
+}
+
+function aplicarMascaraCepEPular(e) {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5, 8);
+    e.target.value = v;
+
+    if (v.length === 9) {
+        buscarCEP(v); // Dispara a busca
+        document.getElementById('numeroEnd').focus(); // Pula para o número
     }
 }
 
@@ -57,7 +65,6 @@ async function buscarCEP(cep) {
             let data = await res.json();
             if(!data.erro) {
                 document.getElementById('endereco').value = `${data.logradouro}, Bairro: ${data.bairro} - ${data.localidade}/${data.uf}`;
-                document.getElementById('numeroEnd').focus();
                 
                 const tabelaFrete = { 'SP': 15.00, 'RJ': 20.00, 'MG': 20.00, 'ES': 20.00, 'PR': 25.00, 'SC': 25.00, 'RS': 25.00, 'DF': 25.00, 'GO': 25.00, 'MT': 30.00, 'MS': 30.00 };
                 let valorCalculado = tabelaFrete[data.uf] || 35.00;
@@ -91,7 +98,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ==========================================
-// CATÁLOGO E MODAL DE ESTAMPA
+// CATÁLOGO: CUSTO E PREÇO DE VENDA
 // ==========================================
 let catalogoEstampas = {}; 
 db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
@@ -104,18 +111,19 @@ db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
         let estoque = est.estoque || 0; 
         let cat = est.categoria || 'CAMISETA';
         let custo = est.custo || 0;
+        let preco = est.precoVenda || 0;
         
-        // Salvamos o custo no catálogo da memória para usar na hora de vender
-        catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque, categoria: cat, custo: custo };
+        catalogoEstampas[est.codigo] = { nome: est.nome, estoque: estoque, categoria: cat, custo: custo, precoVenda: preco };
         
         datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
         
         let badgeSoldOut = estoque <= 0 ? `<span class="badge-soldout">SOLD OUT</span>` : '';
+        let resumoFinanceiro = `Custo: ${formatCurrency(custo)} | Venda: ${formatCurrency(preco)}`;
         
         document.getElementById('listaEstampas').innerHTML += `
         <tr>
             <td><strong>${est.codigo}</strong></td>
-            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} | Custo: ${formatCurrency(custo)}</div></td>
+            <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} • ${resumoFinanceiro}</div></td>
             <td>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <button class="btn-icone" style="width:25px; height:25px; font-size:1.2rem; line-height:0;" onclick="ajustarEstoqueRapido('${doc.id}', -1)">-</button>
@@ -125,7 +133,7 @@ db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
                 </div>
             </td>
             <td style="display:flex; gap:5px;">
-                <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque}, '${cat}', ${custo})">✏️</button>
+                <button class="btn-icone" onclick="prepararEdicaoEstampa('${est.codigo}', '${est.nome.replace(/'/g,"\\'")}', ${estoque}, '${cat}', ${custo}, ${preco})">✏️</button>
                 <button class="btn-icone" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
             </td>
         </tr>`;
@@ -138,36 +146,30 @@ function ajustarEstoqueRapido(id, delta) {
 
 function autocompletarEstampa(val) {
     let code = val.toUpperCase().trim();
-    if(catalogoEstampas[code]) { document.getElementById('nomeEstampa').value = catalogoEstampas[code].nome; }
+    if(catalogoEstampas[code]) { 
+        document.getElementById('nomeEstampa').value = catalogoEstampas[code].nome;
+        document.getElementById('valorUnitario').value = formatCurrency(catalogoEstampas[code].precoVenda); // Autopreencher valor de venda
+    }
 }
 
-function abrirModalEstampa() {
-    document.getElementById('modalEstampa').style.display = 'flex';
-}
-
+function abrirModalEstampa() { document.getElementById('modalEstampa').style.display = 'flex'; }
 function fecharModalEstampa() {
     document.getElementById('modalEstampa').style.display = 'none';
-    document.getElementById('cadCodigoEstampa').value = ''; 
-    document.getElementById('cadCodigoEstampa').disabled = false;
-    document.getElementById('cadNomeEstampa').value = ''; 
-    document.getElementById('cadEstoque').value = '0';
-    document.getElementById('cadCusto').value = '';
-    document.getElementById('cadCategoriaEstampa').value = 'CAMISETA';
-    document.getElementById('editEstampaCodigoOriginal').value = '';
-    document.getElementById('tituloModalEstampa').innerText = 'CADASTRAR PRODUTO';
-    document.getElementById('btnSalvarEstampa').innerText = 'SALVAR PRODUTO';
+    document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
+    document.getElementById('cadNomeEstampa').value = ''; document.getElementById('cadEstoque').value = '0';
+    document.getElementById('cadCusto').value = ''; document.getElementById('cadPreco').value = '';
+    document.getElementById('cadCategoriaEstampa').value = 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = '';
+    document.getElementById('tituloModalEstampa').innerText = 'CADASTRAR PRODUTO'; document.getElementById('btnSalvarEstampa').innerText = 'SALVAR PRODUTO';
 }
 
-function prepararEdicaoEstampa(c, n, e, cat, custo) {
+function prepararEdicaoEstampa(c, n, e, cat, custo, preco) {
     document.getElementById('cadCodigoEstampa').value = c; document.getElementById('cadCodigoEstampa').disabled = true;
     document.getElementById('cadNomeEstampa').value = n; document.getElementById('cadEstoque').value = e;
-    document.getElementById('cadCusto').value = formatCurrency(custo);
-    document.getElementById('cadCategoriaEstampa').value = cat || 'CAMISETA';
-    document.getElementById('editEstampaCodigoOriginal').value = c;
+    document.getElementById('cadCusto').value = formatCurrency(custo); document.getElementById('cadPreco').value = formatCurrency(preco);
+    document.getElementById('cadCategoriaEstampa').value = cat || 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = c;
     
     document.getElementById('tituloModalEstampa').innerText = 'EDITAR PRODUTO: ' + c;
     document.getElementById('btnSalvarEstampa').innerText = 'ATUALIZAR PRODUTO';
-    
     abrirModalEstampa();
 }
 
@@ -178,16 +180,17 @@ function salvarNovaEstampa(e) {
     let cat = document.getElementById('cadCategoriaEstampa').value;
     let est = parseInt(document.getElementById('cadEstoque').value) || 0;
     let custo = unmaskCurrency(document.getElementById('cadCusto').value);
+    let preco = unmaskCurrency(document.getElementById('cadPreco').value);
     let docId = document.getElementById('editEstampaCodigoOriginal').value || cod;
 
-    db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, categoria: cat, estoque: est, custo: custo }, { merge: true })
+    db.collection("estampas").doc(docId).set({ codigo: docId, nome: nom, categoria: cat, estoque: est, custo: custo, precoVenda: preco }, { merge: true })
     .then(() => { fecharModalEstampa(); showToast("Produto Salvo!"); });
 }
 
 function excluirEstampa(id) { if(confirm(`Apagar estampa?`)) db.collection("estampas").doc(id).delete(); }
 
 // ==========================================
-// CRM: DADOS DE CLIENTES (FICHA)
+// CRM: DADOS DE CLIENTES E ALERTA CHURN
 // ==========================================
 let clientesCadastrados = {};
 db.collection("clientes").onSnapshot(snap => {
@@ -239,17 +242,17 @@ function salvarFichaCliente() {
         cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value,
         complemento: document.getElementById('fichaComplemento').value,
         obs: document.getElementById('fichaObs').value
-    }, {merge: true}).then(() => { showToast("Ficha do Cliente Atualizada!"); fecharFichaCliente(); });
+    }, {merge: true}).then(() => { showToast("Ficha Atualizada!"); fecharFichaCliente(); });
 }
 
 function excluirFichaCliente(whatsapp) {
-    if(confirm(`Tem certeza que deseja APAGAR a ficha de ${whatsapp}? O histórico de pedidos continuará existindo, mas os dados salvos do cliente sumirão.`)) {
+    if(confirm(`Tem certeza que deseja APAGAR a ficha de ${whatsapp}?`)) {
         db.collection("clientes").doc(whatsapp).delete().then(() => showToast("Ficha Excluída!", true));
     }
 }
 
 // ==========================================
-// CARRINHO E LANÇAMENTO DE PEDIDO
+// LANÇAMENTO DE PEDIDO (MATEMÁTICA DO LUCRO)
 // ==========================================
 let todosPedidos = []; let carrinhoTemporario = []; 
 
@@ -263,9 +266,8 @@ function adicionarAoCarrinho() {
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
 
     if(!cod || !nom) { showToast("Preencha código e nome!", true); return; }
-    if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Aviso: Estoque baixo/zerado para esta estampa!", true); }
+    if(catalogoEstampas[cod] && catalogoEstampas[cod].estoque < qtd) { showToast("Estoque baixo!", true); }
 
-    // Pega o custo do catálogo na hora da venda para calcular o lucro depois
     const custoProduto = catalogoEstampas[cod] ? catalogoEstampas[cod].custo : 0;
 
     carrinhoTemporario.push({ 
@@ -280,17 +282,18 @@ function adicionarAoCarrinho() {
 function removerDoCarrinho(i) { carrinhoTemporario.splice(i, 1); atualizarTelaCarrinho(); }
 
 function atualizarTelaCarrinho() {
-    let soma = 0; document.getElementById('listaCarrinho').innerHTML = '';
+    let somaProdutos = 0; document.getElementById('listaCarrinho').innerHTML = '';
     
     carrinhoTemporario.forEach((p, i) => {
-        soma += (p.quantidade * p.valorUnitario);
+        somaProdutos += (p.quantidade * p.valorUnitario);
         document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${p.quantidade}x</strong> ${p.tipoPeca} (${p.tamanho}) - [${p.codigoEstampa}]</span><div><span style="color:var(--red); font-weight:900;">${formatCurrency(p.valorUnitario)}</span> <button class="btn-remove-item" onclick="removerDoCarrinho(${i})">X</button></div></div>`;
     });
     
-    let frete = unmaskCurrency(document.getElementById('valorFrete').value);
+    let freteCobrado = unmaskCurrency(document.getElementById('valorFrete').value);
     let desconto = unmaskCurrency(document.getElementById('valorDesconto').value);
     
-    document.getElementById('valorTotal').value = formatCurrency(soma + frete - desconto);
+    // Total que o cliente vai te pagar (Soma Produtos + Frete Cobrado - Desconto)
+    document.getElementById('valorTotal').value = formatCurrency(somaProdutos + freteCobrado - desconto);
     document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 }
 
@@ -301,21 +304,27 @@ async function salvarPedidoCompleto() {
     let end = document.getElementById('endereco').value + ", " + document.getElementById('numeroEnd').value;
     let compl = document.getElementById('complementoEnd').value;
     
-    let frete = unmaskCurrency(document.getElementById('valorFrete').value);
+    let freteCobrado = unmaskCurrency(document.getElementById('valorFrete').value);
+    let freteReal = unmaskCurrency(document.getElementById('valorFreteReal').value);
+    let embalagem = unmaskCurrency(document.getElementById('custoEmbalagem').value);
     let desconto = unmaskCurrency(document.getElementById('valorDesconto').value);
-    let total = unmaskCurrency(document.getElementById('valorTotal').value);
+    let totalCobrado = unmaskCurrency(document.getElementById('valorTotal').value);
 
     if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
 
-    // Calcula Custo Total e Lucro na hora de fechar a O.S.
-    let somaCusto = 0;
+    // MATEMÁTICA DO LUCRO LÍQUIDO REAL
+    let somaCustoPecas = 0;
     let somaVendaPecas = 0;
     carrinhoTemporario.forEach(item => { 
-        somaCusto += (item.custoUnitario * item.quantidade);
+        somaCustoPecas += (item.custoUnitario * item.quantidade);
         somaVendaPecas += (item.valorUnitario * item.quantidade);
     });
-    // Lucro = (Venda das Peças - Custo das Peças) - Desconto
-    let lucroCalculado = (somaVendaPecas - somaCusto) - desconto;
+    
+    // Lucro = (Venda - CustoProdução) - Desconto - CustoEmbalagem - (FreteReal - FreteCobradoCliente)
+    let prejuizoFrete = freteReal > freteCobrado ? (freteReal - freteCobrado) : 0;
+    let lucroSobraFrete = freteCobrado > freteReal ? (freteCobrado - freteReal) : 0;
+    
+    let lucroCalculado = (somaVendaPecas - somaCustoPecas) - desconto - embalagem - prejuizoFrete + lucroSobraFrete;
 
     document.getElementById('btnGerarOrdem').innerText = "SALVANDO...";
     let numGerado = Math.floor(1000 + Math.random() * 9000).toString();
@@ -323,8 +332,8 @@ async function salvarPedidoCompleto() {
     try {
         await db.collection("pedidos").add({
             numeroPedido: numGerado, nome: nome, whatsapp: whatsapp, cep: cep, endereco: end, complemento: compl,
-            valorFrete: frete, valorDesconto: desconto, valorTotal: total, 
-            custoTotalPedido: somaCusto, lucroTotalPedido: lucroCalculado,
+            valorFrete: freteCobrado, valorFreteReal: freteReal, custoEmbalagem: embalagem, valorDesconto: desconto, valorTotal: totalCobrado, 
+            custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado,
             metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value,
             itens: carrinhoTemporario, status: 'PEDIDO FEITO', dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -337,18 +346,23 @@ async function salvarPedidoCompleto() {
             }
         });
 
-        // Limpa tudo
-        document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('complementoEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorDesconto').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
+        // Limpa a tela
+        document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('complementoEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorFreteReal').value=''; document.getElementById('valorDesconto').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
         carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO"; showToast(`PEDIDO #${numGerado} SALVO!`);
     } catch (e) { showToast("Erro ao salvar", true); }
 }
 
 // ==========================================
-// LISTENER DE PEDIDOS E KANBAN
+// KANBAN, GRÁFICOS E CURVA ABC
 // ==========================================
+let chartInstancia = null; // Variável para controlar o gráfico
+
 db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
     todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
     let met = { pedMes: 0, faturamento: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
+
+    // Dados para o Gráfico
+    let vendasPorMes = {}; 
 
     querySnapshot.forEach((doc) => {
         let p = doc.data(); p.id = doc.id; 
@@ -358,10 +372,19 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
         let d = p.dataCriacao ? p.dataCriacao.toDate() : new Date();
         p.dataFormatada = d.toLocaleDateString('pt-BR'); p.dataMesAno = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
         
-        if(p.statusPagamento === 'PAGO') meses.add(p.dataMesAno);
+        if(p.statusPagamento === 'PAGO') {
+            meses.add(p.dataMesAno);
+            // Soma faturamento no gráfico
+            if(!vendasPorMes[p.dataMesAno]) vendasPorMes[p.dataMesAno] = 0;
+            vendasPorMes[p.dataMesAno] += parseFloat(p.valorTotal || 0);
+            
+            // Frequencia da Curva ABC
+            if(p.itens) { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
+        }
+        
         if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
-        // CRM Aggregate
+        // CRM
         if(p.whatsapp) {
             if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, complemento: p.complemento, ultimaCompra: d };
             mapaClientes[p.whatsapp].qtd++;
@@ -369,7 +392,6 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
             if(p.statusPagamento === 'PAGO') mapaClientes[p.whatsapp].totalGasto += parseFloat(p.valorTotal||0);
         }
 
-        if(p.itens && p.statusPagamento === 'PAGO') { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
         todosPedidos.push(p);
     });
 
@@ -378,11 +400,31 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
     renderizarCRM();
     renderizarBestSellers(freqEstampas);
     renderizarKanban(); 
+    renderizarGrafico(vendasPorMes);
 });
 
+function renderizarGrafico(vendas) {
+    // Pega os últimos 6 meses e ordena cronologicamente
+    let labels = Object.keys(vendas).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aA,mA-1)-new Date(aB,mB-1); }).slice(-6);
+    let dados = labels.map(mes => vendas[mes]);
+
+    const ctx = document.getElementById('graficoVendas').getContext('2d');
+    if (chartInstancia) chartInstancia.destroy(); // Apaga o gráfico velho
+
+    chartInstancia = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{ label: 'Faturamento Bruto (R$)', data: dados, backgroundColor: '#c1121f', borderWidth: 2, borderColor: '#111111' }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+}
+
 function renderizarBestSellers(freq) {
-    let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,3);
-    document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas pagas';
+    let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,5); // Pega o Top 5
+    document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas';
+    document.getElementById('dashBestSellersList').innerHTML = sortable.length ? sortable.map(x => `${x[0]} (${x[1]})`).join(' | ') : 'Sem histórico';
 }
 
 function renderizarCRM() {
@@ -401,9 +443,14 @@ function renderizarCRM() {
         let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
         let vipBadge = c[1].totalGasto >= 500 ? `<span class="badge-vip">VIP</span>` : '';
         
+        // Verifica Cliente Sumido (> 90 dias sem comprar)
+        let diasSumido = c[1].ultimaCompra ? Math.floor((new Date() - c[1].ultimaCompra) / (1000 * 60 * 60 * 24)) : 0;
+        let classeSumido = diasSumido > 90 ? 'sumido' : '';
+        let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido} dias)</span>` : '';
+        
         return `
-        <div class="crm-card">
-            <h3 class="crm-card-title">${c[1].nome} ${vipBadge}</h3>
+        <div class="crm-card ${classeSumido}">
+            <h3 class="crm-card-title">${c[1].nome} <div>${vipBadge} ${badgeSumido}</div></h3>
             <div class="crm-card-subtitle">${c[0]}</div>
             
             <div class="crm-stats">
@@ -425,9 +472,6 @@ function renderizarCRM() {
     }).join('');
 }
 
-// ==========================================
-// KANBAN LOGIC & RENDER
-// ==========================================
 function renderizarKanban() {
     let cols = { 'PEDIDO FEITO':'', 'AGUARDANDO ESTAMPA':'', 'ESTAMPA PRONTA':'', 'PEDIDO ENVIADO':'' };
     
@@ -480,9 +524,6 @@ function drop(ev, novoStatus) { ev.preventDefault(); db.collection("pedidos").do
 function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
 function excluirPedido(id) { if (confirm("Deletar pedido inteiro?")) db.collection("pedidos").doc(id).delete(); }
 
-// ==========================================
-// BULK E DASHBOARD FINANCEIRO (C/ LUCRO)
-// ==========================================
 let selecionados = [];
 function checkBulk() {
     selecionados = Array.from(document.querySelectorAll('.checkbox-bulk:checked')).map(cb => cb.value);
@@ -512,7 +553,6 @@ function calcularFaturamentoMensal() {
     todosPedidos.forEach(p => { 
         if(p.statusPagamento === 'PAGO' && p.dataMesAno === mes) {
             somaFaturamento += parseFloat(p.valorTotal);
-            // Pega o lucro que já foi calculado no dia da venda. Se for pedido velho sem lucro salvo, soma 0.
             somaLucro += parseFloat(p.lucroTotalPedido || 0); 
         }
     });
