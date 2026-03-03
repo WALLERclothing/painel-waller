@@ -55,9 +55,9 @@
             
             <div class="form-section-title" style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted);">Custos de Envio & Descontos</div>
             <div class="form-grid">
-                <input type="text" id="valorFrete" class="moeda" placeholder="FRETE COBRADO DO CLIENTE (R$)" oninput="atualizarTelaCarrinho()" title="O que o cliente pagou de frete">
-                <input type="text" id="valorFreteReal" class="moeda" placeholder="CUSTO REAL DO FRETE (R$)" oninput="atualizarTelaCarrinho()" title="O que você pagou de fato nos Correios/Transportadora" style="border-color: var(--text-muted);">
-                <input type="text" id="custoEmbalagem" class="moeda" placeholder="CUSTO EMBALAGEM (R$)" value="R$ 4,50" oninput="atualizarTelaCarrinho()" title="Caixa, seda, adesivos, brindes">
+                <input type="text" id="valorFrete" class="moeda" placeholder="FRETE COBRADO DO CLIENTE (R$)" oninput="atualizarTelaCarrinho()">
+                <input type="text" id="valorFreteReal" class="moeda" placeholder="CUSTO REAL DO FRETE (R$)" oninput="atualizarTelaCarrinho()" style="border-color: var(--text-muted);">
+                <input type="text" id="custoEmbalagem" class="moeda" placeholder="CUSTO EMBALAGEM (R$)" value="R$ 4,50" oninput="atualizarTelaCarrinho()">
                 <input type="text" id="valorDesconto" class="moeda" placeholder="DESCONTO APLICADO (R$)" oninput="atualizarTelaCarrinho()">
             </div>
             
@@ -110,6 +110,7 @@
             <h3 style="color: var(--white);">Lucro Líquido Real</h3>
             <span id="dashLucro" style="color: var(--green);">R$ 0,00</span>
         </div>
+        <div class="dash-card"><h3>Top Estampas</h3><div id="dashBestSellers" class="best-sellers-list">Carregando...</div></div>
     </div>
 
     <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
@@ -147,6 +148,7 @@
             <h2 class="card-title" style="margin: 0;">Catálogo e Estoque</h2>
             <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirModalEstampa()">+ NOVO PRODUTO</button>
         </div>
+        
         <div style="background: var(--gray); padding: 1rem; border: var(--border-thick); margin-bottom: 1.5rem;">
             <strong style="color: var(--red);">🔥 CURVA A (Mais Vendidos):</strong> <span id="dashBestSellersList">Carregando...</span>
         </div>
@@ -171,26 +173,50 @@
     <div class="modal-box">
         <button class="btn-close-modal" onclick="fecharModalEstampa()">X</button>
         <h2 class="card-title" id="tituloModalEstampa" style="color: var(--red);">CADASTRAR PRODUTO</h2>
+        
         <form onsubmit="salvarNovaEstampa(event)">
             <input type="hidden" id="editEstampaCodigoOriginal" value="">
+            
             <div class="form-grid">
-                <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: SKULL-01)" required style="flex: 0.5;">
-                <input type="text" id="cadNomeEstampa" placeholder="NOME DA ESTAMPA" required style="flex: 1.5;">
+                <div class="input-group" style="flex: 0.5;">
+                    <label>CÓDIGO (SKU)</label>
+                    <input type="text" id="cadCodigoEstampa" placeholder="Ex: SKULL-01" required>
+                </div>
+                <div class="input-group" style="flex: 1.5;">
+                    <label>NOME DO PRODUTO</label>
+                    <input type="text" id="cadNomeEstampa" placeholder="Ex: GOOD VIBES" required>
+                </div>
             </div>
+            
             <div class="form-grid">
-                <select id="cadCategoriaEstampa" style="flex:1;">
-                    <option value="CAMISETA">CAMISETA</option>
-                    <option value="MOLETOM">MOLETOM</option>
-                    <option value="ACESSÓRIO">ACESSÓRIO</option>
-                    <option value="OUTROS">OUTROS</option>
-                </select>
-                <input type="number" id="cadEstoque" placeholder="ESTOQUE ATUAL" value="0" min="0" required style="flex: 0.5;">
+                <div class="input-group" style="flex: 1;">
+                    <label>CATEGORIA</label>
+                    <select id="cadCategoriaEstampa">
+                        <option value="CAMISETA">CAMISETA</option>
+                        <option value="MOLETOM">MOLETOM</option>
+                        <option value="ACESSÓRIO">ACESSÓRIO</option>
+                        <option value="OUTROS">OUTROS</option>
+                    </select>
+                </div>
+                <div class="input-group" style="flex: 0.5;">
+                    <label>ESTOQUE (QTD)</label>
+                    <input type="number" id="cadEstoque" placeholder="0" value="0" min="0" required>
+                </div>
             </div>
-            <div class="form-section-title" style="margin-top: 10px;">Margem de Lucro Bruto</div>
+            
+            <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">MARGEM DE LUCRO BRUTO</div>
+            
             <div class="form-grid">
-                <input type="text" id="cadCusto" class="moeda" placeholder="CUSTO DE PRODUÇÃO (R$)" required>
-                <input type="text" id="cadPreco" class="moeda" placeholder="PREÇO DE VENDA (R$)" required>
+                <div class="input-group">
+                    <label>CUSTO DE PRODUÇÃO (R$)</label>
+                    <input type="text" id="cadCusto" class="moeda" placeholder="Ex: R$ 30,00" required>
+                </div>
+                <div class="input-group">
+                    <label>PREÇO DE VENDA (R$)</label>
+                    <input type="text" id="cadPreco" class="moeda" placeholder="Ex: R$ 89,90" required>
+                </div>
             </div>
+            
             <button type="submit" id="btnSalvarEstampa" class="btn-primary">SALVAR PRODUTO</button>
         </form>
     </div>
