@@ -13,16 +13,12 @@
 </head>
 <body>
 
-<div id="glitchOverlay" class="glitch-overlay">
-    <h1 class="glitch-text" data-text="WALLER">WALLER</h1>
-    <p style="color: #666; font-size: 0.8rem; margin-top: 10px; font-weight: bold; letter-spacing: 2px;">Sincronizando Sistema...</p>
-</div>
-
 <button class="fab-mobile" onclick="mudarAba('cadastro')">+</button>
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
+        <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙 Tema escuro</button>
         <button class="btn-theme" onclick="abrirModalRelatorios()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg>
             Relatórios PDF
@@ -112,7 +108,7 @@
         <div class="dash-card" style="border-color:#166534;"><h3>Lucro Líquido Real</h3><span id="dashLucro" style="color:#166534;">R$ 0,00</span></div>
     </div>
     
-    <h2 class="card-title">Fila de Produção</h2>
+    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;"></span></h2>
     
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
@@ -139,7 +135,9 @@
         </div>
     </div>
 
-    <div class="kanban-board" id="gridPedidosContainer"></div>
+    <div class="kanban-board" id="gridPedidosContainer">
+        <div class="skeleton" style="width:100%;"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+    </div>
 </div>
 
 <div id="aba-estampas" class="container" style="display: none;">
@@ -263,7 +261,7 @@
             </div>
             <div class="form-grid cols-4">
                 <input type="text" id="editPedRastreio" placeholder="CÓDIGO RASTREIO">
-                <input type="text" id="editPedFrete" class="moeda" placeholder="FRETE" oninput="atualizarTelaCarrinhoEdicao()">
+                <input type="text" id="editPedFrete" class="moeda" placeholder="VALOR FRETE" oninput="atualizarTelaCarrinhoEdicao()">
                 <select id="editPedMetodo"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
                 <select id="editPedStatusPagamento"><option value="PAGO">PAGO</option><option value="PENDENTE">PENDENTE</option></select>
             </div>
