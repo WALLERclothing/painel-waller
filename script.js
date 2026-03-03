@@ -28,8 +28,22 @@ function upper(v) { return (v || '').toString().trim().toUpperCase(); }
 function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
 function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
 function unmaskCurrency(value) { if (!value) return 0; return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
-function formatDate(dateValue) { if (!dateValue) return '-'; if (typeof dateValue === 'string' && dateValue.includes('-')) { return new Date(dateValue + 'T12:00:00').toLocaleDateString('pt-BR'); } const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue); return date.toLocaleDateString('pt-BR'); }
-function getItensResumo(itens = []) { if (!itens.length) return 'Sem itens'; return itens.map((item) => `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa}`).join(' • '); }
+function formatDate(dateValue) { 
+    if (!dateValue) return '-'; 
+    if (typeof dateValue === 'string' && dateValue.includes('-')) { return new Date(dateValue + 'T12:00:00').toLocaleDateString('pt-BR'); } 
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue); 
+    if(isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('pt-BR'); 
+}
+
+function getItensResumo(itens = []) { 
+    if (!itens || !Array.isArray(itens)) return 'Sem itens'; 
+    return itens.map((item) => {
+        if(!item) return '';
+        return `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa}`;
+    }).filter(Boolean).join(' • ') || 'Sem itens'; 
+}
+
 function primeiroNome(nome = '') { return (nome.trim().split(' ')[0] || 'cliente'); }
 
 function showToast(msg, type = 'success') {
@@ -102,7 +116,7 @@ function carregarRascunho() {
         }
     } catch(e){}
 }
-el('aba-cadastro').addEventListener('input', salvarRascunho);
+if(el('aba-cadastro')) el('aba-cadastro').addEventListener('input', salvarRascunho);
 
 
 // ================= LANÇAR DROP / PEDIDO =================
@@ -267,7 +281,10 @@ async function salvarEdicaoPedidoDefinitiva() {
 // ================= WHATSAPP E FERRAMENTAS =================
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome); let itensTexto = '';
-    (pedido.itens || []).forEach(i => { itensTexto += `▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`; });
+    (pedido.itens || []).forEach(i => {
+        if(!i) return;
+        itensTexto += `▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`; 
+    });
     let txt = `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* esta: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}`;
     if(pedido.valorFrete > 0) txt += `*FRETE:* ${formatCurrency(pedido.valorFrete)}\n`;
     txt += `*TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer duvida, e so dar um salve por aqui!`; return txt;
@@ -347,7 +364,7 @@ function renderPedidosGrid(lista) {
                     <span><input type="checkbox" class="chk-bulk" ${checked} onchange="toggleSelecao('${pedido.id}')"> <strong>#${pedido.numeroPedido}</strong></span>
                     <span class="pedido-badge ${statusClass(grupo.status)}">${grupo.status}</span>
                 </div>
-                <p><strong><span class="copy-text" title="Copiar" onclick="copiarTexto('${pedido.nome}')">${pedido.nome || 'SEM NOME'}</span></strong></p>
+                <p><strong><span class="copy-text" title="Copiar" onclick="copiarTexto('${(pedido.nome||'').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">${pedido.nome || 'SEM NOME'}</span></strong></p>
                 <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
                 <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
                 ${grupo.status === 'AGUARDANDO PAGAMENTO' ? `<button class="btn-cobrar" onclick="enviarCobranca('${pedido.id}')">💸 Cobrar Pix</button>` : ''}
@@ -387,6 +404,7 @@ function atualizarDashboard(lista) {
     const pedidosMes = lista.filter((pedido) => {
         if (!pedido.dataCriacao) return false;
         const d = pedido.dataCriacao.toDate ? pedido.dataCriacao.toDate() : new Date(pedido.dataCriacao);
+        if (isNaN(d.getTime())) return false;
         return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
     });
     el('dashPedidosMes').textContent = pedidosMes.length;
@@ -399,6 +417,7 @@ function atualizarDashboard(lista) {
 function aniversarioProximo(dataIso) {
     if (!dataIso) return false;
     const hoje = new Date(); const data = new Date(`${dataIso}T12:00:00`); 
+    if(isNaN(data.getTime())) return false;
     let niverEsteAno = new Date(hoje.getFullYear(), data.getMonth(), data.getDate());
     let diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
     if (diff < 0) { niverEsteAno = new Date(hoje.getFullYear() + 1, data.getMonth(), data.getDate()); diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000); }
@@ -418,20 +437,22 @@ function extrairClientesDosPedidos() {
         mapa.set(chave, base);
     });
 
-    // Calcula Aniversário de 1 ano Waller
     Array.from(mapa.values()).forEach(base => {
         base.aniversarioWaller = false;
         if (base.historicoPedidos.length > 0) {
             base.historicoPedidos.sort((a, b) => {
-                let da = a.dataCriacao ? (a.dataCriacao.toDate ? a.dataCriacao.toDate() : new Date(a.dataCriacao)) : new Date();
-                let db = b.dataCriacao ? (b.dataCriacao.toDate ? b.dataCriacao.toDate() : new Date(b.dataCriacao)) : new Date();
-                return da - db;
+                let da = a.dataCriacao ? (a.dataCriacao.toDate ? a.dataCriacao.toDate() : new Date(a.dataCriacao)) : new Date(0);
+                let db = b.dataCriacao ? (b.dataCriacao.toDate ? b.dataCriacao.toDate() : new Date(b.dataCriacao)) : new Date(0);
+                return da.getTime() - db.getTime();
             });
             let primeiraCompra = base.historicoPedidos[0].dataCriacao;
-            primeiraCompra = primeiraCompra ? (primeiraCompra.toDate ? primeiraCompra.toDate() : new Date(primeiraCompra)) : new Date();
-            const hoje = new Date();
-            if (primeiraCompra.getFullYear() < hoje.getFullYear() && primeiraCompra.getMonth() === hoje.getMonth() && Math.abs(primeiraCompra.getDate() - hoje.getDate()) <= 7) {
-                base.aniversarioWaller = true;
+            let dataPrim = primeiraCompra ? (primeiraCompra.toDate ? primeiraCompra.toDate() : new Date(primeiraCompra)) : null;
+            if (dataPrim && !isNaN(dataPrim.getTime())) {
+                const hoje = new Date();
+                const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
+                const diffMonths = hoje.getMonth() - dataPrim.getMonth();
+                const diffDays = Math.abs(hoje.getDate() - dataPrim.getDate());
+                if (diffYears > 0 && diffMonths === 0 && diffDays <= 7) { base.aniversarioWaller = true; }
             }
         }
     });
@@ -454,18 +475,18 @@ function abrirVisualizacaoCliente(cliente) {
     el('fichaClienteTitulo').textContent = `Ficha Completa: ${cliente.nome || 'Cliente'}`;
     el('fichaClienteConteudo').innerHTML = `
         <div class="cliente-ficha-grid">
-            <p><strong>Nome:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.nome}')">${cliente.nome || '-'}</span> ${getSeloVip(cliente.totalGasto)}</p>
+            <p><strong>Nome:</strong> <span class="copy-text" onclick="copiarTexto('${(cliente.nome||'').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">${cliente.nome || '-'}</span> ${getSeloVip(cliente.totalGasto)}</p>
             <p><strong>WhatsApp:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.whatsapp}')">${cliente.whatsapp || '-'}</span></p>
             <p><strong>Instagram:</strong> ${cliente.instagram || '-'}</p>
             <p><strong>CPF/CNPJ:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.documento}')">${cliente.documento || '-'}</span></p>
             <p><strong>CEP:</strong> ${cliente.cep || '-'}</p>
             <p><strong>Aniversário:</strong> ${cliente.aniversario ? formatDate(cliente.aniversario) : '-'}</p>
             <p><strong>Cidade/UF:</strong> ${cliente.cidade || '-'} / ${cliente.estado || ''}</p>
-            <p><strong>Endereço:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.endereco}, ${cliente.complemento}')">${cliente.endereco || '-'} ${cliente.complemento ? ` - ${cliente.complemento}` : ''}</span></p>
+            <p><strong>Endereço:</strong> <span class="copy-text" onclick="copiarTexto('${(cliente.endereco||'').replace(/'/g, "\\'")}, ${cliente.complemento||''}')">${cliente.endereco || '-'} ${cliente.complemento ? ` - ${cliente.complemento}` : ''}</span></p>
             <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
             <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
         </div>
-        ${cliente.notasPrivadas ? `<div style="margin-top:10px; padding:10px; background:#fef3c7; border-left:4px solid #f59e0b; border-radius:4px;"><small style="color:#92400e; font-weight:bold;">Notas Internas:</small><p style="margin:0; font-size:0.85rem; color:#92400e;">${cliente.notasPrivadas}</p></div>` : ''}
+        ${cliente.notasPrivadas ? `<div style="margin-top:10px; padding:10px; background:#fef3c7; border-left:4px solid #f59e0b; border-radius:4px;"><small style="color:#92400e; font-weight:bold;">Notas Internas:</small><p style="margin:0; font-size:0.85rem; color:#92400e;">${cliente.notasPrivadas.replace(/</g, '&lt;')}</p></div>` : ''}
         ${cliente.blacklist ? `<div style="margin-top:10px; padding:10px; background:#fef2f2; border-left:4px solid #dc2626; border-radius:4px; color:#dc2626; font-weight:bold;">⚠️ CLIENTE NA BLACKLIST</div>` : ''}
         <div style="display:flex; gap:0.5rem; margin-top:1rem;">
             <button class="btn-primary" onclick="editarCliente('${idRef}'); fecharFichaCliente();">EDITAR DADOS</button>
@@ -532,6 +553,7 @@ function calcularBestSellers() {
     let contagem = {};
     pedidosCache.forEach(p => {
         (p.itens || []).forEach(i => {
+            if(!i) return;
             if(!contagem[i.codigoEstampa]) contagem[i.codigoEstampa] = 0;
             contagem[i.codigoEstampa] += Number(i.quantidade) || 1;
         });
@@ -595,7 +617,7 @@ async function salvarEdicaoCatalogo(e) {
 async function atualizarStockInline(codigo, tamanho, valorNovo) {
     const val = parseInt(valorNovo); if(isNaN(val) || val < 0) return;
     await db.collection('estampas').doc(codigo).update({ [`estoque.${tamanho}`]: val });
-    showToast(`Stock do ${codigo} atualizado para ${val}!`);
+    showToast(`Stock atualizado para ${val}!`);
 }
 
 function renderCatalogo(lista = estampasCache) {
@@ -604,11 +626,11 @@ function renderCatalogo(lista = estampasCache) {
 
     lista.forEach((est) => {
         let pills = ''; let totalStk = 0;
-        Object.entries(est.estoque).forEach(([tam, qtd]) => { 
-            totalStk += qtd;
+        Object.entries(est.estoque || {}).forEach(([tam, qtd]) => { 
+            totalStk += Number(qtd);
             pills += `<div class="stock-pill"><small>${tam}:</small> <input type="number" class="inline-stock-input" value="${qtd}" onchange="atualizarStockInline('${est.codigo}', '${tam}', this.value)"></div>`; 
         });
-        const isEsgotado = totalStk === 0;
+        const isEsgotado = totalStk <= 0;
 
         container.innerHTML += `<article class="catalog-item ${isEsgotado ? 'item-esgotado' : ''}">
             <div class="catalog-item-top"><p class="catalog-code"><span class="copy-text" onclick="copiarTexto('${est.codigo}')">${est.codigo}</span></p></div>
@@ -667,46 +689,46 @@ function gerarEtiquetasEmMassa() {
     doc.save(`Etiquetas-Waller-${new Date().getTime()}.pdf`);
     showToast(`${pedidosSelecionados.length} Etiquetas geradas!`);
     pedidosSelecionados = []; el('bulkBar').style.display = 'none';
-    aplicarFiltros(); // re-renderiza para limpar checkboxes
+    aplicarFiltros(); 
 }
 
 // ================= BLINDAGEM DOS LISTENERS DO FIREBASE =================
 function iniciarListeners() {
     db.collection('clientes').onSnapshot((snap) => {
-        try {
-            let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); clientesCache = lidos; 
-            extrairClientesDosPedidos(); renderClientes(); el('carregandoClientes').style.display = 'none';
-        } catch(e) { console.error("Erro Clientes:", e); }
+        let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); clientesCache = lidos; 
+        try { if(pedidosCache.length > 0) { extrairClientesDosPedidos(); renderClientes(); } } 
+        catch(e) { console.error("Erro Clientes:", e); }
+        finally { if(el('carregandoClientes')) el('carregandoClientes').style.display = 'none'; }
     });
 
     db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
-        try {
-            let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
-            atualizarDashboard(pedidosCache); aplicarFiltros(); extrairClientesDosPedidos(); renderClientes(); calcularBestSellers();
-            el('carregando').style.display = 'none';
-        } catch(e) { console.error("Erro Pedidos:", e); }
+        let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
+        try { atualizarDashboard(pedidosCache); aplicarFiltros(); extrairClientesDosPedidos(); renderClientes(); calcularBestSellers(); } 
+        catch(e) { console.error("Erro Pedidos:", e); }
+        finally { if(el('carregando')) el('carregando').style.display = 'none'; }
     });
 
     db.collection('estampas').orderBy('codigo').onSnapshot((snap) => {
-        try {
-            let est = [];
-            snap.forEach((doc) => {
-                const data = doc.data();
-                let estq = {P:0, M:0, G:0, GG:0, XG:0, UN:0};
-                if(typeof data.estoque === 'number' || typeof data.estoque === 'string'){ estq.UN = Number(data.estoque) || 0; } 
-                else if (typeof data.estoque === 'object' && data.estoque !== null) { estq = { ...estq, ...data.estoque }; }
-                est.push({ codigo: upper(data.codigo), nome: upper(data.nome), valor: Number(data.valor) || 0, tipoPadrao: upper(data.tipoPadrao), estoque: estq });
-            });
-            estampasCache = est; renderCatalogo(); calcularBestSellers(); el('carregandoEstampas').style.display = 'none';
-        } catch(e) { console.error("Erro Catálogo:", e); }
+        let est = [];
+        snap.forEach((doc) => {
+            const data = doc.data();
+            let estq = {P:0, M:0, G:0, GG:0, XG:0, UN:0};
+            if(typeof data.estoque === 'number' || typeof data.estoque === 'string'){ estq.UN = Number(data.estoque) || 0; } 
+            else if (typeof data.estoque === 'object' && data.estoque !== null) { estq = { ...estq, ...data.estoque }; }
+            est.push({ codigo: upper(data.codigo), nome: upper(data.nome), valor: Number(data.valor) || 0, tipoPadrao: upper(data.tipoPadrao), estoque: estq });
+        });
+        estampasCache = est; 
+        try { renderCatalogo(); calcularBestSellers(); } 
+        catch(e) { console.error("Erro Catálogo:", e); }
+        finally { if(el('carregandoEstampas')) el('carregandoEstampas').style.display = 'none'; }
     });
 }
 
 // INICIALIZAÇÃO
-el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
-el('cadValorEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadValorEstampa').value); if(val>0) el('cadValorEstampa').value = formatCurrency(val); });
-el('editCatalogoValor').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoValor').value); if(val>0) el('editCatalogoValor').value = formatCurrency(val); });
-el('editPedValorTotal').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedValorTotal').value); if(val>0) el('editPedValorTotal').value = formatCurrency(val); });
+if(el('codigoEstampa')) el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
+if(el('cadValorEstampa')) el('cadValorEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadValorEstampa').value); if(val>0) el('cadValorEstampa').value = formatCurrency(val); });
+if(el('editCatalogoValor')) el('editCatalogoValor').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoValor').value); if(val>0) el('editCatalogoValor').value = formatCurrency(val); });
+if(el('editPedValorTotal')) el('editPedValorTotal').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedValorTotal').value); if(val>0) el('editPedValorTotal').value = formatCurrency(val); });
 
 setupAutoFields('whatsapp', 'instagram', 'cpf', 'cep', 'cidade', 'estado', 'endereco');
 setupAutoFields('clienteWhatsapp', 'clienteInstagram', 'clienteDocumento', 'clienteCep', 'clienteCidade', 'clienteEstado', 'clienteEndereco');
