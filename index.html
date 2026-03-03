@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waller Clothing | Painel</title>
+    <title>Waller Clothing | System</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -13,21 +13,28 @@
 </head>
 <body>
 
+<div id="glitchOverlay" class="glitch-overlay">
+    <h1 class="glitch-text" data-text="WALLER">WALLER</h1>
+    <p style="color: #666; font-size: 0.8rem; margin-top: 10px; font-weight: bold; letter-spacing: 2px;">Sincronizando Sistema...</p>
+</div>
+
 <button class="fab-mobile" onclick="mudarAba('cadastro')">+</button>
 
 <nav class="navbar">
     <h1>WALLER CLOTHING</h1>
     <div class="nav-actions">
-        <button class="btn-theme" id="btnTema" onclick="alternarTema()">🌙 Tema escuro</button>
-        <button class="btn-theme" onclick="abrirModalRelatorios()">🖨️ Relatórios</button>
+        <button class="btn-theme" onclick="abrirModalRelatorios()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg>
+            Relatórios PDF
+        </button>
     </div>
 </nav>
 
 <div class="tab-menu">
-    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops</button>
-    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Fila de Produção</button>
+    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops (Alt+N)</button>
+    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Produção (Alt+B)</button>
     <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo</button>
-    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🧾 Fichas de Clientes</button>
+    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🧾 Clientes</button>
 </div>
 
 <div id="toast-container"></div>
@@ -36,7 +43,7 @@
     <div class="card">
         <h2 class="card-title">Lançar Drop / Pedido</h2>
         <div class="form-section">
-            <div class="form-section-title">1. Dados completos do cliente</div>
+            <div class="form-section-title">1. Dados do Cliente</div>
             <div class="form-grid cols-3">
                 <input type="text" id="nome" placeholder="NOME COMPLETO DO CLIENTE">
                 <input type="text" id="whatsapp" placeholder="WHATSAPP (Ex: 11999999999)" maxlength="15" onblur="autoPreencherCliente()">
@@ -69,10 +76,11 @@
         </div>
 
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
-            <div class="form-section-title">2. Adicionar peças ao pedido</div>
+            <div class="form-section-title">2. Produtos</div>
             <div class="form-grid cols-2">
                 <input type="text" id="codigoEstampa" placeholder="CÓDIGO DO PRODUTO" onblur="preencherEstampaPorCodigo()">
                 <input type="text" id="nomeEstampa" placeholder="NOME DO PRODUTO (AUTOMÁTICO)">
+                <input type="hidden" id="custoOculto">
             </div>
             <div class="form-grid cols-5">
                 <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
@@ -90,7 +98,7 @@
             <div id="listaCarrinho"></div>
         </div>
         <div class="form-grid cols-2" style="margin-top: 1rem;">
-            <button type="button" class="btn-primary btn-delete" style="box-shadow: 4px 4px 0 #dc2626;" onclick="limparLancarDrop(true)">LIXEIRA / LIMPAR TUDO</button>
+            <button type="button" class="btn-primary btn-delete" onclick="limparLancarDrop(true)">LIMPAR TUDO</button>
             <button type="button" id="btnSalvarPedido" class="btn-primary" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
         </div>
     </div>
@@ -100,11 +108,11 @@
     <div class="dashboard-grid">
         <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
         <div class="dash-card"><h3>Aguardando Pagamento</h3><span id="dashAguardandoPagamento">0</span></div>
-        <div class="dash-card"><h3>Envio Efetuado</h3><span id="dashEnviar">0</span></div>
-        <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
+        <div class="dash-card"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
+        <div class="dash-card" style="border-color:#166534;"><h3>Lucro Líquido Real</h3><span id="dashLucro" style="color:#166534;">R$ 0,00</span></div>
     </div>
     
-    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com banco...</span></h2>
+    <h2 class="card-title">Fila de Produção</h2>
     
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
@@ -119,24 +127,23 @@
     <div id="bulkBar" class="bulk-bar" style="display:none;">
         <div style="font-weight: 800;"><span id="bulkCount">0</span> pedido(s) selecionado(s)</div>
         <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-            <select id="bulkStatusTarget" style="padding:0.3rem; border-radius:6px; font-size:0.8rem;">
+            <select id="bulkStatusTarget" style="padding:0.4rem; border-radius:6px; font-size:0.8rem; background:#111; color:#fff; border:1px solid #333;">
                 <option value="AGUARDANDO PAGAMENTO">AGUARDANDO PAGAMENTO</option>
                 <option value="EM SEPARAÇÃO">EM SEPARAÇÃO</option>
                 <option value="ENVIO EFETUADO">ENVIO EFETUADO</option>
                 <option value="PEDIDO ENTREGUE">PEDIDO ENTREGUE</option>
             </select>
-            <button class="btn-add btn-dark" style="padding:0.4rem 1rem;" onclick="avancarSelecionados()">Mover Selecionados</button>
-            <button class="btn-add" style="padding:0.4rem 1rem; color:#111;" onclick="gerarEtiquetasEmMassa()">🖨️ Imprimir Etiquetas</button>
+            <button class="btn-add btn-dark" style="padding:0.4rem 1rem;" onclick="avancarSelecionados()">Mover Status</button>
+            <button class="btn-add" style="padding:0.4rem 1rem; color:#111;" onclick="gerarEtiquetasEmMassa()">🖨️ Etiquetas de Envio</button>
+            <button class="btn-add" style="padding:0.4rem 1rem; background:#1e293b; color:#fff; border-color:#334155;" onclick="gerarStickersEmMassa()">🎨 Imprimir Stickers (@)</button>
         </div>
     </div>
 
-    <div class="kanban-board" id="gridPedidosContainer">
-        <div class="skeleton" style="width:100%;"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-    </div>
+    <div class="kanban-board" id="gridPedidosContainer"></div>
 </div>
 
 <div id="aba-estampas" class="container" style="display: none;">
-    <div class="card">
+    <div class="card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
         <h2 class="card-title">🏆 Top 5 Mais Vendidos</h2>
         <div id="bestSellersContainer" class="bestseller-grid">
             <p style="color:var(--muted); font-size:0.8rem;">Calculando Ranking...</p>
@@ -145,9 +152,9 @@
 
     <div class="card">
         <div class="catalog-header">
-            <h2 class="card-title">Catálogo de Produtos <span id="carregandoEstampas" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
+            <h2 class="card-title">Catálogo & Estoque</h2>
             <div class="cliente-head-actions">
-                <input type="text" id="filtroEstampas" placeholder="🔎 Buscar por código ou nome" oninput="filtrarCatalogo()">
+                <input type="text" id="filtroEstampas" placeholder="🔎 Buscar código ou nome" oninput="filtrarCatalogo()">
                 <button class="btn-add btn-dark" onclick="abrirModalNovaEstampa()">+ Novo Produto</button>
             </div>
         </div>
@@ -158,9 +165,9 @@
 <div id="aba-clientes" class="container" style="display: none;">
     <div class="card">
         <div class="catalog-header">
-            <h2 class="card-title">Fichas de Clientes <span id="carregandoClientes" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
+            <h2 class="card-title">Base de Clientes (CRM)</h2>
             <div class="cliente-head-actions">
-                <input type="text" id="filtroClientes" placeholder="🔎 Buscar por nome, whatsapp, cidade ou documento" oninput="filtrarClientes()">
+                <input type="text" id="filtroClientes" placeholder="🔎 Buscar nome, whatsapp ou documento" oninput="filtrarClientes()">
                 <button class="btn-add btn-dark" onclick="abrirCadastroCliente()">+ Novo Cliente</button>
             </div>
         </div>
@@ -170,24 +177,26 @@
 
 <div id="modalRelatorios" class="modal-overlay">
     <div class="modal-box" style="max-width: 500px; text-align: center;">
-        <button class="btn-close-modal" onclick="fecharModalRelatorios()">X</button>
-        <h2 class="card-title">Relatórios PDF</h2>
+        <button class="btn-close-modal" onclick="fecharModalRelatorios()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+        </button>
+        <h2 class="card-title">Relatórios do Sistema</h2>
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:1.5rem;">
-            <button class="btn-primary" onclick="gerarPDFProducao()">Relatório: Fila de Produção</button>
-            <button class="btn-primary" style="background:#475569;" onclick="gerarPDFCatalogo()">Relatório: Catálogo e Estoque</button>
-            <button class="btn-primary" style="background:#166534;" onclick="gerarPDFClientes()">Relatório: Lista de Clientes VIP</button>
+            <button class="btn-primary" onclick="gerarPDFProducao()">📄 Imprimir Fila de Produção</button>
+            <button class="btn-primary" style="background:#1e293b;" onclick="gerarPDFCatalogo()">📄 Catálogo e Estoque Atual</button>
+            <button class="btn-primary" style="background:#166534;" onclick="gerarPDFClientes()">📄 Lista de Clientes VIP</button>
         </div>
     </div>
 </div>
 
 <div id="modalCliente" class="modal-overlay">
     <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharCadastroCliente()">X</button>
-        <h2 class="card-title">Novo/Editar Cliente</h2>
+        <button class="btn-close-modal" onclick="fecharCadastroCliente()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
+        <h2 class="card-title">Ficha do Cliente</h2>
         <form id="formCliente" onsubmit="salvarCliente(event)">
             <div class="form-grid cols-3">
-                <input type="text" id="clienteNome" placeholder="NOME COMPLETO DO CLIENTE" required>
-                <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP (Ex: 11999999999)" required>
+                <input type="text" id="clienteNome" placeholder="NOME COMPLETO" required>
+                <input type="text" id="clienteWhatsapp" placeholder="WHATSAPP" required>
                 <input type="text" id="clienteInstagram" placeholder="INSTAGRAM (OPCIONAL)">
             </div>
             <div class="form-grid cols-5">
@@ -195,29 +204,29 @@
                 <input type="text" id="clienteCep" placeholder="CEP">
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
                 <input type="text" id="clienteEstado" placeholder="UF">
-                <input type="date" id="clienteAniversario" title="Data de Aniversário (Opcional)">
+                <input type="date" id="clienteAniversario" title="Data de Aniversário">
             </div>
             <div class="form-grid cols-3">
-                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
+                <input type="text" id="clienteEndereco" placeholder="ENDEREÇO">
                 <input type="text" id="clienteComplemento" placeholder="COMPLEMENTO">
-                <input type="text" id="clienteReferencia" placeholder="PONTO DE REFERÊNCIA">
+                <input type="text" id="clienteReferencia" placeholder="REFERÊNCIA">
             </div>
             <div class="form-grid cols-1">
-                <textarea id="clienteNotas" placeholder="Notas internas privadas sobre este cliente..." rows="2" style="width:100%; border:2px solid #1f2937; border-radius:10px; padding:0.75rem; font-family:inherit;"></textarea>
+                <textarea id="clienteNotas" placeholder="Notas internas privadas sobre este cliente..." rows="2"></textarea>
             </div>
             <div class="form-grid cols-1" style="margin-top: 5px;">
                 <label style="display:flex; align-items:center; gap:8px; font-weight:bold; color:#dc2626;">
-                    <input type="checkbox" id="clienteBlacklist" style="width:auto; transform:scale(1.2);"> ⚠️ Adicionar à Blacklist (Piscará aviso no Drop)
+                    <input type="checkbox" id="clienteBlacklist" style="width:auto; transform:scale(1.2);"> ⚠️ Adicionar à Blacklist (Aviso no Drop)
                 </label>
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR CLIENTE</button>
+            <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR DADOS</button>
         </form>
     </div>
 </div>
 
 <div id="modalFichaCliente" class="modal-overlay">
     <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
+        <button class="btn-close-modal" onclick="fecharFichaCliente()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
         <h2 class="card-title" id="fichaClienteTitulo">Ficha do Cliente</h2>
         <div id="fichaClienteConteudo"></div>
     </div>
@@ -225,7 +234,7 @@
 
 <div id="modalFichaPedido" class="modal-overlay">
     <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharFichaPedido()">X</button>
+        <button class="btn-close-modal" onclick="fecharFichaPedido()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
         <h2 class="card-title" id="fichaPedidoTitulo">Detalhes do Pedido</h2>
         <div id="fichaPedidoConteudo"></div>
     </div>
@@ -233,7 +242,7 @@
 
 <div id="modalEditarPedidoCompleto" class="modal-overlay">
     <div class="modal-box">
-        <button class="btn-close-modal" onclick="fecharModalEditarPedido()">X</button>
+        <button class="btn-close-modal" onclick="fecharModalEditarPedido()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
         <h2 class="card-title">Editar Pedido</h2>
         <div class="form-section">
             <div class="form-grid cols-3">
@@ -253,9 +262,9 @@
                 <input type="text" id="editPedReferencia" placeholder="REFERÊNCIA">
             </div>
             <div class="form-grid cols-4">
-                <input type="text" id="editPedRastreio" placeholder="CÓDIGO DE RASTREIO (Ex: QQ12345BR)">
-                <input type="text" id="editPedFrete" class="moeda" placeholder="VALOR FRETE" oninput="atualizarTelaCarrinhoEdicao()">
-                <select id="editPedMetodo"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO / BOLETO</option></select>
+                <input type="text" id="editPedRastreio" placeholder="CÓDIGO RASTREIO">
+                <input type="text" id="editPedFrete" class="moeda" placeholder="FRETE" oninput="atualizarTelaCarrinhoEdicao()">
+                <select id="editPedMetodo"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select>
                 <select id="editPedStatusPagamento"><option value="PAGO">PAGO</option><option value="PENDENTE">PENDENTE</option></select>
             </div>
         </div>
@@ -264,6 +273,7 @@
             <div class="form-grid cols-2">
                 <input type="text" id="editPedCodigoEstampa" placeholder="CÓDIGO DO PRODUTO" onblur="preencherEstampaPorCodigoEdicao()">
                 <input type="text" id="editPedNomeEstampa" placeholder="NOME DO PRODUTO">
+                <input type="hidden" id="editPedCustoOculto">
             </div>
             <div class="form-grid cols-5">
                 <select id="editPedTipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="ACESSÓRIO">ACESSÓRIO</option></select>
@@ -272,13 +282,13 @@
                 <input type="text" id="editPedValorUnitario" class="moeda" placeholder="R$ UNITÁRIO">
                 <input type="number" id="editPedQuantidade" value="1" min="1">
             </div>
-            <button type="button" class="btn-add" onclick="adicionarAoCarrinhoEdicaoInput()">+ ADICIONAR PEÇA AO PEDIDO</button>
+            <button type="button" class="btn-add" onclick="adicionarAoCarrinhoEdicaoInput()">+ ADICIONAR PEÇA</button>
             <small id="mensagemAutoPreenchimentoEdicao" class="helper-text"></small>
         </div>
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
             <div class="form-section-title">Itens Deste Pedido</div>
-            <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
-            <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: #d90429;">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
+            <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #333; border-radius: 8px;"></div>
+            <div style="text-align: right; font-weight: 900; font-size: 1.2rem; color: var(--accent);">TOTAL: <span id="displayEditTotal">R$ 0,00</span></div>
         </div>
         <button type="button" class="btn-primary" onclick="salvarEdicaoPedidoDefinitiva()">ATUALIZAR PEDIDO</button>
     </div>
@@ -286,17 +296,18 @@
 
 <div id="modalNovaEstampa" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px;">
-        <button class="btn-close-modal" onclick="fecharModalNovaEstampa()">X</button>
+        <button class="btn-close-modal" onclick="fecharModalNovaEstampa()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
         <h2 class="card-title">Cadastrar Produto</h2>
         <form id="formNovaEstampa" onsubmit="salvarNovaEstampa(event)">
             <div class="form-grid cols-2">
                 <input type="text" id="cadCodigoEstampa" placeholder="CÓDIGO (Ex: FUGI-01)" required>
                 <input type="text" id="cadNomeEstampa" placeholder="NOME DO PRODUTO" required>
             </div>
-            <div class="form-grid cols-2">
-                <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR BASE (R$)" required>
+            <div class="form-grid cols-3">
+                <input type="text" id="cadValorEstampa" class="moeda" placeholder="VALOR VENDA (R$)" required>
+                <input type="text" id="cadCustoEstampa" class="moeda" placeholder="CUSTO PRODUÇÃO (R$)" required>
                 <select id="cadTipoPadrao">
-                    <option value="">TIPO DO PRODUTO (OPCIONAL)</option>
+                    <option value="">TIPO DO PRODUTO</option>
                     <option value="OVERSIZED">OVERSIZED</option>
                     <option value="MOLETOM">MOLETOM</option>
                     <option value="REGATA">REGATA</option>
@@ -305,12 +316,12 @@
             </div>
             <div class="form-section-title" style="margin-top: 1rem;">Estoque por Tamanho</div>
             <div class="form-grid cols-6">
-                <div><small>P</small><input type="number" id="cadEstP" placeholder="P" min="0" value="0"></div>
-                <div><small>M</small><input type="number" id="cadEstM" placeholder="M" min="0" value="0"></div>
-                <div><small>G</small><input type="number" id="cadEstG" placeholder="G" min="0" value="0"></div>
-                <div><small>GG</small><input type="number" id="cadEstGG" placeholder="GG" min="0" value="0"></div>
-                <div><small>XG</small><input type="number" id="cadEstXG" placeholder="XG" min="0" value="0"></div>
-                <div><small>Único</small><input type="number" id="cadEstUN" placeholder="UN" min="0" value="0"></div>
+                <div><small>P</small><input type="number" id="cadEstP" min="0" value="0"></div>
+                <div><small>M</small><input type="number" id="cadEstM" min="0" value="0"></div>
+                <div><small>G</small><input type="number" id="cadEstG" min="0" value="0"></div>
+                <div><small>GG</small><input type="number" id="cadEstGG" min="0" value="0"></div>
+                <div><small>XG</small><input type="number" id="cadEstXG" min="0" value="0"></div>
+                <div><small>Único</small><input type="number" id="cadEstUN" min="0" value="0"></div>
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 1rem;">CADASTRAR PRODUTO</button>
         </form>
@@ -319,21 +330,24 @@
 
 <div id="modalCatalogo" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px;">
-        <button class="btn-close-modal" onclick="fecharModalCatalogo()">X</button>
+        <button class="btn-close-modal" onclick="fecharModalCatalogo()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
         <h2 class="card-title">Editar Produto</h2>
         <form id="formCatalogo" onsubmit="salvarEdicaoCatalogo(event)">
             <input type="hidden" id="editCatalogoCodigo">
             <div class="form-grid cols-2">
                 <input type="text" id="editCatalogoNome" placeholder="NOME DO PRODUTO" required>
-                <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR BASE" required>
+                <select id="editCatalogoTipo">
+                    <option value="">TIPO DO PRODUTO</option>
+                    <option value="OVERSIZED">OVERSIZED</option>
+                    <option value="MOLETOM">MOLETOM</option>
+                    <option value="REGATA">REGATA</option>
+                    <option value="ACESSÓRIO">ACESSÓRIO</option>
+                </select>
             </div>
-            <select id="editCatalogoTipo" style="margin-bottom: 10px;">
-                <option value="">TIPO DO PRODUTO</option>
-                <option value="OVERSIZED">OVERSIZED</option>
-                <option value="MOLETOM">MOLETOM</option>
-                <option value="REGATA">REGATA</option>
-                <option value="ACESSÓRIO">ACESSÓRIO</option>
-            </select>
+            <div class="form-grid cols-2" style="margin-bottom: 10px;">
+                <input type="text" id="editCatalogoValor" class="moeda" placeholder="VALOR DE VENDA" required>
+                <input type="text" id="editCatalogoCusto" class="moeda" placeholder="CUSTO DE PRODUÇÃO" required>
+            </div>
             <div class="form-section-title">Estoque por Tamanho</div>
             <div class="form-grid cols-6">
                 <div><small>P</small><input type="number" id="editEstP" min="0" value="0"></div>
