@@ -22,14 +22,14 @@ const db = firebase.firestore();
 const STATUS_LIST = ['PEDIDO FEITO', 'AGUARDANDO PAGAMENTO', 'EM SEPARAÇÃO', 'ENVIO EFETUADO', 'PEDIDO ENTREGUE'];
 
 let estampasCache = []; let carrinhoTemporario = []; let carrinhoEdicao = [];
-let pedidosCache = []; let clientesCache = []; let filtroAtual = 'TODOS';
+let pedidosCache = []; let clientesCache = []; let clientesPurosCache = []; let filtroAtual = 'TODOS';
 let pedidoEmEdicaoId = null; let pedidosSelecionados = [];
 
 // ================= FUNÇÕES DE BLINDAGEM E UX =================
-function upper(v) { return (v || '').toString().trim().toUpperCase(); }
-function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
+function upper(v) { return String(v || '').trim().toUpperCase(); }
+function onlyDigits(v) { return String(v || '').replace(/\D/g, ''); }
 function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
-function unmaskCurrency(value) { if (!value) return 0; return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
+function unmaskCurrency(value) { if (!value) return 0; return parseFloat(String(value).replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
 
 // Proteção contra dados quebrados no banco
 function escapeStr(v) { return String(v || '').replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
@@ -53,13 +53,15 @@ function formatDate(dateValue) {
 function getItensResumo(itens) { 
     const arr = safeItens(itens);
     if (arr.length === 0) return 'Sem itens'; 
-    return arr.map((item) => `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa}`).join(' • '); 
+    return arr.map((item) => `${item.quantidade || 1}x ${escapeStr(item.nomeEstampa || item.codigoEstampa)}`).join(' • '); 
 }
 
-function primeiroNome(nome = '') { return (nome.trim().split(' ')[0] || 'cliente'); }
+function primeiroNome(nome = '') { return (String(nome).trim().split(' ')[0] || 'cliente'); }
 
 function showToast(msg, type = 'success') {
-    const container = el('toast-container'); const toast = document.createElement('div');
+    const container = el('toast-container'); 
+    if(!container) return;
+    const toast = document.createElement('div');
     toast.className = `toast toast-${type}`; toast.innerText = msg;
     container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
 }
@@ -67,15 +69,15 @@ function showToast(msg, type = 'success') {
 function copiarTexto(texto) { navigator.clipboard.writeText(texto).then(() => showToast('Copiado: ' + texto, 'info')); }
 
 // MÁSCARAS
-function maskPhone(v) { v = v.replace(/\D/g, ''); v = v.replace(/^(\d{2})(\d)/g, '($1) $2'); v = v.replace(/(\d)(\d{4})$/, '$1-$2'); return v.slice(0, 15); }
-function maskCPFCNPJ(v) { v = v.replace(/\D/g, ''); if (v.length <= 11) { v = v.replace(/(\d{3})(\d)/, '$1.$2'); v = v.replace(/(\d{3})(\d)/, '$1.$2'); v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); return v; } else { v = v.replace(/^(\d{2})(\d)/, '$1.$2'); v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3'); v = v.replace(/\.(\d{3})(\d)/, '.$1/$2'); v = v.replace(/(\d{4})(\d)/, '$1-$2'); return v.slice(0, 18); } }
-function maskCEP(v) { v = v.replace(/\D/g, ''); v = v.replace(/(\d{5})(\d)/, '$1-$2'); return v.slice(0, 9); }
+function maskPhone(v) { v = String(v).replace(/\D/g, ''); v = v.replace(/^(\d{2})(\d)/g, '($1) $2'); v = v.replace(/(\d)(\d{4})$/, '$1-$2'); return v.slice(0, 15); }
+function maskCPFCNPJ(v) { v = String(v).replace(/\D/g, ''); if (v.length <= 11) { v = v.replace(/(\d{3})(\d)/, '$1.$2'); v = v.replace(/(\d{3})(\d)/, '$1.$2'); v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); return v; } else { v = v.replace(/^(\d{2})(\d)/, '$1.$2'); v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3'); v = v.replace(/\.(\d{3})(\d)/, '.$1/$2'); v = v.replace(/(\d{4})(\d)/, '$1-$2'); return v.slice(0, 18); } }
+function maskCEP(v) { v = String(v).replace(/\D/g, ''); v = v.replace(/(\d{5})(\d)/, '$1-$2'); return v.slice(0, 9); }
 
 function setupAutoFields(idWhats, idInsta, idCpf, idCep, idCidade, idEstado, idEndereco) {
     const whats = el(idWhats); const insta = el(idInsta); const cpf = el(idCpf); const cep = el(idCep);
     const cidade = el(idCidade); const estado = el(idEstado); const endereco = el(idEndereco);
     if(whats) whats.addEventListener('input', (e) => { e.target.value = maskPhone(e.target.value); if (e.target.value.length === 15 && insta) insta.focus(); });
-    if(cpf) cpf.addEventListener('input', (e) => { let raw = e.target.value.replace(/\D/g, ''); e.target.value = maskCPFCNPJ(e.target.value); if (raw.length === 11 && cep) cep.focus(); });
+    if(cpf) cpf.addEventListener('input', (e) => { let raw = String(e.target.value).replace(/\D/g, ''); e.target.value = maskCPFCNPJ(e.target.value); if (raw.length === 11 && cep) cep.focus(); });
     if(cep) cep.addEventListener('input', (e) => {
         e.target.value = maskCEP(e.target.value);
         if (e.target.value.length === 9) {
@@ -198,7 +200,6 @@ function adicionarAoCarrinho() {
     const estampa = estampasCache.find(e => e.codigo === cod);
     const stockAtual = estampa ? (estampa.estoque[tam] || 0) : 0;
     
-    // Agora não bloqueia! Apenas avisa se a venda ultrapassar o stock.
     if (qtd > stockAtual) {
         el('quantidade').classList.add('error-blink'); setTimeout(() => el('quantidade').classList.remove('error-blink'), 1500);
         showToast(`Aviso: Venda forçada. O stock de ${tam} era apenas ${stockAtual}.`, 'warning');
@@ -213,21 +214,23 @@ function adicionarAoCarrinho() {
 }
 
 function atualizarTelaCarrinho() {
-    let somaItens = 0; el('listaCarrinho').innerHTML = '';
-    carrinhoTemporario.forEach((p, index) => {
-        if(!p) return;
-        somaItens += p.quantidade * p.valorUnitario;
-        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-        </button></div></div>`;
-    });
-    
-    const frete = unmaskCurrency(el('valorFrete').value);
-    const desconto = unmaskCurrency(el('valorDesconto').value);
-    let totalReal = somaItens + frete - desconto;
-    if (totalReal < 0) totalReal = 0;
+    try {
+        let somaItens = 0; el('listaCarrinho').innerHTML = '';
+        carrinhoTemporario.forEach((p, index) => {
+            if(!p) return;
+            somaItens += p.quantidade * p.valorUnitario;
+            el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button></div></div>`;
+        });
+        
+        const frete = unmaskCurrency(el('valorFrete').value);
+        const desconto = unmaskCurrency(el('valorDesconto').value);
+        let totalReal = somaItens + frete - desconto;
+        if (totalReal < 0) totalReal = 0;
 
-    el('valorTotal').value = formatCurrency(totalReal);
+        el('valorTotal').value = formatCurrency(totalReal);
+    } catch(e) { console.error(e); }
 }
 
 function removerDoCarrinho(index) { carrinhoTemporario.splice(index, 1); atualizarTelaCarrinho(); salvarRascunho(); }
@@ -452,7 +455,9 @@ async function drop(ev, novoStatus) {
 
 function renderPedidosGrid(lista) {
     try {
-        const container = el('gridPedidosContainer'); container.innerHTML = '';
+        const container = el('gridPedidosContainer'); 
+        if(!container) return;
+        container.innerHTML = '';
         const grupos = STATUS_LIST.map((status) => ({ status, itens: lista.filter((p) => upper(p.status || 'PEDIDO FEITO') === status) }));
 
         const iWh = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>`;
@@ -495,17 +500,19 @@ function renderPedidosGrid(lista) {
 }
 
 function aplicarFiltros() {
-    const busca = upper(el('inputBusca').value);
-    const filtrado = pedidosCache.filter((pedido) => {
-        const texto = `${upper(pedido.nome)} ${upper(pedido.whatsapp)} ${upper(getItensResumo(pedido.itens))}`;
-        const matchBusca = texto.includes(busca);
-        if (filtroAtual === 'TODOS') return matchBusca;
-        if (filtroAtual === 'AGUARDANDO PAGAMENTO') return upper(pedido.status) === 'AGUARDANDO PAGAMENTO' && matchBusca;
-        if (filtroAtual === 'EM PRODUÇÃO') return ['PEDIDO FEITO', 'EM SEPARAÇÃO'].includes(upper(pedido.status)) && matchBusca;
-        if (filtroAtual === 'EM ENVIO') return ['ENVIO EFETUADO'].includes(upper(pedido.status)) && matchBusca;
-        return matchBusca;
-    });
-    renderPedidosGrid(filtrado);
+    try {
+        const busca = upper(el('inputBusca').value);
+        const filtrado = pedidosCache.filter((pedido) => {
+            const texto = `${upper(pedido.nome)} ${upper(pedido.whatsapp)} ${upper(getItensResumo(pedido.itens))}`;
+            const matchBusca = texto.includes(busca);
+            if (filtroAtual === 'TODOS') return matchBusca;
+            if (filtroAtual === 'AGUARDANDO PAGAMENTO') return upper(pedido.status) === 'AGUARDANDO PAGAMENTO' && matchBusca;
+            if (filtroAtual === 'EM PRODUÇÃO') return ['PEDIDO FEITO', 'EM SEPARAÇÃO'].includes(upper(pedido.status)) && matchBusca;
+            if (filtroAtual === 'EM ENVIO') return ['ENVIO EFETUADO'].includes(upper(pedido.status)) && matchBusca;
+            return matchBusca;
+        });
+        renderPedidosGrid(filtrado);
+    } catch(e) { console.error(e); }
 }
 
 function setFiltroBtn(filtro) {
@@ -516,61 +523,71 @@ function setFiltroBtn(filtro) {
 }
 
 function atualizarDashboard(lista) {
-    const mesFiltro = el('mesDash').value;
-    if(!mesFiltro) return;
-    const [anoStr, mesStr] = mesFiltro.split('-');
-    const anoFiltro = parseInt(anoStr);
-    const mesNumFiltro = parseInt(mesStr) - 1;
+    try {
+        const mesDashEl = el('mesDash');
+        if(!mesDashEl) return;
+        const mesFiltro = mesDashEl.value;
+        if(!mesFiltro) return;
+        const [anoStr, mesStr] = mesFiltro.split('-');
+        const anoFiltro = parseInt(anoStr);
+        const mesNumFiltro = parseInt(mesStr) - 1;
 
-    const pedidosMes = lista.filter((pedido) => {
-        const d = parseFirestoreDate(pedido.dataCriacao);
-        if (!d) return false;
-        return d.getMonth() === mesNumFiltro && d.getFullYear() === anoFiltro;
-    });
-    
-    el('dashPedidosMes').textContent = pedidosMes.length;
-    el('dashAguardandoPagamento').textContent = pedidosMes.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
-    el('dashFaturamento').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
-    el('dashLucro').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.lucroTotal || 0), 0));
+        const pedidosMes = lista.filter((pedido) => {
+            const d = parseFirestoreDate(pedido.dataCriacao);
+            if (!d) return false;
+            return d.getMonth() === mesNumFiltro && d.getFullYear() === anoFiltro;
+        });
+        
+        el('dashPedidosMes').textContent = pedidosMes.length;
+        el('dashAguardandoPagamento').textContent = pedidosMes.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
+        el('dashFaturamento').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
+        el('dashLucro').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.lucroTotal || 0), 0));
+    } catch(e) { console.error(e); }
 }
 
 // ================= CLIENTES E VIPs =================
 function extrairClientesDosPedidos() {
-    const mapa = new Map();
-    clientesCache.forEach((c) => { const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`; mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] }); });
+    try {
+        const mapa = new Map();
+        clientesPurosCache.forEach((c) => { 
+            const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`; 
+            mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] }); 
+        });
 
-    pedidosCache.forEach((pedido) => {
-        const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
-        if (!chave) return;
-        const base = mapa.get(chave) || { nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), complemento: upper(pedido.complemento), referencia: upper(pedido.referencia), aniversario: '', notasPrivadas: '', blacklist: false, totalPedidos: 0, totalGasto: 0, historicoPedidos: [], aniversarioWaller: false };
-        base.totalPedidos += 1; base.totalGasto += Number(pedido.valorTotal) || 0; base.historicoPedidos.push(pedido);
-        if (!base.cep) base.cep = upper(pedido.cep); if (!base.endereco) base.endereco = upper(pedido.endereco); if (!base.cidade) base.cidade = upper(pedido.cidade);
-        mapa.set(chave, base);
-    });
+        pedidosCache.forEach((pedido) => {
+            const chave = onlyDigits(pedido.whatsapp) || `${upper(pedido.nome)}-${upper(pedido.documento)}`;
+            if (!chave) return;
+            const base = mapa.get(chave) || { nome: upper(pedido.nome), whatsapp: upper(pedido.whatsapp), instagram: upper(pedido.instagram), documento: upper(pedido.documento), cep: upper(pedido.cep), cidade: upper(pedido.cidade), estado: upper(pedido.estado), endereco: upper(pedido.endereco), complemento: upper(pedido.complemento), referencia: upper(pedido.referencia), aniversario: '', notasPrivadas: '', blacklist: false, totalPedidos: 0, totalGasto: 0, historicoPedidos: [], aniversarioWaller: false };
+            base.totalPedidos += 1; base.totalGasto += Number(pedido.valorTotal) || 0; base.historicoPedidos.push(pedido);
+            if (!base.cep) base.cep = upper(pedido.cep); if (!base.endereco) base.endereco = upper(pedido.endereco); if (!base.cidade) base.cidade = upper(pedido.cidade);
+            mapa.set(chave, base);
+        });
 
-    Array.from(mapa.values()).forEach(base => {
-        base.aniversarioWaller = false;
-        if (base.historicoPedidos.length > 0) {
-            base.historicoPedidos.sort((a, b) => {
-                const da = parseFirestoreDate(a.dataCriacao) || new Date(0);
-                const db = parseFirestoreDate(b.dataCriacao) || new Date(0);
-                return da.getTime() - db.getTime();
-            });
-            const dataPrim = parseFirestoreDate(base.historicoPedidos[0].dataCriacao);
-            if (dataPrim) {
-                const hoje = new Date();
-                const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
-                const diffMonths = hoje.getMonth() - dataPrim.getMonth();
-                const diffDays = Math.abs(hoje.getDate() - dataPrim.getDate());
-                if (diffYears > 0 && diffMonths === 0 && diffDays <= 7) { base.aniversarioWaller = true; }
+        Array.from(mapa.values()).forEach(base => {
+            base.aniversarioWaller = false;
+            if (base.historicoPedidos.length > 0) {
+                base.historicoPedidos.sort((a, b) => {
+                    const da = parseFirestoreDate(a.dataCriacao) || new Date(0);
+                    const db = parseFirestoreDate(b.dataCriacao) || new Date(0);
+                    return da.getTime() - db.getTime();
+                });
+                const dataPrim = parseFirestoreDate(base.historicoPedidos[0].dataCriacao);
+                if (dataPrim) {
+                    const hoje = new Date();
+                    const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
+                    const diffMonths = hoje.getMonth() - dataPrim.getMonth();
+                    const diffDays = Math.abs(hoje.getDate() - dataPrim.getDate());
+                    if (diffYears > 0 && diffMonths === 0 && diffDays <= 7) { base.aniversarioWaller = true; }
+                }
             }
-        }
-    });
+        });
 
-    clientesCache = Array.from(mapa.values()).sort((a, b) => {
-        const aNiv = aniversarioProximo(a.aniversario) ? 0 : 1; const bNiv = aniversarioProximo(b.aniversario) ? 0 : 1;
-        if(aNiv !== bNiv) return aNiv - bNiv; return (a.nome || '').localeCompare(b.nome || '');
-    });
+        clientesCache = Array.from(mapa.values()).sort((a, b) => {
+            const aNiv = aniversarioProximo(a.aniversario) ? 0 : 1; const bNiv = aniversarioProximo(b.aniversario) ? 0 : 1;
+            if(aNiv !== bNiv) return aNiv - bNiv; 
+            return String(a.nome || '').localeCompare(String(b.nome || ''));
+        });
+    } catch(e) { console.error("Erro extrairClientes:", e); }
 }
 
 function getSeloVip(total) {
@@ -587,12 +604,12 @@ function abrirVisualizacaoCliente(cliente) {
         el('fichaClienteConteudo').innerHTML = `
             <div class="cliente-ficha-grid">
                 <p><strong>Nome:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.nome)}')">${escapeStr(cliente.nome) || '-'}</span> ${getSeloVip(cliente.totalGasto)}</p>
-                <p><strong>WhatsApp:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.whatsapp}')">${cliente.whatsapp || '-'}</span></p>
+                <p><strong>WhatsApp:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.whatsapp)}')">${escapeStr(cliente.whatsapp) || '-'}</span></p>
                 <p><strong>Instagram:</strong> ${escapeStr(cliente.instagram) || '-'}</p>
-                <p><strong>CPF/CNPJ:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.documento}')">${cliente.documento || '-'}</span></p>
-                <p><strong>CEP:</strong> ${cliente.cep || '-'}</p>
+                <p><strong>CPF/CNPJ:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.documento)}')">${escapeStr(cliente.documento) || '-'}</span></p>
+                <p><strong>CEP:</strong> ${escapeStr(cliente.cep) || '-'}</p>
                 <p><strong>Aniversário:</strong> ${cliente.aniversario ? formatDate(cliente.aniversario) : '-'}</p>
-                <p><strong>Cidade/UF:</strong> ${escapeStr(cliente.cidade) || '-'} / ${cliente.estado || ''}</p>
+                <p><strong>Cidade/UF:</strong> ${escapeStr(cliente.cidade) || '-'} / ${escapeStr(cliente.estado) || ''}</p>
                 <p><strong>Endereço:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.endereco)}, ${escapeStr(cliente.complemento)}')">${escapeStr(cliente.endereco) || '-'} ${cliente.complemento ? ` - ${escapeStr(cliente.complemento)}` : ''}</span></p>
                 <p><strong>Total de pedidos:</strong> ${cliente.totalPedidos || 0}</p>
                 <p><strong>Total gasto:</strong> ${formatCurrency(cliente.totalGasto || 0)}</p>
@@ -639,11 +656,13 @@ function editarCliente(idRef) {
 
 function excluirCliente(idRef) { if (confirm('Excluir ficha deste cliente? O histórico de pedidos continuará a existir.')) { db.collection('clientes').doc(idRef).delete(); showToast('Cliente excluído.', 'warning'); } }
 
-function renderClientes() {
+function renderClientes(lista = clientesCache) {
     try {
-        const container = el('listaClientes'); container.innerHTML = '';
-        if (!clientesCache.length) { container.innerHTML = '<div class="catalog-empty">Nenhum cliente na base.</div>'; return; }
-        clientesCache.forEach((cliente) => {
+        const container = el('listaClientes'); 
+        if(!container) return;
+        container.innerHTML = '';
+        if (!lista.length) { container.innerHTML = '<div class="catalog-empty">Nenhum cliente na base.</div>'; return; }
+        lista.forEach((cliente) => {
             const idRef = onlyDigits(cliente.whatsapp) || `${upper(cliente.nome)}-${upper(cliente.documento)}`;
             const destaque = aniversarioProximo(cliente.aniversario);
             container.innerHTML += `<article class="cliente-card ${destaque ? 'cliente-alerta' : ''}" style="${cliente.blacklist ? 'border-color:#dc2626;' : ''}">
@@ -652,14 +671,21 @@ function renderClientes() {
                 ${destaque ? '<span class="niver-tag pulse" style="margin-left:5px;">🎂 Aniversário</span>' : ''}
                 ${cliente.aniversarioWaller ? '<span class="niver-tag pulse" style="margin-left:5px; background:#16a34a; color:#fff;">🎈 1 Ano de Marca</span>' : ''}
                 ${cliente.blacklist ? '<span class="niver-tag" style="background:#450a0a; color:#ef4444; margin-left:5px;">⚠️ Blacklist</span>' : ''}
-                <p><strong>Whatsapp:</strong> <span class="copy-text" onclick="copiarTexto('${cliente.whatsapp}')">${cliente.whatsapp || '-'}</span></p>
+                <p><strong>Whatsapp:</strong> <span class="copy-text" onclick="copiarTexto('${escapeStr(cliente.whatsapp)}')">${escapeStr(cliente.whatsapp) || '-'}</span></p>
                 <div class="cliente-stats"><span>${cliente.totalPedidos || 0} pedido(s)</span><span>${formatCurrency(cliente.totalGasto || 0)}</span></div>
                 <div class="pedido-actions"><button class="catalog-edit" onclick="visualizarClientePorId('${idRef}')">Ficha Completa</button></div>
             </article>`;
         });
     } catch(e) { console.error("Erro Clientes:", e); }
 }
-function filtrarClientes() { const busca = upper(el('filtroClientes').value); renderClientes(); }
+
+function filtrarClientes() { 
+    try {
+        const busca = upper(el('filtroClientes').value); 
+        const filtrado = clientesCache.filter(c => upper(`${c.nome} ${c.whatsapp} ${c.documento} ${c.cidade}`).includes(busca));
+        renderClientes(filtrado);
+    } catch(e) { console.error(e); }
+}
 
 // ================= CATÁLOGO, ESTOQUE E BEST SELLERS =================
 function calcularBestSellers() {
@@ -669,8 +695,9 @@ function calcularBestSellers() {
         pedidosCache.forEach(p => {
             safeItens(p.itens).forEach(i => {
                 if(!i) return;
-                if(!contagem[i.codigoEstampa]) contagem[i.codigoEstampa] = 0;
-                contagem[i.codigoEstampa] += Number(i.quantidade) || 1;
+                const cod = i.codigoEstampa || 'SEM_COD';
+                if(!contagem[cod]) contagem[cod] = 0;
+                contagem[cod] += Number(i.quantidade) || 1;
             });
         });
 
@@ -739,29 +766,33 @@ async function atualizarStockInline(codigo, tamanho, valorNovo) {
 }
 
 function renderCatalogo(lista = estampasCache) {
-    const container = el('catalogoEstampas'); container.innerHTML = '';
-    if (!lista.length) { container.innerHTML = '<div class="catalog-empty">Nenhum produto.</div>'; return; }
+    try {
+        const container = el('catalogoEstampas'); 
+        if(!container) return;
+        container.innerHTML = '';
+        if (!lista.length) { container.innerHTML = '<div class="catalog-empty">Nenhum produto.</div>'; return; }
 
-    lista.forEach((est) => {
-        let pills = ''; let totalStk = 0;
-        Object.entries(est.estoque || {}).forEach(([tam, qtd]) => { 
-            totalStk += Number(qtd);
-            pills += `<div class="stock-pill"><small>${tam}:</small> <input type="number" class="inline-stock-input" value="${qtd}" onchange="atualizarStockInline('${est.codigo}', '${tam}', this.value)"></div>`; 
+        lista.forEach((est) => {
+            let pills = ''; let totalStk = 0;
+            Object.entries(est.estoque || {}).forEach(([tam, qtd]) => { 
+                totalStk += Number(qtd);
+                pills += `<div class="stock-pill"><small>${tam}:</small> <input type="number" class="inline-stock-input" value="${qtd}" onchange="atualizarStockInline('${est.codigo}', '${tam}', this.value)"></div>`; 
+            });
+            const isEsgotado = totalStk <= 0;
+
+            container.innerHTML += `<article class="catalog-item ${isEsgotado ? 'item-esgotado' : ''}">
+                <div class="catalog-item-top"><p class="catalog-code"><span class="copy-text" onclick="copiarTexto('${est.codigo}')">${est.codigo}</span></p></div>
+                <h3>${escapeStr(est.nome)}</h3>
+                <p class="catalog-price">${formatCurrency(est.valor || 0)}</p>
+                <p class="catalog-stock" style="color:var(--muted); font-size:0.75rem;">Custo: ${formatCurrency(est.custo || 0)} | Tipo: ${est.tipoPadrao || 'Não definido'}</p>
+                <div class="stock-grid">${pills}</div>
+                <div class="catalog-actions" style="margin-top:10px;">
+                    <button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button>
+                    <button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                </div>
+            </article>`;
         });
-        const isEsgotado = totalStk <= 0;
-
-        container.innerHTML += `<article class="catalog-item ${isEsgotado ? 'item-esgotado' : ''}">
-            <div class="catalog-item-top"><p class="catalog-code"><span class="copy-text" onclick="copiarTexto('${est.codigo}')">${est.codigo}</span></p></div>
-            <h3>${escapeStr(est.nome)}</h3>
-            <p class="catalog-price">${formatCurrency(est.valor || 0)}</p>
-            <p class="catalog-stock" style="color:var(--muted); font-size:0.75rem;">Custo: ${formatCurrency(est.custo || 0)} | Tipo: ${est.tipoPadrao || 'Não definido'}</p>
-            <div class="stock-grid">${pills}</div>
-            <div class="catalog-actions" style="margin-top:10px;">
-                <button class="catalog-edit" onclick="abrirModalCatalogo('${est.codigo}')">Editar</button>
-                <button class="catalog-delete" onclick="db.collection('estampas').doc('${est.codigo}').delete()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
-            </div>
-        </article>`;
-    });
+    } catch(e) { console.error("Erro render Catalogo:", e); }
 }
 
 // ================= RELATÓRIOS E PDF EM MASSA =================
@@ -786,7 +817,6 @@ function gerarPDFClientes() {
     doc.autoTable({ startY: 20, head: [['Nome', 'WhatsApp', 'Cidade', 'Total Gasto']], body: clientesCache.map((c) => [c.nome, c.whatsapp, c.cidade, formatCurrency(c.totalGasto)]) });
     doc.save(`Lista-Clientes.pdf`); fecharModalRelatorios(); showToast('PDF Gerado!');
 }
-
 function gerarPDFFaturamentoMensal() {
     const mesFiltro = el('mesDash').value;
     if(!mesFiltro) return showToast("Selecione o mês no Dashboard!", "warning");
@@ -815,18 +845,14 @@ function gerarPDFFaturamentoMensal() {
 function gerarEtiquetasEmMassa() {
     if(pedidosSelecionados.length === 0) return showToast("Selecione pedidos primeiro", "warning");
     const { jsPDF } = window.jspdf;
-    // Formato A4 padrão para etiquetas
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     let labelCount = 0;
 
-    pedidosSelecionados.forEach((id, index) => {
+    pedidosSelecionados.forEach((id) => {
         const p = pedidosCache.find(x => x.id === id); if(!p) return;
         
-        if (labelCount > 0 && labelCount % 4 === 0) {
-            doc.addPage();
-        }
+        if (labelCount > 0 && labelCount % 4 === 0) doc.addPage();
 
-        // Divide a folha A4 em 4 quadrantes (2 colunas, 2 linhas)
         const posOnPage = labelCount % 4; 
         const col = posOnPage % 2; 
         const row = Math.floor(posOnPage / 2); 
@@ -834,10 +860,7 @@ function gerarEtiquetasEmMassa() {
         const offsetX = col * 105;
         const offsetY = row * 148.5;
 
-        // Borda de corte opcional
-        doc.setDrawColor(200);
-        doc.setLineDash([], 0);
-        doc.rect(offsetX, offsetY, 105, 148.5);
+        doc.setDrawColor(200); doc.setLineDash([], 0); doc.rect(offsetX, offsetY, 105, 148.5);
 
         doc.setFont("helvetica", "bold"); doc.setFontSize(14); 
         doc.text("WALLER CLOTHING", offsetX + 52.5, offsetY + 15, {align: "center"});
@@ -890,12 +913,14 @@ function gerarStickersEmMassa() {
     pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); fecharModalRelatorios();
 }
 
-// ================= BLINDAGEM DOS LISTENERS DO FIREBASE =================
+// ================= LISTENERS DO FIREBASE BLINDADOS =================
 function iniciarListeners() {
-    // Seta data atual no Dashboard
     const now = new Date();
-    el('mesDash').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}`;
-    el('mesDash').addEventListener('change', () => atualizarDashboard(pedidosCache));
+    const mesDashEl = el('mesDash');
+    if(mesDashEl) {
+        mesDashEl.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}`;
+        mesDashEl.addEventListener('change', () => atualizarDashboard(pedidosCache));
+    }
 
     db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
         try {
@@ -904,16 +929,16 @@ function iniciarListeners() {
         
         try { atualizarDashboard(pedidosCache); } catch(e) { console.error("Erro Dashboard:", e); }
         try { aplicarFiltros(); } catch(e) { console.error("Erro Kanban:", e); }
-        try { extrairClientesDosPedidos(); renderClientes(); } catch(e) { console.error("Erro Clientes:", e); }
+        try { extrairClientesDosPedidos(); renderClientes(); } catch(e) { console.error("Erro extrair Clientes dos Pedidos:", e); }
         try { calcularBestSellers(); } catch(e) { console.error("Erro BestSellers:", e); }
-        
-        if(el('carregando')) el('carregando').style.display = 'none';
     });
 
     db.collection('clientes').onSnapshot((snap) => {
         try {
-            let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); clientesCache = lidos; 
-            if(pedidosCache.length > 0) { extrairClientesDosPedidos(); renderClientes(); }
+            let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); 
+            clientesPurosCache = lidos; 
+            extrairClientesDosPedidos(); 
+            renderClientes();
         } catch(e) { console.error("Erro leitura Clientes:", e); }
     });
 
