@@ -47,13 +47,19 @@ function aplicarMascaraEPular(e) {
 }
 
 function aplicarMascaraCepEPular(e) {
-    let v = e.target.value.replace(/\D/g, '');
-    if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5, 8);
-    e.target.value = v;
+    let v = e.target.value.replace(/\D/g, ''); // só pega números
+    
+    // Formata na tela: 12345-678
+    if (v.length > 5) {
+        e.target.value = v.slice(0, 5) + '-' + v.slice(5, 8);
+    } else {
+        e.target.value = v;
+    }
 
-    if (v.length === 9) {
-        buscarCEP(v); // Dispara a busca
-        document.getElementById('numeroEnd').focus(); // Pula para o número
+    // Se completou os 8 números do CEP brasileiro, pula e busca o endereço!
+    if (v.length === 8) {
+        buscarCEP(v); 
+        document.getElementById('numeroEnd').focus();
     }
 }
 
@@ -148,7 +154,7 @@ function autocompletarEstampa(val) {
     let code = val.toUpperCase().trim();
     if(catalogoEstampas[code]) { 
         document.getElementById('nomeEstampa').value = catalogoEstampas[code].nome;
-        document.getElementById('valorUnitario').value = formatCurrency(catalogoEstampas[code].precoVenda); // Autopreencher valor de venda
+        document.getElementById('valorUnitario').value = formatCurrency(catalogoEstampas[code].precoVenda);
     }
 }
 
@@ -292,7 +298,6 @@ function atualizarTelaCarrinho() {
     let freteCobrado = unmaskCurrency(document.getElementById('valorFrete').value);
     let desconto = unmaskCurrency(document.getElementById('valorDesconto').value);
     
-    // Total que o cliente vai te pagar (Soma Produtos + Frete Cobrado - Desconto)
     document.getElementById('valorTotal').value = formatCurrency(somaProdutos + freteCobrado - desconto);
     document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
 }
@@ -312,7 +317,6 @@ async function salvarPedidoCompleto() {
 
     if(!nome || !whatsapp || carrinhoTemporario.length===0) { showToast("Preencha Nome, Whats e 1 Peça!", true); return; }
 
-    // MATEMÁTICA DO LUCRO LÍQUIDO REAL
     let somaCustoPecas = 0;
     let somaVendaPecas = 0;
     carrinhoTemporario.forEach(item => { 
@@ -320,10 +324,8 @@ async function salvarPedidoCompleto() {
         somaVendaPecas += (item.valorUnitario * item.quantidade);
     });
     
-    // Lucro = (Venda - CustoProdução) - Desconto - CustoEmbalagem - (FreteReal - FreteCobradoCliente)
     let prejuizoFrete = freteReal > freteCobrado ? (freteReal - freteCobrado) : 0;
     let lucroSobraFrete = freteCobrado > freteReal ? (freteCobrado - freteReal) : 0;
-    
     let lucroCalculado = (somaVendaPecas - somaCustoPecas) - desconto - embalagem - prejuizoFrete + lucroSobraFrete;
 
     document.getElementById('btnGerarOrdem').innerText = "SALVANDO...";
@@ -346,22 +348,20 @@ async function salvarPedidoCompleto() {
             }
         });
 
-        // Limpa a tela
         document.getElementById('nome').value = ''; document.getElementById('whatsapp').value = ''; document.getElementById('cep').value=''; document.getElementById('endereco').value=''; document.getElementById('numeroEnd').value=''; document.getElementById('complementoEnd').value=''; document.getElementById('valorFrete').value=''; document.getElementById('valorFreteReal').value=''; document.getElementById('valorDesconto').value=''; document.getElementById('valorTotal').value=''; document.getElementById('alertaClienteFiel').style.display = 'none';
         carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('btnGerarOrdem').innerText = "GERAR ORDEM DE SERVIÇO"; showToast(`PEDIDO #${numGerado} SALVO!`);
     } catch (e) { showToast("Erro ao salvar", true); }
 }
 
 // ==========================================
-// KANBAN, GRÁFICOS E CURVA ABC
+// KANBAN, GRÁFICOS E CURVA ABC (CORRIGIDO)
 // ==========================================
-let chartInstancia = null; // Variável para controlar o gráfico
+let chartInstancia = null; 
 
 db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapshot) => {
     todosPedidos = []; mapaClientes = {}; let freqEstampas = {}; let meses = new Set();
     let met = { pedMes: 0, faturamento: 0 }; let mAtual = new Date().getMonth(); let aAtual = new Date().getFullYear();
 
-    // Dados para o Gráfico
     let vendasPorMes = {}; 
 
     querySnapshot.forEach((doc) => {
@@ -374,17 +374,14 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
         
         if(p.statusPagamento === 'PAGO') {
             meses.add(p.dataMesAno);
-            // Soma faturamento no gráfico
             if(!vendasPorMes[p.dataMesAno]) vendasPorMes[p.dataMesAno] = 0;
             vendasPorMes[p.dataMesAno] += parseFloat(p.valorTotal || 0);
             
-            // Frequencia da Curva ABC
             if(p.itens) { p.itens.forEach(i => { if(i.codigoEstampa) freqEstampas[i.nomeEstampa] = (freqEstampas[i.nomeEstampa]||0) + parseInt(i.quantidade); }); }
         }
         
         if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
-        // CRM
         if(p.whatsapp) {
             if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, cep: p.cep, endereco: p.endereco, complemento: p.complemento, ultimaCompra: d };
             mapaClientes[p.whatsapp].qtd++;
@@ -403,28 +400,32 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
     renderizarGrafico(vendasPorMes);
 });
 
+// Proteções contra o erro que quebrou o sistema:
 function renderizarGrafico(vendas) {
-    // Pega os últimos 6 meses e ordena cronologicamente
+    const canvas = document.getElementById('graficoVendas');
+    if(!canvas) return; // Se a tela não achar o gráfico, ele cancela e não trava nada.
+    
     let labels = Object.keys(vendas).sort((a,b) => { let [mA,aA]=a.split('/'); let [mB,aB]=b.split('/'); return new Date(aA,mA-1)-new Date(aB,mB-1); }).slice(-6);
     let dados = labels.map(mes => vendas[mes]);
 
-    const ctx = document.getElementById('graficoVendas').getContext('2d');
-    if (chartInstancia) chartInstancia.destroy(); // Apaga o gráfico velho
+    const ctx = canvas.getContext('2d');
+    if (chartInstancia) chartInstancia.destroy(); 
 
     chartInstancia = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{ label: 'Faturamento Bruto (R$)', data: dados, backgroundColor: '#c1121f', borderWidth: 2, borderColor: '#111111' }]
-        },
+        data: { labels: labels, datasets: [{ label: 'Faturamento Bruto (R$)', data: dados, backgroundColor: '#c1121f', borderWidth: 2, borderColor: '#111111' }] },
         options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
     });
 }
 
 function renderizarBestSellers(freq) {
-    let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,5); // Pega o Top 5
-    document.getElementById('dashBestSellers').innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas';
-    document.getElementById('dashBestSellersList').innerHTML = sortable.length ? sortable.map(x => `${x[0]} (${x[1]})`).join(' | ') : 'Sem histórico';
+    let sortable = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,5); 
+    
+    let elDash = document.getElementById('dashBestSellers');
+    if(elDash) elDash.innerHTML = sortable.length ? sortable.map((x, i) => `<div>${i+1}. ${x[0]} <span style="color:var(--red);">(${x[1]}x)</span></div>`).join('') : 'Sem vendas';
+    
+    let elCat = document.getElementById('dashBestSellersList');
+    if(elCat) elCat.innerHTML = sortable.length ? sortable.map(x => `${x[0]} (${x[1]})`).join(' | ') : 'Sem histórico';
 }
 
 function renderizarCRM() {
@@ -443,7 +444,6 @@ function renderizarCRM() {
         let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
         let vipBadge = c[1].totalGasto >= 500 ? `<span class="badge-vip">VIP</span>` : '';
         
-        // Verifica Cliente Sumido (> 90 dias sem comprar)
         let diasSumido = c[1].ultimaCompra ? Math.floor((new Date() - c[1].ultimaCompra) / (1000 * 60 * 60 * 24)) : 0;
         let classeSumido = diasSumido > 90 ? 'sumido' : '';
         let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido} dias)</span>` : '';
