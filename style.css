@@ -64,6 +64,7 @@ body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(
 .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .cols-5 { grid-template-columns: 1.1fr .8fr .8fr .8fr .6fr; }
+.cols-5-eq { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
 input, select, textarea { width: 100%; border: 1px solid #333; background: #0a0a0a; color: #fff; border-radius: 8px; padding: .75rem .9rem; font-weight: 700; font-family: inherit; }
