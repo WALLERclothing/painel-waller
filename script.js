@@ -11,7 +11,7 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 
-// ================= OFFLINE PERSISTENCE (PWA) =================
+// ================= OFFLINE PERSISTENCE =================
 firebase.firestore().enablePersistence()
   .catch((err) => {
       if (err.code == 'failed-precondition') console.log('Múltiplas abas abertas.');
@@ -25,26 +25,35 @@ let estampasCache = []; let carrinhoTemporario = []; let carrinhoEdicao = [];
 let pedidosCache = []; let clientesCache = []; let filtroAtual = 'TODOS';
 let pedidoEmEdicaoId = null; let pedidosSelecionados = [];
 
-// ================= FUNÇÕES DE APOIO, PROTEÇÃO E UX =================
+// ================= FUNÇÕES DE BLINDAGEM E UX =================
 function upper(v) { return (v || '').toString().trim().toUpperCase(); }
 function onlyDigits(v) { return (v || '').toString().replace(/\D/g, ''); }
 function formatCurrency(num) { const value = parseFloat(num) || 0; return `R$ ${value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`; }
 function unmaskCurrency(value) { if (!value) return 0; return parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
-function escapeStr(v) { return String(v || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); } // PROTEÇÃO CONTRA CRASH
 
-function formatDate(dateValue) { 
-    if (!dateValue) return '-'; 
-    try {
-        if (typeof dateValue === 'string' && dateValue.includes('-')) { return new Date(dateValue + 'T12:00:00').toLocaleDateString('pt-BR'); } 
-        const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue); 
-        if(isNaN(date.getTime())) return '-';
-        return date.toLocaleDateString('pt-BR'); 
-    } catch(e) { return '-'; }
+// Evita que aspas e quebras de linha estraguem o HTML do Painel
+function escapeStr(v) { return String(v || '').replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+// Leitura de Datas à prova de falhas
+function parseFirestoreDate(fbDate) {
+    if (!fbDate) return null;
+    if (fbDate.toDate && typeof fbDate.toDate === 'function') return fbDate.toDate();
+    if (fbDate.seconds) return new Date(fbDate.seconds * 1000);
+    const d = new Date(fbDate); return isNaN(d.getTime()) ? null : d;
 }
 
-function getItensResumo(itens = []) { 
-    if (!itens || !Array.isArray(itens)) return 'Sem itens'; 
-    return itens.map((item) => {
+function formatDate(dateValue) { 
+    const d = parseFirestoreDate(dateValue);
+    if (!d) return '-'; return d.toLocaleDateString('pt-BR'); 
+}
+
+// Previne erro se o pedido antigo tiver os 'itens' como texto em vez de lista
+function safeItens(itens) { return Array.isArray(itens) ? itens : []; }
+
+function getItensResumo(itens) { 
+    const arr = safeItens(itens);
+    if (arr.length === 0) return 'Sem itens'; 
+    return arr.map((item) => {
         if(!item) return ''; return `${item.quantidade || 1}x ${item.nomeEstampa || item.codigoEstampa}`;
     }).filter(Boolean).join(' • ') || 'Sem itens'; 
 }
@@ -144,7 +153,7 @@ function autoPreencherCliente() {
             document.body.style.boxShadow = "inset 0 0 50px #dc2626"; showToast("⚠️ ATENÇÃO: CLIENTE NA BLACKLIST!", "error");
             setTimeout(() => document.body.style.boxShadow = "", 3000);
         } else {
-            el('whatsapp').style.borderColor = '#166534';
+            el('whatsapp').style.borderColor = '#16a34a';
             if(clienteExistente.totalPedidos > 0) showToast(`Bem-vindo de volta! ${clienteExistente.totalPedidos + 1}ª compra.`, 'info');
             setTimeout(() => el('whatsapp').style.borderColor = '#333', 1500);
         }
@@ -207,7 +216,7 @@ function atualizarTelaCarrinho() {
     let soma = 0; el('listaCarrinho').innerHTML = '';
     carrinhoTemporario.forEach((p, index) => {
         soma += p.quantidade * p.valorUnitario;
-        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
+        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
         </button></div></div>`;
     });
@@ -251,27 +260,29 @@ async function salvarPedidoCompleto() {
 
 // ================= EDIÇÃO DE PEDIDO BLINDADA =================
 function abrirFichaPedido(idPedido) {
-    const pedido = pedidosCache.find((p) => p.id === idPedido); if (!pedido) return;
-    el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
-    el('fichaPedidoConteudo').innerHTML = `
-        <div class="cliente-ficha-grid" style="margin-bottom: 1rem;">
-            <p><strong>Cliente:</strong> ${escapeStr(pedido.nome) || '-'}</p>
-            <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
-            <p><strong>Status:</strong> ${pedido.status || '-'}</p>
-            <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
-            <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${pedido.estado || '-'}</p>
-            <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
-        </div>
-        <h3 class="form-section-title">Peças no pedido</h3>
-        <div style="margin-bottom: 1.5rem;">
-            ${(pedido.itens || []).map(i => {
-                if(!i) return '';
-                return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${i.nomeEstampa || i.codigoEstampa}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
-            }).join('')}
-        </div>
-        <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
-    `;
-    el('modalFichaPedido').style.display = 'flex';
+    try {
+        const pedido = pedidosCache.find((p) => p.id === idPedido); if (!pedido) return;
+        el('fichaPedidoTitulo').textContent = `Detalhes do Pedido #${pedido.numeroPedido || '----'}`;
+        el('fichaPedidoConteudo').innerHTML = `
+            <div class="cliente-ficha-grid" style="margin-bottom: 1rem;">
+                <p><strong>Cliente:</strong> ${escapeStr(pedido.nome) || '-'}</p>
+                <p><strong>WhatsApp:</strong> ${pedido.whatsapp || '-'}</p>
+                <p><strong>Status:</strong> ${pedido.status || '-'}</p>
+                <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
+                <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${pedido.estado || '-'}</p>
+                <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
+            </div>
+            <h3 class="form-section-title">Peças no pedido</h3>
+            <div style="margin-bottom: 1.5rem;">
+                ${safeItens(pedido.itens).map(i => {
+                    if(!i) return '';
+                    return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${escapeStr(i.nomeEstampa || i.codigoEstampa)}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
+                }).join('')}
+            </div>
+            <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
+        `;
+        el('modalFichaPedido').style.display = 'flex';
+    } catch(e) { console.error(e); showToast("Erro ao abrir pedido.", "error"); }
 }
 function fecharFichaPedido() { el('modalFichaPedido').style.display = 'none'; }
 
@@ -284,7 +295,7 @@ function abrirModalEditarPedido(idPedido) {
     el('editPedReferencia').value = pedido.referencia || ''; el('editPedRastreio').value = pedido.rastreio || '';
     el('editPedFrete').value = formatCurrency(pedido.valorFrete || 0); el('editPedMetodo').value = pedido.metodoPagamento || 'PIX'; el('editPedStatusPagamento').value = pedido.statusPagamento || 'PAGO';
 
-    carrinhoEdicao = JSON.parse(JSON.stringify(pedido.itens || []));
+    carrinhoEdicao = JSON.parse(JSON.stringify(safeItens(pedido.itens)));
     atualizarTelaCarrinhoEdicao(); fecharFichaPedido(); el('modalEditarPedidoCompleto').style.display = 'flex';
 }
 function fecharModalEditarPedido() { el('modalEditarPedidoCompleto').style.display = 'none'; pedidoEmEdicaoId = null; carrinhoEdicao = []; }
@@ -309,7 +320,7 @@ function atualizarTelaCarrinhoEdicao() {
     carrinhoEdicao.forEach((p, index) => {
         if(!p) return;
         soma += p.quantidade * p.valorUnitario;
-        el('listaCarrinhoEdicao').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${p.nomeEstampa}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
+        el('listaCarrinhoEdicao').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
     });
     soma += unmaskCurrency(el('editPedFrete').value); el('editPedValorTotal').value = formatCurrency(soma); el('displayEditTotal').textContent = formatCurrency(soma);
 }
@@ -334,7 +345,7 @@ async function salvarEdicaoPedidoDefinitiva() {
 // ================= WHATSAPP E FERRAMENTAS =================
 function mensagemWhatsInformal(pedido) {
     const nome = primeiroNome(pedido.nome); let itensTexto = '';
-    (pedido.itens || []).forEach(i => {
+    safeItens(pedido.itens).forEach(i => {
         if(!i) return;
         itensTexto += `▪ ${i.quantidade || 1}x ${i.tipoPeca || 'PECA'} | ${i.nomeEstampa || i.codigoEstampa}\n  Tamanho: ${i.tamanho || '-'} | Cor: ${i.cor || '-'}\n  Valor: ${formatCurrency(i.valorUnitario || 0)}\n\n`; 
     });
@@ -464,9 +475,8 @@ function setFiltroBtn(filtro) {
 function atualizarDashboard(lista) {
     const hoje = new Date();
     const pedidosMes = lista.filter((pedido) => {
-        if (!pedido.dataCriacao) return false;
-        const d = pedido.dataCriacao.toDate ? pedido.dataCriacao.toDate() : new Date(pedido.dataCriacao);
-        if (isNaN(d.getTime())) return false;
+        const d = parseFirestoreDate(pedido.dataCriacao);
+        if (!d) return false;
         return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
     });
     el('dashPedidosMes').textContent = pedidosMes.length;
@@ -477,18 +487,6 @@ function atualizarDashboard(lista) {
 }
 
 // ================= CLIENTES E VIPs =================
-function aniversarioProximo(dataIso) {
-    if (!dataIso) return false;
-    try {
-        const hoje = new Date(); const data = new Date(`${dataIso}T12:00:00`); 
-        if(isNaN(data.getTime())) return false;
-        let niverEsteAno = new Date(hoje.getFullYear(), data.getMonth(), data.getDate());
-        let diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
-        if (diff < 0) { niverEsteAno = new Date(hoje.getFullYear() + 1, data.getMonth(), data.getDate()); diff = Math.ceil((niverEsteAno - new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000); }
-        return diff >= 0 && diff <= 15;
-    } catch(e) { return false; }
-}
-
 function extrairClientesDosPedidos() {
     const mapa = new Map();
     clientesCache.forEach((c) => { const chave = onlyDigits(c.whatsapp) || `${upper(c.nome)}-${upper(c.documento)}`; mapa.set(chave, { ...c, totalPedidos: 0, totalGasto: 0, historicoPedidos: [] }); });
@@ -506,13 +504,12 @@ function extrairClientesDosPedidos() {
         base.aniversarioWaller = false;
         if (base.historicoPedidos.length > 0) {
             base.historicoPedidos.sort((a, b) => {
-                let da = a.dataCriacao ? (a.dataCriacao.toDate ? a.dataCriacao.toDate() : new Date(a.dataCriacao)) : new Date(0);
-                let db = b.dataCriacao ? (b.dataCriacao.toDate ? b.dataCriacao.toDate() : new Date(b.dataCriacao)) : new Date(0);
+                const da = parseFirestoreDate(a.dataCriacao) || new Date(0);
+                const db = parseFirestoreDate(b.dataCriacao) || new Date(0);
                 return da.getTime() - db.getTime();
             });
-            let primeiraCompra = base.historicoPedidos[0].dataCriacao;
-            let dataPrim = primeiraCompra ? (primeiraCompra.toDate ? primeiraCompra.toDate() : new Date(primeiraCompra)) : null;
-            if (dataPrim && !isNaN(dataPrim.getTime())) {
+            const dataPrim = parseFirestoreDate(base.historicoPedidos[0].dataCriacao);
+            if (dataPrim) {
                 const hoje = new Date();
                 const diffYears = hoje.getFullYear() - dataPrim.getFullYear();
                 const diffMonths = hoje.getMonth() - dataPrim.getMonth();
@@ -618,7 +615,7 @@ function calcularBestSellers() {
         if (!pedidosCache.length || !estampasCache.length) return;
         let contagem = {};
         pedidosCache.forEach(p => {
-            (p.itens || []).forEach(i => {
+            safeItens(p.itens).forEach(i => {
                 if(!i) return;
                 if(!contagem[i.codigoEstampa]) contagem[i.codigoEstampa] = 0;
                 contagem[i.codigoEstampa] += Number(i.quantidade) || 1;
@@ -788,19 +785,25 @@ function gerarStickersEmMassa() {
 
 // ================= BLINDAGEM DOS LISTENERS DO FIREBASE =================
 function iniciarListeners() {
+    db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
+        try {
+            let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
+        } catch(e) { console.error("Erro leitura Pedidos:", e); }
+        
+        try { atualizarDashboard(pedidosCache); } catch(e) { console.error("Erro Dashboard:", e); }
+        try { aplicarFiltros(); } catch(e) { console.error("Erro Kanban:", e); }
+        try { extrairClientesDosPedidos(); renderClientes(); } catch(e) { console.error("Erro Clientes:", e); }
+        try { calcularBestSellers(); } catch(e) { console.error("Erro BestSellers:", e); }
+        
+        const board = el('gridPedidosContainer');
+        if(board && board.innerHTML.includes('skeleton')) { board.innerHTML = ''; }
+    });
+
     db.collection('clientes').onSnapshot((snap) => {
         try {
             let lidos = []; snap.forEach((doc) => lidos.push({id: doc.id, ...doc.data()})); clientesCache = lidos; 
             if(pedidosCache.length > 0) { extrairClientesDosPedidos(); renderClientes(); }
-        } catch(e) { console.error("Erro Clientes:", e); }
-    });
-
-    db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
-        try {
-            let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
-            atualizarDashboard(pedidosCache); aplicarFiltros(); extrairClientesDosPedidos(); renderClientes(); calcularBestSellers();
-            if(el('carregando')) el('carregando').style.display = 'none';
-        } catch(e) { console.error("Erro Pedidos:", e); }
+        } catch(e) { console.error("Erro leitura Clientes:", e); }
     });
 
     db.collection('estampas').orderBy('codigo').onSnapshot((snap) => {
@@ -813,18 +816,15 @@ function iniciarListeners() {
                 else if (typeof data.estoque === 'object' && data.estoque !== null) { estq = { ...estq, ...data.estoque }; }
                 est.push({ codigo: upper(data.codigo), nome: upper(data.nome), valor: Number(data.valor) || 0, custo: Number(data.custo) || 0, tipoPadrao: upper(data.tipoPadrao), estoque: estq });
             });
-            estampasCache = est; renderCatalogo(); calcularBestSellers(); 
-            if(el('carregandoEstampas')) el('carregandoEstampas').style.display = 'none';
-        } catch(e) { console.error("Erro Catálogo:", e); }
+            estampasCache = est; 
+        } catch(e) { console.error("Erro leitura Catálogo:", e); }
+
+        try { renderCatalogo(); } catch(e) { console.error("Erro render Catálogo:", e); }
+        try { calcularBestSellers(); } catch(e) { console.error("Erro BestSellers (Catalogo):", e); }
     });
 }
 
-// INICIALIZAÇÃO E REMOÇÃO DO GLITCH (SE EXISTIR)
-setTimeout(() => {
-    const glitch = el('glitchOverlay');
-    if(glitch) { glitch.style.opacity = '0'; setTimeout(() => glitch.style.display = 'none', 500); }
-}, 500); // Removido rápido para não atrapalhar o uso
-
+// ================= INICIALIZAÇÃO =================
 if(el('codigoEstampa')) el('codigoEstampa').addEventListener('input', preencherEstampaPorCodigo);
 if(el('cadValorEstampa')) el('cadValorEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadValorEstampa').value); if(val>0) el('cadValorEstampa').value = formatCurrency(val); });
 if(el('cadCustoEstampa')) el('cadCustoEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadCustoEstampa').value); if(val>0) el('cadCustoEstampa').value = formatCurrency(val); });
