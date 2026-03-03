@@ -124,7 +124,7 @@ function salvarRascunho() {
     try {
         const data = {
             nome: el('nome').value, whatsapp: el('whatsapp').value, instagram: el('instagram').value, cpf: el('cpf').value, cep: el('cep').value, cidade: el('cidade').value, estado: el('estado').value,
-            endereco: el('endereco').value, complemento: el('complemento').value, referencia: el('referencia').value, frete: el('valorFrete').value, pag: el('metodoPagamento').value, status: el('statusPagamento').value, carrinho: carrinhoTemporario
+            endereco: el('endereco').value, complemento: el('complemento').value, referencia: el('referencia').value, frete: el('valorFrete').value, desconto: el('valorDesconto').value, pag: el('metodoPagamento').value, status: el('statusPagamento').value, carrinho: carrinhoTemporario
         };
         localStorage.setItem('wallerRascunho', JSON.stringify(data));
     } catch(e){}
@@ -135,7 +135,7 @@ function carregarRascunho() {
         if (saved) {
             const data = JSON.parse(saved);
             el('nome').value = data.nome || ''; el('whatsapp').value = data.whatsapp || ''; el('instagram').value = data.instagram || ''; el('cpf').value = data.cpf || ''; el('cep').value = data.cep || ''; el('cidade').value = data.cidade || ''; el('estado').value = data.estado || '';
-            el('endereco').value = data.endereco || ''; el('complemento').value = data.complemento || ''; el('referencia').value = data.referencia || ''; el('valorFrete').value = data.frete || ''; if(data.pag) el('metodoPagamento').value = data.pag; if(data.status) el('statusPagamento').value = data.status;
+            el('endereco').value = data.endereco || ''; el('complemento').value = data.complemento || ''; el('referencia').value = data.referencia || ''; el('valorFrete').value = data.frete || ''; el('valorDesconto').value = data.desconto || ''; if(data.pag) el('metodoPagamento').value = data.pag; if(data.status) el('statusPagamento').value = data.status;
             carrinhoTemporario = safeItens(data.carrinho); atualizarTelaCarrinho();
         }
     } catch(e){}
@@ -211,31 +211,42 @@ function adicionarAoCarrinho() {
 }
 
 function atualizarTelaCarrinho() {
-    let soma = 0; el('listaCarrinho').innerHTML = '';
+    let somaItens = 0; el('listaCarrinho').innerHTML = '';
     carrinhoTemporario.forEach((p, index) => {
         if(!p) return;
-        soma += p.quantidade * p.valorUnitario;
-        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">X</button></div></div>`;
+        somaItens += p.quantidade * p.valorUnitario;
+        el('listaCarrinho').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)} <br><small>Cor: ${p.cor} | Unitário: ${formatCurrency(p.valorUnitario)}</small></div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinho(${index})">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+        </button></div></div>`;
     });
-    soma += unmaskCurrency(el('valorFrete').value); el('valorTotal').value = formatCurrency(soma);
+    
+    const frete = unmaskCurrency(el('valorFrete').value);
+    const desconto = unmaskCurrency(el('valorDesconto').value);
+    let totalReal = somaItens + frete - desconto;
+    if (totalReal < 0) totalReal = 0;
+
+    el('valorTotal').value = formatCurrency(totalReal);
 }
 
 function removerDoCarrinho(index) { carrinhoTemporario.splice(index, 1); atualizarTelaCarrinho(); salvarRascunho(); }
 
 async function salvarPedidoCompleto() {
     const nome = upper(el('nome').value);
-    if (!nome || carrinhoTemporario.length === 0) return showToast('Preencha o nome e adicione itens!', 'warning');
+    if (!nome || carrinhoTemporario.length === 0) return showToast('Preencha o nome e adicione itens no pedido!', 'warning');
 
     const statusBase = el('statusPagamento').value === 'PENDENTE' ? 'AGUARDANDO PAGAMENTO' : 'PEDIDO FEITO';
     
     let totalCusto = 0;
     carrinhoTemporario.forEach(i => { if(i) totalCusto += (i.custoUnitario || 0) * i.quantidade });
-    const lucroLiquido = unmaskCurrency(el('valorTotal').value) - unmaskCurrency(el('valorFrete').value) - totalCusto;
+    const frete = unmaskCurrency(el('valorFrete').value);
+    const desconto = unmaskCurrency(el('valorDesconto').value);
+    const total = unmaskCurrency(el('valorTotal').value);
+    const lucroLiquido = total - frete - totalCusto; // O desconto já reduziu o total, então lucro baixa.
 
     const dadosPedido = {
         nome, whatsapp: upper(el('whatsapp').value), instagram: upper(el('instagram').value), documento: upper(el('cpf').value), cep: upper(el('cep').value), cidade: upper(el('cidade').value),
         estado: upper(el('estado').value), endereco: upper(el('endereco').value), complemento: upper(el('complemento').value), referencia: upper(el('referencia').value),
-        valorTotal: unmaskCurrency(el('valorTotal').value), valorFrete: unmaskCurrency(el('valorFrete').value), lucroTotal: lucroLiquido, metodoPagamento: el('metodoPagamento').value,
+        valorTotal: total, valorFrete: frete, valorDesconto: desconto, lucroTotal: lucroLiquido, metodoPagamento: el('metodoPagamento').value,
         statusPagamento: el('statusPagamento').value, itens: carrinhoTemporario, rastreio: '', status: statusBase, numeroPedido: Math.floor(1000 + Math.random() * 9000).toString(),
         dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -268,11 +279,16 @@ function abrirFichaPedido(idPedido) {
                 <p><strong>Status:</strong> ${pedido.status || '-'}</p>
                 <p><strong>Pagamento:</strong> ${pedido.metodoPagamento || '-'} (${pedido.statusPagamento || '-'})</p>
                 <p><strong>Endereço:</strong> ${escapeStr(pedido.endereco) || '-'} ${pedido.complemento ? `- ${escapeStr(pedido.complemento)}` : ''}, ${escapeStr(pedido.cidade) || '-'}/${pedido.estado || '-'}</p>
-                <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
+                <p><strong>Desconto:</strong> ${formatCurrency(pedido.valorDesconto || 0)}</p>
+                <p><strong>Frete:</strong> ${formatCurrency(pedido.valorFrete || 0)}</p>
+                <p><strong>Total Final:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
             </div>
             <h3 class="form-section-title">Peças no pedido</h3>
             <div style="margin-bottom: 1.5rem;">
-                ${safeItens(pedido.itens).map(i => `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${escapeStr(i.nomeEstampa || i.codigoEstampa)}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`).join('')}
+                ${safeItens(pedido.itens).map(i => {
+                    if(!i) return '';
+                    return `<div class="item-carrinho"><div><strong>${i.quantidade}x ${i.tipoPeca} (${i.tamanho})</strong> • ${escapeStr(i.nomeEstampa || i.codigoEstampa)}<br><small>Cor: ${i.cor} | ${formatCurrency(i.valorUnitario)}</small></div></div>`;
+                }).join('')}
             </div>
             <button class="btn-primary" onclick="abrirModalEditarPedido('${pedido.id}')">✏️ EDITAR ESTE PEDIDO</button>
         `;
@@ -289,7 +305,9 @@ function abrirModalEditarPedido(idPedido) {
         el('editPedCpf').value = pedido.documento || ''; el('editPedCep').value = pedido.cep || ''; el('editPedCidade').value = pedido.cidade || '';
         el('editPedEstado').value = pedido.estado || ''; el('editPedEndereco').value = pedido.endereco || ''; el('editPedComplemento').value = pedido.complemento || '';
         el('editPedReferencia').value = pedido.referencia || ''; el('editPedRastreio').value = pedido.rastreio || '';
-        el('editPedFrete').value = formatCurrency(pedido.valorFrete || 0); el('editPedMetodo').value = pedido.metodoPagamento || 'PIX'; el('editPedStatusPagamento').value = pedido.statusPagamento || 'PAGO';
+        el('editPedFrete').value = formatCurrency(pedido.valorFrete || 0); 
+        el('editPedDesconto').value = formatCurrency(pedido.valorDesconto || 0);
+        el('editPedMetodo').value = pedido.metodoPagamento || 'PIX'; el('editPedStatusPagamento').value = pedido.statusPagamento || 'PAGO';
 
         carrinhoEdicao = JSON.parse(JSON.stringify(safeItens(pedido.itens)));
         atualizarTelaCarrinhoEdicao(); fecharFichaPedido(); el('modalEditarPedidoCompleto').style.display = 'flex';
@@ -313,14 +331,21 @@ function adicionarAoCarrinhoEdicaoInput() {
 }
 function atualizarTelaCarrinhoEdicao() {
     try {
-        let soma = 0; el('listaCarrinhoEdicao').innerHTML = '';
+        let somaItens = 0; el('listaCarrinhoEdicao').innerHTML = '';
         if(carrinhoEdicao.length === 0) el('listaCarrinhoEdicao').innerHTML = '<p style="color:#d90429; font-size:0.8rem; margin:0;">Pedido ficará sem itens se salvo assim.</p>';
         carrinhoEdicao.forEach((p, index) => {
             if(!p) return;
-            soma += p.quantidade * p.valorUnitario;
+            somaItens += p.quantidade * p.valorUnitario;
             el('listaCarrinhoEdicao').innerHTML += `<div class="item-carrinho"><div><strong>${p.quantidade}x ${p.tipoPeca} (${p.tamanho})</strong> • ${escapeStr(p.nomeEstampa)}</div><div><strong>${formatCurrency(p.quantidade * p.valorUnitario)}</strong><button type="button" class="btn-excluir-item" onclick="removerDoCarrinhoEdicao(${index})">X</button></div></div>`;
         });
-        soma += unmaskCurrency(el('editPedFrete').value); el('editPedValorTotal').value = formatCurrency(soma); el('displayEditTotal').textContent = formatCurrency(soma);
+        
+        const frete = unmaskCurrency(el('editPedFrete').value);
+        const desconto = unmaskCurrency(el('editPedDesconto').value);
+        let totalReal = somaItens + frete - desconto;
+        if(totalReal < 0) totalReal = 0;
+
+        el('editPedValorTotal').value = formatCurrency(totalReal); // Hidden input para calculo base
+        el('displayEditTotal').textContent = formatCurrency(totalReal);
     } catch(e) { console.error(e); }
 }
 function removerDoCarrinhoEdicao(index) { carrinhoEdicao.splice(index, 1); atualizarTelaCarrinhoEdicao(); }
@@ -328,7 +353,10 @@ function removerDoCarrinhoEdicao(index) { carrinhoEdicao.splice(index, 1); atual
 async function salvarEdicaoPedidoDefinitiva() {
     if (!pedidoEmEdicaoId) return;
     let totalCusto = 0; carrinhoEdicao.forEach(i => { if(i) totalCusto += (i.custoUnitario || 0) * i.quantidade });
-    const lucroLiquido = unmaskCurrency(el('editPedValorTotal').value) - unmaskCurrency(el('editPedFrete').value) - totalCusto;
+    const totalCalc = unmaskCurrency(el('editPedValorTotal').value);
+    const freteCalc = unmaskCurrency(el('editPedFrete').value);
+    const descontoCalc = unmaskCurrency(el('editPedDesconto').value);
+    const lucroLiquido = totalCalc - freteCalc - totalCusto;
 
     const dadosEditados = {
         nome: upper(el('editPedNome').value), whatsapp: upper(el('editPedWhatsapp').value), instagram: upper(el('editPedInstagram').value),
@@ -336,7 +364,7 @@ async function salvarEdicaoPedidoDefinitiva() {
         estado: upper(el('editPedEstado').value), endereco: upper(el('editPedEndereco').value), complemento: upper(el('editPedComplemento').value),
         referencia: upper(el('editPedReferencia').value), rastreio: upper(el('editPedRastreio').value),
         metodoPagamento: el('editPedMetodo').value, statusPagamento: el('editPedStatusPagamento').value,
-        itens: carrinhoEdicao, valorFrete: unmaskCurrency(el('editPedFrete').value), valorTotal: unmaskCurrency(el('editPedValorTotal').value), lucroTotal: lucroLiquido
+        itens: carrinhoEdicao, valorFrete: freteCalc, valorDesconto: descontoCalc, valorTotal: totalCalc, lucroTotal: lucroLiquido
     };
     await db.collection('pedidos').doc(pedidoEmEdicaoId).update(dadosEditados);
     showToast('✅ Pedido atualizado com sucesso!'); fecharModalEditarPedido();
@@ -351,6 +379,7 @@ function mensagemWhatsInformal(pedido) {
     });
     let txt = `Fala, ${nome}!\n\nPassando pra atualizar que seu pedido *#${pedido.numeroPedido || ''}* esta: *${pedido.status || 'PROCESSANDO'}*.\n\n*RESUMO DO SEU DROP:*\n${itensTexto}`;
     if(pedido.valorFrete > 0) txt += `*FRETE:* ${formatCurrency(pedido.valorFrete)}\n`;
+    if(pedido.valorDesconto > 0) txt += `*DESCONTO:* -${formatCurrency(pedido.valorDesconto)}\n`;
     txt += `*TOTAL DO PEDIDO:* ${formatCurrency(pedido.valorTotal || 0)}\n\nQualquer duvida, e so dar um salve por aqui!`; return txt;
 }
 function linkWhatsPedido(pedido) { const num = onlyDigits(pedido.whatsapp); if (!num) return '#'; return `https://wa.me/55${num}?text=${encodeURIComponent(mensagemWhatsInformal(pedido))}`; }
@@ -380,6 +409,12 @@ function statusClass(status) {
 function statusOptionsSelecionado(atual) { return STATUS_LIST.map((status) => `<option value="${status}" ${status === atual ? 'selected' : ''}>${status}</option>`).join(''); }
 function abrirSanfonaStatus(id, statusAtual) { return `<details class="status-sanfona"><summary>Mudar Estado</summary><select id="status-select-${id}">${statusOptionsSelecionado(statusAtual)}</select><button class="btn-add" style="width:100%; margin-top:5px; background:#fff; color:#000;" onclick="salvarStatusPedido('${id}','status-select-${id}')">Salvar</button></details>`; }
 async function salvarStatusPedido(id, selectId) { const status = upper(el(selectId).value); await db.collection('pedidos').doc(id).update({ status }); showToast('Status atualizado!'); }
+
+async function confirmarPagamentoPedido(id) {
+    if(!confirm('Confirmar pagamento deste pedido? Ele será movido para EM SEPARAÇÃO.')) return;
+    await db.collection('pedidos').doc(id).update({ statusPagamento: 'PAGO', status: 'EM SEPARAÇÃO' });
+    showToast('Pagamento confirmado!'); playMechSound();
+}
 
 async function avancarPedido(id, statusAtual) {
     const idx = STATUS_LIST.indexOf(statusAtual);
@@ -424,6 +459,7 @@ function renderPedidosGrid(lista) {
         const iAv = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/></svg>`;
         const iFb = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M5 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>`;
         const iBx = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0a.5.5 0 0 1 .447.224l4 8a.5.5 0 0 1-.447.67L8 1.118 4.003 8.894a.5.5 0 1 1-.894-.448l4-8A.5.5 0 0 1 8 0zM1 11a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3zm1.5.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-11z"/></svg>`;
+        const iCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>`;
 
         grupos.forEach((grupo) => {
             const isUltimo = grupo.status === 'PEDIDO ENTREGUE';
@@ -439,9 +475,12 @@ function renderPedidosGrid(lista) {
                     </div>
                     <p><strong><span class="copy-text" title="Copiar Nome" onclick="copiarTexto('${escapeStr(pedido.nome)}')">${escapeStr(pedido.nome) || 'SEM NOME'}</span></strong></p>
                     <p><strong>Itens:</strong> ${getItensResumo(pedido.itens)}</p>
+                    <p><strong>Pagamento:</strong> ${pedido.metodoPagamento} (${pedido.statusPagamento})</p>
                     <p><strong>Total:</strong> ${formatCurrency(pedido.valorTotal || 0)}</p>
+                    
                     ${grupo.status === 'AGUARDANDO PAGAMENTO' ? `<button class="btn-cobrar" onclick="enviarCobranca('${pedido.id}')">💸 Cobrar Pix</button>` : ''}
                     <div class="pedido-actions">
+                        ${grupo.status === 'AGUARDANDO PAGAMENTO' ? `<button class="btn-action-icon" style="color:#16a34a; border-color:#16a34a;" title="Confirmar Pagamento" onclick="confirmarPagamentoPedido('${pedido.id}')">${iCheck}</button>` : ''}
                         <a class="btn-action-icon btn-whats-icon" target="_blank" title="WhatsApp" href="${linkWhatsPedido(pedido)}">${iWh}</a>
                         ${pedido.rastreio ? `<button class="btn-action-icon" title="Rastreio Correios" onclick="enviarRastreio('${pedido.id}')">${iBx}</button>` : ''}
                         <button class="btn-action-icon" title="Ver Detalhes" onclick="abrirFichaPedido('${pedido.id}')">${iOl}</button>
@@ -475,17 +514,22 @@ function setFiltroBtn(filtro) {
 }
 
 function atualizarDashboard(lista) {
-    const hoje = new Date();
+    const mesFiltro = el('mesDash').value;
+    if(!mesFiltro) return;
+    const [anoStr, mesStr] = mesFiltro.split('-');
+    const anoFiltro = parseInt(anoStr);
+    const mesNumFiltro = parseInt(mesStr) - 1;
+
     const pedidosMes = lista.filter((pedido) => {
         const d = parseFirestoreDate(pedido.dataCriacao);
         if (!d) return false;
-        return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+        return d.getMonth() === mesNumFiltro && d.getFullYear() === anoFiltro;
     });
+    
     el('dashPedidosMes').textContent = pedidosMes.length;
-    el('dashAguardandoPagamento').textContent = lista.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
-    el('dashEnviar').textContent = lista.filter((p) => upper(p.status) === 'ENVIO EFETUADO').length;
-    el('dashFaturamento').textContent = formatCurrency(lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
-    el('dashLucro').textContent = formatCurrency(lista.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.lucroTotal || 0), 0));
+    el('dashAguardandoPagamento').textContent = pedidosMes.filter((p) => upper(p.status) === 'AGUARDANDO PAGAMENTO').length;
+    el('dashFaturamento').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.valorTotal || 0), 0));
+    el('dashLucro').textContent = formatCurrency(pedidosMes.filter((p) => upper(p.statusPagamento) === 'PAGO').reduce((acc, p) => acc + (p.lucroTotal || 0), 0));
 }
 
 // ================= CLIENTES E VIPs =================
@@ -740,6 +784,30 @@ function gerarPDFClientes() {
     doc.autoTable({ startY: 20, head: [['Nome', 'WhatsApp', 'Cidade', 'Total Gasto']], body: clientesCache.map((c) => [c.nome, c.whatsapp, c.cidade, formatCurrency(c.totalGasto)]) });
     doc.save(`Lista-Clientes.pdf`); fecharModalRelatorios(); showToast('PDF Gerado!');
 }
+function gerarPDFFaturamentoMensal() {
+    const mesFiltro = el('mesDash').value;
+    if(!mesFiltro) return showToast("Selecione o mês no Dashboard!", "warning");
+    const [anoStr, mesStr] = mesFiltro.split('-'); const anoFiltro = parseInt(anoStr); const mesNumFiltro = parseInt(mesStr) - 1;
+
+    const pedidosMes = pedidosCache.filter((pedido) => {
+        const d = parseFirestoreDate(pedido.dataCriacao); if (!d) return false;
+        return d.getMonth() === mesNumFiltro && d.getFullYear() === anoFiltro && upper(pedido.statusPagamento) === 'PAGO';
+    });
+    if (pedidosMes.length === 0) return showToast("Sem pedidos pagos neste mês.", "warning");
+
+    const faturamento = pedidosMes.reduce((acc, p) => acc + (p.valorTotal || 0), 0);
+    const lucro = pedidosMes.reduce((acc, p) => acc + (p.lucroTotal || 0), 0);
+
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    doc.text(`Relatório Financeiro - ${mesStr}/${anoStr}`, 14, 14);
+    doc.setFontSize(10);
+    doc.text(`Faturamento Bruto: ${formatCurrency(faturamento)}`, 14, 22);
+    doc.text(`Lucro Líquido Real: ${formatCurrency(lucro)}`, 14, 28);
+    doc.text(`Total de Pedidos Pagos: ${pedidosMes.length}`, 14, 34);
+
+    doc.autoTable({ startY: 40, head: [['Pedido', 'Data', 'Total', 'Lucro']], body: pedidosMes.map((p) => [`#${p.numeroPedido}`, formatDate(p.dataCriacao), formatCurrency(p.valorTotal), formatCurrency(p.lucroTotal)]) });
+    doc.save(`Financeiro-${mesStr}-${anoStr}.pdf`); fecharModalRelatorios(); showToast('PDF Gerado!');
+}
 
 function gerarEtiquetasEmMassa() {
     if(pedidosSelecionados.length === 0) return showToast("Selecione pedidos primeiro", "warning");
@@ -758,7 +826,7 @@ function gerarEtiquetasEmMassa() {
     });
     doc.save(`Etiquetas-Waller-${new Date().getTime()}.pdf`);
     showToast(`${pedidosSelecionados.length} Etiquetas geradas!`);
-    pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); 
+    pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); fecharModalRelatorios();
 }
 
 function gerarStickersEmMassa() {
@@ -786,11 +854,16 @@ function gerarStickersEmMassa() {
     });
     doc.save(`Stickers-Waller-${new Date().getTime()}.pdf`);
     showToast(`${pedidosSelecionados.length} Stickers gerados!`);
-    pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); 
+    pedidosSelecionados = []; el('bulkBar').style.display = 'none'; aplicarFiltros(); fecharModalRelatorios();
 }
 
 // ================= BLINDAGEM DOS LISTENERS DO FIREBASE =================
 function iniciarListeners() {
+    // Seta data atual no Dashboard
+    const now = new Date();
+    el('mesDash').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}`;
+    el('mesDash').addEventListener('change', () => atualizarDashboard(pedidosCache));
+
     db.collection('pedidos').orderBy('dataCriacao', 'desc').onSnapshot((snap) => {
         try {
             let ped = []; snap.forEach((doc) => ped.push({ id: doc.id, ...doc.data() })); pedidosCache = ped;
@@ -835,7 +908,6 @@ if(el('cadValorEstampa')) el('cadValorEstampa').addEventListener('blur', () => {
 if(el('cadCustoEstampa')) el('cadCustoEstampa').addEventListener('blur', () => { const val = unmaskCurrency(el('cadCustoEstampa').value); if(val>0) el('cadCustoEstampa').value = formatCurrency(val); });
 if(el('editCatalogoValor')) el('editCatalogoValor').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoValor').value); if(val>0) el('editCatalogoValor').value = formatCurrency(val); });
 if(el('editCatalogoCusto')) el('editCatalogoCusto').addEventListener('blur', () => { const val = unmaskCurrency(el('editCatalogoCusto').value); if(val>0) el('editCatalogoCusto').value = formatCurrency(val); });
-if(el('editPedValorTotal')) el('editPedValorTotal').addEventListener('blur', () => { const val = unmaskCurrency(el('editPedValorTotal').value); if(val>0) el('editPedValorTotal').value = formatCurrency(val); });
 
 setupAutoFields('whatsapp', 'instagram', 'cpf', 'cep', 'cidade', 'estado', 'endereco');
 setupAutoFields('clienteWhatsapp', 'clienteInstagram', 'clienteDocumento', 'clienteCep', 'clienteCidade', 'clienteEstado', 'clienteEndereco');
