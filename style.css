@@ -56,6 +56,10 @@ body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); 
 .form-grid { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .form-grid > * { flex: 1; min-width: 180px; }
 
+/* Adicionado Labels para Modais ficarem mais claros */
+.input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.input-group label { font-size: 0.75rem; font-weight: 900; color: var(--red); text-transform: uppercase; }
+
 input, select, textarea { width: 100%; padding: 0.8rem 1rem; font-size: 0.95rem; font-family: 'Montserrat', sans-serif; font-weight: 700; border: var(--border-thick); border-radius: 0; outline: none; box-sizing: border-box; background-color: var(--white); color: var(--black); text-transform: uppercase; }
 input:focus, select:focus, textarea:focus { border-color: var(--red); box-shadow: 2px 2px 0px var(--red); }
 ::placeholder { color: var(--text-muted); font-weight: 500; text-transform: none; }
@@ -111,7 +115,7 @@ button { font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointe
 /* GRID DE CRM CLIENTES */
 .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 .crm-card { background: var(--white); border: var(--border-thick); padding: 1.5rem; box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; gap: 10px; position: relative; transition: 0.2s; }
-.crm-card.sumido { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); } /* Alerta de Cliente Sumido */
+.crm-card.sumido { border-color: var(--red); box-shadow: 4px 4px 0px var(--red); }
 .crm-card-title { font-size: 1.2rem; font-weight: 900; color: var(--black); margin: 0; text-transform: uppercase; display: flex; justify-content: space-between; align-items: flex-start; }
 .crm-card-subtitle { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; }
 .crm-stats { display: flex; justify-content: space-between; background: var(--gray); padding: 10px; border: 1px dashed var(--border-color); font-size: 0.85rem; font-weight: 800; }
