@@ -104,7 +104,7 @@
         <div class="dash-card green-text"><h3>Faturamento (Pago)</h3><span id="dashFaturamento">R$ 0,00</span></div>
     </div>
     
-    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando...</span></h2>
+    <h2 class="card-title">Fila de Produção <span id="carregando" style="font-size:0.8rem; color:#d90429;">Sincronizando com banco...</span></h2>
     
     <div class="filtros-container">
         <input type="text" id="inputBusca" placeholder="🔍 BUSCAR POR NOME / WHATSAPP / ITEM" onkeyup="aplicarFiltros()">
@@ -118,7 +118,7 @@
 
     <div id="bulkBar" class="bulk-bar" style="display:none;">
         <div style="font-weight: 800;"><span id="bulkCount">0</span> pedido(s) selecionado(s)</div>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
             <select id="bulkStatusTarget" style="padding:0.3rem; border-radius:6px; font-size:0.8rem;">
                 <option value="AGUARDANDO PAGAMENTO">AGUARDANDO PAGAMENTO</option>
                 <option value="EM SEPARAÇÃO">EM SEPARAÇÃO</option>
@@ -126,6 +126,7 @@
                 <option value="PEDIDO ENTREGUE">PEDIDO ENTREGUE</option>
             </select>
             <button class="btn-add btn-dark" style="padding:0.4rem 1rem;" onclick="avancarSelecionados()">Mover Selecionados</button>
+            <button class="btn-add" style="padding:0.4rem 1rem; color:#111;" onclick="gerarEtiquetasEmMassa()">🖨️ Imprimir Etiquetas</button>
         </div>
     </div>
 
@@ -135,6 +136,13 @@
 </div>
 
 <div id="aba-estampas" class="container" style="display: none;">
+    <div class="card">
+        <h2 class="card-title">🏆 Top 5 Produtos Mais Vendidos</h2>
+        <div id="bestSellersContainer" class="bestseller-grid">
+            <p style="color:var(--muted); font-size:0.8rem;">Calculando...</p>
+        </div>
+    </div>
+
     <div class="card">
         <div class="catalog-header">
             <h2 class="card-title">Catálogo de Produtos <span id="carregandoEstampas" style="font-size:0.8rem; color:#d90429;">Lendo...</span></h2>
@@ -187,7 +195,7 @@
                 <input type="text" id="clienteCep" placeholder="CEP">
                 <input type="text" id="clienteCidade" placeholder="CIDADE">
                 <input type="text" id="clienteEstado" placeholder="UF">
-                <input type="date" id="clienteAniversario" title="Data de Aniversário">
+                <input type="date" id="clienteAniversario" title="Data de Aniversário (Opcional)">
             </div>
             <div class="form-grid cols-3">
                 <input type="text" id="clienteEndereco" placeholder="ENDEREÇO / RUA E NÚMERO">
@@ -195,7 +203,12 @@
                 <input type="text" id="clienteReferencia" placeholder="PONTO DE REFERÊNCIA">
             </div>
             <div class="form-grid cols-1">
-                <textarea id="clienteNotas" placeholder="Notas internas privadas sobre este cliente..." rows="3" style="width:100%; border:2px solid #1f2937; border-radius:10px; padding:0.75rem; font-family:inherit;"></textarea>
+                <textarea id="clienteNotas" placeholder="Notas internas privadas sobre este cliente..." rows="2" style="width:100%; border:2px solid #1f2937; border-radius:10px; padding:0.75rem; font-family:inherit;"></textarea>
+            </div>
+            <div class="form-grid cols-1" style="margin-top: 5px;">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:bold; color:#dc2626;">
+                    <input type="checkbox" id="clienteBlacklist" style="width:auto; transform:scale(1.2);"> ⚠️ Adicionar à Blacklist (Piscará aviso no Drop)
+                </label>
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 10px;">SALVAR CLIENTE</button>
         </form>
@@ -246,7 +259,6 @@
                 <select id="editPedStatusPagamento"><option value="PAGO">PAGO</option><option value="PENDENTE">PENDENTE</option></select>
             </div>
         </div>
-        
         <div class="form-section">
             <div class="form-section-title">Adicionar Mais Itens</div>
             <div class="form-grid cols-2">
@@ -263,7 +275,6 @@
             <button type="button" class="btn-add" onclick="adicionarAoCarrinhoEdicaoInput()">+ ADICIONAR PEÇA AO PEDIDO</button>
             <small id="mensagemAutoPreenchimentoEdicao" class="helper-text"></small>
         </div>
-
         <div class="form-section" style="border-bottom: none; margin-bottom: 0;">
             <div class="form-section-title">Itens Deste Pedido</div>
             <div id="listaCarrinhoEdicao" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px dashed #94a3b8; border-radius: 8px;"></div>
