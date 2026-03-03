@@ -105,7 +105,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ==========================================
-// CATÁLOGO: ESTOQUE POR GRADE DE TAMANHOS
+// CATÁLOGO: ESTOQUE EM TEMPO REAL NA GRADE
 // ==========================================
 let catalogoEstampas = {}; 
 db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
@@ -116,42 +116,48 @@ db.collection("estampas").orderBy("codigo").onSnapshot((querySnapshot) => {
     querySnapshot.forEach((doc) => {
         let est = doc.data(); 
         
-        // Bloqueio de segurança da Lixeira no JS
         if(est.apagado === true) return; 
 
         let cat = est.categoria || 'CAMISETA';
         let custo = est.custo || 0;
         let preco = est.precoVenda || 0;
         
-        let e = est.estoqueGrade || { P:0, M:0, G:0, GG:0, XG:0, U:0 };
+        // Mantém apenas os tamanhos P, M, G, GG
+        let e = est.estoqueGrade || { P:0, M:0, G:0, GG:0 };
         
         catalogoEstampas[est.codigo] = { nome: est.nome, estoque: e, categoria: cat, custo: custo, precoVenda: preco };
         datalist.innerHTML += `<option value="${est.codigo}">${est.nome}</option>`;
         
-        let totalEstoque = parseInt(e.P)+parseInt(e.M)+parseInt(e.G)+parseInt(e.GG)+parseInt(e.XG)+parseInt(e.U);
+        let totalEstoque = parseInt(e.P)+parseInt(e.M)+parseInt(e.G)+parseInt(e.GG);
         let badgeSoldOut = totalEstoque <= 0 ? `<br><span class="badge-soldout" style="margin: 5px 0 0 0;">SOLD OUT</span>` : '';
         
+        // Aqui os spans viraram inputs para editar o estoque rápido!
         document.getElementById('listaEstampas').innerHTML += `
         <tr>
             <td><strong>${est.codigo}</strong></td>
             <td><div style="font-weight:900;">${est.nome}</div><div style="font-size:0.75rem; color:var(--text-muted);">${cat} • Venda: ${formatCurrency(preco)}</div>${badgeSoldOut}</td>
             <td>
                 <div class="grade-tamanhos">
-                    <div class="grade-box">P <br><span>${e.P}</span></div>
-                    <div class="grade-box">M <br><span>${e.M}</span></div>
-                    <div class="grade-box">G <br><span>${e.G}</span></div>
-                    <div class="grade-box">GG<br><span>${e.GG}</span></div>
-                    <div class="grade-box">XG<br><span>${e.XG}</span></div>
-                    <div class="grade-box">U <br><span>${e.U}</span></div>
+                    <div class="grade-box">P <input type="number" value="${e.P || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'P', this.value)"></div>
+                    <div class="grade-box">M <input type="number" value="${e.M || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'M', this.value)"></div>
+                    <div class="grade-box">G <input type="number" value="${e.G || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'G', this.value)"></div>
+                    <div class="grade-box">GG<input type="number" value="${e.GG || 0}" onchange="atualizarEstoqueGrade('${doc.id}', 'GG', this.value)"></div>
                 </div>
             </td>
             <td style="display:flex; gap:5px;">
-                <button class="btn-icone" title="Editar / Ajustar Estoque" onclick="prepararEdicaoEstampa('${est.codigo}')">✏️</button>
+                <button class="btn-icone" title="Editar Detalhes" onclick="prepararEdicaoEstampa('${est.codigo}')">✏️</button>
                 <button class="btn-icone" title="Apagar Produto" onclick="excluirEstampa('${doc.id}')" style="color:var(--red);">X</button>
             </td>
         </tr>`;
     });
 });
+
+// Função que salva a mudança de número direto na caixinha da grade principal
+function atualizarEstoqueGrade(id, tamanho, valorStr) {
+    let valor = parseInt(valorStr) || 0;
+    let campo = "estoqueGrade." + tamanho;
+    db.collection("estampas").doc(id).update({ [campo]: valor });
+}
 
 function autocompletarEstampa(val) {
     let code = val.toUpperCase().trim();
@@ -166,7 +172,7 @@ function fecharModalEstampa() {
     document.getElementById('modalEstampa').style.display = 'none';
     document.getElementById('cadCodigoEstampa').value = ''; document.getElementById('cadCodigoEstampa').disabled = false;
     document.getElementById('cadNomeEstampa').value = ''; 
-    document.getElementById('estP').value = '0'; document.getElementById('estM').value = '0'; document.getElementById('estG').value = '0'; document.getElementById('estGG').value = '0'; document.getElementById('estXG').value = '0'; document.getElementById('estU').value = '0';
+    document.getElementById('estP').value = '0'; document.getElementById('estM').value = '0'; document.getElementById('estG').value = '0'; document.getElementById('estGG').value = '0';
     document.getElementById('cadCusto').value = ''; document.getElementById('cadPreco').value = '';
     document.getElementById('cadCategoriaEstampa').value = 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = '';
     document.getElementById('tituloModalEstampa').innerText = 'CADASTRAR PRODUTO'; document.getElementById('btnSalvarEstampa').innerText = 'SALVAR PRODUTO';
@@ -179,7 +185,6 @@ function prepararEdicaoEstampa(cod) {
     
     document.getElementById('estP').value = p.estoque.P || 0; document.getElementById('estM').value = p.estoque.M || 0;
     document.getElementById('estG').value = p.estoque.G || 0; document.getElementById('estGG').value = p.estoque.GG || 0;
-    document.getElementById('estXG').value = p.estoque.XG || 0; document.getElementById('estU').value = p.estoque.U || 0;
     
     document.getElementById('cadCusto').value = formatCurrency(p.custo); document.getElementById('cadPreco').value = formatCurrency(p.precoVenda);
     document.getElementById('cadCategoriaEstampa').value = p.categoria || 'CAMISETA'; document.getElementById('editEstampaCodigoOriginal').value = cod;
@@ -196,9 +201,10 @@ function salvarNovaEstampa(e) {
     let cat = document.getElementById('cadCategoriaEstampa').value;
     
     let grade = {
-        P: parseInt(document.getElementById('estP').value) || 0, M: parseInt(document.getElementById('estM').value) || 0,
-        G: parseInt(document.getElementById('estG').value) || 0, GG: parseInt(document.getElementById('estGG').value) || 0,
-        XG: parseInt(document.getElementById('estXG').value) || 0, U: parseInt(document.getElementById('estU').value) || 0
+        P: parseInt(document.getElementById('estP').value) || 0, 
+        M: parseInt(document.getElementById('estM').value) || 0,
+        G: parseInt(document.getElementById('estG').value) || 0, 
+        GG: parseInt(document.getElementById('estGG').value) || 0
     };
     
     let custo = unmaskCurrency(document.getElementById('cadCusto').value);
@@ -291,7 +297,7 @@ function excluirFichaCliente(whatsapp) {
 }
 
 // ==========================================
-// LANÇAMENTO DE PEDIDO
+// LANÇAMENTO DE PEDIDO E BAIXA DE ESTOQUE
 // ==========================================
 let todosPedidos = []; let carrinhoTemporario = []; 
 
@@ -299,7 +305,7 @@ function adicionarAoCarrinho() {
     const cod = document.getElementById('codigoEstampa').value.toUpperCase().trim();
     const nom = document.getElementById('nomeEstampa').value.toUpperCase().trim();
     const tip = document.getElementById('tipoPeca').value;
-    const tam = document.getElementById('tamanho').value; // P, M, G...
+    const tam = document.getElementById('tamanho').value; // P, M, G, GG
     const cor = document.getElementById('cor').value;
     const val = unmaskCurrency(document.getElementById('valorUnitario').value);
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
@@ -393,7 +399,7 @@ async function salvarPedidoCompleto() {
 }
 
 // ==========================================
-// KANBAN, GRÁFICOS E CURVA ABC
+// KANBAN, DASHBOARD E AVISOS DE ZAP
 // ==========================================
 let chartInstancia = null; 
 
@@ -406,8 +412,7 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
     querySnapshot.forEach((doc) => {
         let p = doc.data(); 
         
-        // Proteção da Lixeira no JS
-        if(p.apagado === true) return;
+        if(p.apagado === true) return; // Esconde pedidos excluídos
 
         p.id = doc.id; 
         p.statusAtualizado = (p.status || 'PEDIDO FEITO').toUpperCase();
@@ -426,7 +431,6 @@ db.collection("pedidos").orderBy("dataCriacao", "desc").onSnapshot((querySnapsho
         
         if(d.getMonth() === mAtual && d.getFullYear() === aAtual) met.pedMes++;
 
-        // CRM Stats
         if(p.whatsapp) {
             if(!mapaClientes[p.whatsapp]) mapaClientes[p.whatsapp] = { nome: p.nome, totalGasto: 0, qtd: 0, ultimaCompra: d };
             mapaClientes[p.whatsapp].qtd++;
@@ -541,6 +545,7 @@ function renderizarKanban() {
         let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
         let itensHtml = p.itens.map(i => `<div class="item-tag-compacto"><div class="item-tag-topo"><span>${i.quantidade}x ${i.tipoPeca}</span></div><div style="font-weight:700; color:var(--text-muted); font-size:0.7rem;">Tam: ${i.tamanho} | Cor: ${i.cor}</div><div style="color:var(--red); font-weight:900; font-size:0.75rem;">[${i.codigoEstampa}] ${i.nomeEstampa}</div></div>`).join('');
         
+        // Novo botão de ZAP no rodapé de cada pedido
         let cardHtml = `
         <div class="pedido-card" id="${p.id}" draggable="true" ondragstart="drag(event)">
             <div class="pedido-header">
@@ -560,7 +565,8 @@ function renderizarKanban() {
                 <div class="pedido-itens-lista" id="itens-${p.id}">${itensHtml}</div>
             </div>
             <div class="pedido-footer">
-                <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️ EDITAR</button>
+                <button onclick="enviarMensagemStatus('${p.id}')" title="Avisar cliente no WhatsApp" style="color:var(--green); flex: 0.6;">💬 AVISAR</button>
+                <button onclick="abrirModalEdicao('${p.id}')" title="Editar">✏️</button>
                 <button onclick="excluirPedido('${p.id}')" title="Lixeira" style="color:var(--red); flex: 0.3;">❌</button>
             </div>
         </div>`;
@@ -588,18 +594,37 @@ function drop(ev, novoStatus) {
     
     db.collection("pedidos").doc(pedidoId).update({ status: novoStatus }).then(() => {
         showToast("MOVIDO COM SUCESSO!");
-        if(novoStatus === 'PEDIDO ENVIADO' && pedido) {
-            if(confirm(`Mandar aviso automático de envio no WhatsApp para ${pedido.nome.split(' ')[0]}?`)) {
-                let zap = pedido.whatsapp.replace(/\D/g, '');
-                let msg = `Fala ${pedido.nome.split(' ')[0]}! O seu pedido da Waller Clothing acabou de ser enviado! 📦🚀 Logo logo chega aí.`;
-                window.open(`https://wa.me/55${zap}?text=${encodeURIComponent(msg)}`, '_blank');
-            }
-        }
     });
 }
 
 function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
 function excluirPedido(id) { if (confirm("Mandar pedido para a lixeira?")) db.collection("pedidos").doc(id).update({apagado: true}); }
+
+// NOVO: Geração Inteligente de Mensagem de Status para o WhatsApp
+function enviarMensagemStatus(pedidoId) {
+    let p = todosPedidos.find(x => x.id === pedidoId);
+    if(!p) return;
+    
+    let zap = p.whatsapp.replace(/\D/g, '');
+    let primeiroNome = p.nome.split(' ')[0];
+    
+    let saudacao = `Fala ${primeiroNome}! Tudo bem? ✌️\n\n`;
+    let statusInfo = `O status do seu pedido *#${p.numeroPedido}* foi atualizado para: *${p.statusAtualizado}*\n\n`;
+    let itensStr = `*📦 Detalhes do Pedido:*\n`;
+    
+    p.itens.forEach(i => {
+        itensStr += `- ${i.quantidade}x ${i.tipoPeca} (${i.nomeEstampa} - Tam: ${i.tamanho}) = ${formatCurrency(i.valorUnitario * i.quantidade)}\n`;
+    });
+    
+    let totaisStr = `\n`;
+    if (p.valorDesconto > 0) totaisStr += `Desconto: -${formatCurrency(p.valorDesconto)}\n`;
+    if (p.valorFrete > 0) totaisStr += `Frete: ${formatCurrency(p.valorFrete)}\n`;
+    
+    totaisStr += `*Total do Pedido:* ${formatCurrency(p.valorTotal)}`;
+    
+    let msgFinal = saudacao + statusInfo + itensStr + totaisStr;
+    window.open(`https://wa.me/55${zap}?text=${encodeURIComponent(msgFinal)}`, '_blank');
+}
 
 let selecionados = [];
 function checkBulk() {
