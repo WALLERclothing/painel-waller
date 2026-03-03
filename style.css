@@ -129,6 +129,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--f
 .catalog-item-top { display: flex; justify-content: space-between; align-items: center; }
 .catalog-code { margin: 0; color: #fff; font-weight: 900; font-size: 0.85rem;}
 .catalog-price { margin: 0; color: var(--ok); font-weight: 900; font-size: 1.2rem; }
+.catalog-stock { margin: 0; font-size: .8rem; font-weight: 800; }
 .stock-grid { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
 .stock-pill { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 2px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 2px; color: #ccc;}
 .stock-esgotado { color: #ef4444; border-color: #7f1d1d; background: #450a0a; padding: 4px 6px; }
