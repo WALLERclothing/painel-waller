@@ -2,10 +2,11 @@
 // FUNÇÃO BLINDADA E VARIÁVEIS GLOBAIS
 // ==========================================
 
-// 👇 COLE SEU NOVO TOKEN ENTRE AS ASPAS ABAIXO:
-const ME_TOKEN = "COLE_AQUI_SEU_NOVO_TOKEN_GIGANTE"; 
+// SEU NOVO TOKEN OFICIAL DO MELHOR ENVIO:
+const ME_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYmZlZDE1ZmZjYzhmNTFmMWVkOTc2YzgwNjBjZDI5MzNhODk2MzU3MGRjYTYyZWViMzZmNmY2NjAzMThmZDkwMTcxN2YxOWYxMWU0YzQ2ZWIiLCJpYXQiOjE3NzI1ODg3NzguOTY3MzEsIm5iZiI6MTc3MjU4ODc3OC45NjczMTIsImV4cCI6MTgwNDEyNDc3OC45NTU1Nywic3ViIjoiYTEzNmEwZWItOWY0ZC00MTEwLWE1NmEtYTI1MjliMzJjZDM5Iiwic2NvcGVzIjpbImNhcnQtcmVhZCIsImNhcnQtd3JpdGUiLCJjb21wYW5pZXMtcmVhZCIsImNvbXBhbmllcy13cml0ZSIsImNvdXBvbnMtcmVhZCIsImNvdXBvbnMtd3JpdGUiLCJub3RpZmljYXRpb25zLXJlYWQiLCJvcmRlcnMtcmVhZCIsInByb2R1Y3RzLXJlYWQiLCJwcm9kdWN0cy1kZXN0cm95IiwicHJvZHVjdHMtd3JpdGUiLCJwdXJjaGFzZXMtcmVhZCIsInNoaXBwaW5nLWNhbGN1bGF0ZSIsInNoaXBwaW5nLWNhbmNlbCIsInNoaXBwaW5nLWNoZWNrb3V0Iiwic2hpcHBpbmctY29tcGFuaWVzIiwic2hpcHBpbmctZ2VuZXJhdGUiLCJzaGlwcGluZy1wcmV2aWV3Iiwic2hpcHBpbmctcHJpbnQiLCJzaGlwcGluZy1zaGFyZSIsInNoaXBwaW5nLXRyYWNraW5nIiwiZWNvbW1lcmNlLXNoaXBwaW5nIiwidHJhbnNhY3Rpb25zLXJlYWQiLCJ1c2Vycy1yZWFkIiwidXNlcnMtd3JpdGUiLCJ3ZWJob29rcy1yZWFkIiwid2ViaG9va3Mtd3JpdGUiLCJ3ZWJob29rcy1kZWxldGUiLCJ0ZGVhbGVyLXdlYmhvb2siXX0.D-XgoRQJYhIvW2ROm2nmZ6PsMuKc0GoP8LAVXVxXVeKClR-oKmeoD05V05Jt6vHTuYbliPk9loLu_lJmxf6DsXqb2jRy2fxl5IUUypc1A_7XjKQclugvXSiFsBEPWnhQyys1vJ5rF1KUe43kVh_1EQf9XyGivOUAcuv_IU2-KqtGrQgDD-kzGgb563eSP13WziQad28IIW7ySgpmMiLXf5ucxTU5TlhCStImFe93aVUxc3YkJ96kIWNUlRiKTj950j0CgEhJSV5_P9gmORUhIAvnofQ_kl8l3piwTHcETKS9He7WqtCwR0yQOsQ_zV2r8pDeiDefzrh-2RgjbG13gyqgbk2GZM1wRDWo_jnPRBRKLvli_FJYWfZO8bLGlX3_gUcoZUvZs2vwUqQapfs9GFLRbbaehL-MMJmssx4vUdXKjdZMoMB-jQZdKeBO9aHn83V75dSgm-saZAAd98Z49YgzjG3dBiI-vYhQS97oeztKaPXwFNSW0qrp_BWNGHRVQsVLoycvJCYQK0iQ2tBJfxHGvU-R1Peg6IEr65UKggS9oe4GSV_Twidb0x7ikxsnidcfs0iik3M5UGQw3mpqyMIP9ZCxaV4sPyId7kgcg2C6-KUlwdnd5_zFFtDIKp5NVpU9IhGN_OK5xCf5OoPtVrWnKRYNHpymEwvrEWRy4Cg"; 
 
 const ME_CPF_ORIGEM = "43737606838"; 
+
 let historicoNotificacoes = [];
 let filtroAniversarioAtivo = false;
 let despesasGlobais = []; 
@@ -141,7 +142,7 @@ function marcarNotificacaoLida(id) { let notif = historicoNotificacoes.find(n =>
 function toggleNotificacoes() { let p = document.getElementById('painelNotificacoes'); p.style.display = p.style.display === 'none' ? 'flex' : 'none'; }
 
 // ==========================================
-// ATALHOS DE TECLADO E STARTUP
+// ATALHOS DE TECLADO E STARTUP DA VITRINE
 // ==========================================
 window.onload = () => { if(isVitrine) { document.body.classList.add('modo-vitrine'); mudarAba('estampas'); document.title = "Catálogo - Waller Clothing"; } };
 
@@ -339,7 +340,7 @@ async function sincronizarClienteEmMassa(whatsapp, dadosObj) {
 
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
-// Usamos o túnel oficial da Vercel se estiver online. Se estiver no PC, ele contorna magicamente.
+// Usamos o túnel da Vercel se estiver online. Se estiver no PC, ele contorna magicamente para funcionar.
 const ME_CALC_URL = isLocalhost ? 'https://corsproxy.io/?' + encodeURIComponent('https://melhorenvio.com.br/api/v2/me/shipment/calculate') : '/api/me/shipment/calculate';
 const ME_CART_URL = isLocalhost ? 'https://corsproxy.io/?' + encodeURIComponent('https://melhorenvio.com.br/api/v2/me/cart') : '/api/me/cart';
 
@@ -557,8 +558,8 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
     try {
         let response = await chamarApiCarrinhoME(payload);
-        
         let respString = JSON.stringify(response.data);
+        
         if (!response.ok && (respString.includes("Transportadora não atende") || respString.includes("Transportadora nao atende"))) {
             showToast("PAC Indisponível para essa região. Tentando forçar via SEDEX... 🔄", false);
             payload.service = 2; // Muda para SEDEX
@@ -568,16 +569,17 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
         if (response.ok && response.data.id) {
             showToast("Caixa Dinâmica ("+cubagem.length+"x"+cubagem.width+"x"+cubagem.height+") gerada! 🎉", false);
-            window.open("https://melhorenvio.com.br/painel", "_blank");
+            // LINK FINAL OFICIAL DE REDIRECIONAMENTO:
+            window.open("https://melhorenvio.com.br/painel/carrinho", "_blank");
         } else {
             if (response.isVercelError) {
-                alert("⚠️ ERRO DE SERVIDOR VERCEL:\n\nO seu site tentou se comunicar com o MelhorEnvio, mas a configuração 'vercel.json' falhou.\n\nVerifique se você criou o arquivo vercel.json corretamente na raiz do GitHub e aguarde 2 minutos para tentar novamente.");
+                alert("⚠️ ERRO DE SERVIDOR VERCEL:\n\nO seu site tentou se comunicar com o MelhorEnvio, mas a configuração 'vercel.json' não foi encontrada.\n\nVerifique se você criou o arquivo vercel.json na raiz do GitHub (sem a palavra www no link).");
                 return;
             }
 
             let detalhes = "Erro desconhecido.";
             if(response.data.message === "Unauthenticated.") {
-                detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio.";
+                detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio e cole no script.js.";
             } else if(response.data.errors) {
                 detalhes = Object.entries(response.data.errors).map(([k, v]) => `- ${k.toUpperCase()}: ${v.join(', ')}`).join('\n');
             } else if (response.data.error) {
