@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/me/(.*)",
-      "destination": "https://www.melhorenvio.com.br/api/v2/me/$1"
+      "destination": "https://melhorenvio.com.br/api/v2/me/$1"
     }
   ]
 }
