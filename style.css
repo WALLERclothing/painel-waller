@@ -208,4 +208,53 @@ th { font-weight: 900; text-transform: uppercase; border-top: var(--border-thick
 @media (max-width: 768px) {
     .navbar h1 { font-size: 1.5rem; } .nav-actions { position: relative; right: 0; margin-top: 10px; } .navbar { flex-direction: column; } .form-grid > * { min-width: 100%; } .tab-menu { flex-direction: column; gap: 0.5rem; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
+
+}
+
+/* ==========================================
+   LAYOUT PDV (LANÇAR DROPS EM TELA ÚNICA)
+   ========================================== */
+.pdv-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+}
+
+.pdv-coluna-esq {
+    display: flex;
+    flex-direction: column;
+}
+
+.pdv-coluna-dir {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px dashed var(--border-color);
+    padding-left: 2rem;
+    min-height: 500px; /* Garante que a coluna direita ocupe a tela */
+}
+
+/* Modificadores para compactar a altura dos elementos */
+.compact-grid {
+    margin-bottom: 0.6rem !important;
+}
+
+.compact-grid input, 
+.compact-grid select {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+/* Ajuste Responsivo para Celular/Tablet */
+@media (max-width: 950px) {
+    .pdv-container {
+        grid-template-columns: 1fr;
+    }
+    .pdv-coluna-dir {
+        border-left: none;
+        padding-left: 0;
+        border-top: 2px dashed var(--border-color);
+        padding-top: 1.5rem;
+        min-height: auto;
+    }
 }
