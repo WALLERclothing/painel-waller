@@ -28,6 +28,7 @@
         </div>
         <button class="btn-nav" id="btnFoco" onclick="toggleModoFoco()">🎯 FOCO</button>
         <button class="btn-nav" onclick="toggleTheme()">🌙</button>
+        <button class="btn-nav" onclick="abrirModalFluxoCaixa()" style="background: var(--white); color: var(--black);">💸 CAIXA</button>
         <button class="btn-nav" onclick="abrirModalPDF()" style="background: var(--green); color: var(--black); border-color: var(--black);">📄 RELATÓRIOS</button>
     </div>
 </nav>
@@ -109,7 +110,7 @@
                 <button type="button" class="btn-add" onclick="adicionarAoCarrinho()" style="flex: 1.5; padding: 0.6rem;">+ ADICIONAR</button>
             </div>
 
-            <div id="carrinho-container" style="flex-grow: 1; overflow-y: auto; max-height: 200px; margin-top: 0.5rem;">
+            <div id="carrinho-container" style="flex-grow: 1; overflow-y: auto; max-height: 200px; margin-top: 0.5rem; display: none;">
                 <div class="form-section-title" style="margin-bottom: 0.5rem;">Carrinho:</div>
                 <div id="listaCarrinho"></div>
             </div>
@@ -407,6 +408,64 @@
     </div>
 </div>
 
+<div id="modalFluxoCaixa" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 95%;">
+        <button class="btn-close-modal" onclick="fecharModalFluxoCaixa()">X</button>
+        <h2 class="card-title" style="color: var(--black); margin-bottom: 1rem;">💸 FLUXO DE CAIXA</h2>
+
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="dash-card" style="border-color: var(--green); box-shadow: 4px 4px 0px var(--green);">
+                <h3 style="color: var(--green);">TOTAL ENTRADAS</h3>
+                <span id="fcEntradas" style="color: var(--green); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="border-color: var(--red); box-shadow: 4px 4px 0px var(--red);">
+                <h3 style="color: var(--red);">TOTAL SAÍDAS</h3>
+                <span id="fcSaidas" style="color: var(--red); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="background: var(--black); box-shadow: 4px 4px 0px var(--border-color);">
+                <h3 style="color: var(--white);">SALDO DO MÊS</h3>
+                <span id="fcSaldo" style="color: var(--white); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+        </div>
+
+        <form onsubmit="salvarTransacaoManual(event)" style="background: var(--gray); padding: 15px; border: var(--border-thick); margin-bottom: 1.5rem;">
+            <div class="form-section-title" style="margin-bottom: 10px; color: var(--black);">+ ADICIONAR LANÇAMENTO MANUAL</div>
+            <div class="form-grid">
+                <div class="input-group" style="flex: 1;">
+                    <label>TIPO</label>
+                    <select id="fcTipo"><option value="ENTRADA">🟢 ENTRADA</option><option value="SAIDA">🔴 SAÍDA</option></select>
+                </div>
+                <div class="input-group" style="flex: 2;">
+                    <label>DESCRIÇÃO</label>
+                    <input type="text" id="fcDesc" placeholder="Ex: Aporte, Compra de Tecido..." required>
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>VALOR (R$)</label>
+                    <input type="text" id="fcValor" class="moeda" required>
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>DATA</label>
+                    <input type="date" id="fcData" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 0.8rem; margin-top: 10px;">REGISTRAR MOVIMENTAÇÃO</button>
+        </form>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div class="form-section-title" style="margin: 0;">EXTRATO DETALHADO:</div>
+            <input type="month" id="fcFiltroMes" onchange="renderizarFluxoCaixa()" style="width: auto; padding: 5px; font-weight: 900; border: var(--border-thick);">
+        </div>
+        <div style="max-height: 350px; overflow-y: auto; border: var(--border-thick);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead style="background: var(--black); color: var(--white); position: sticky; top: 0; z-index: 1;">
+                    <tr><th style="padding: 10px;">DATA</th><th>DESCRIÇÃO</th><th>ORIGEM</th><th style="text-align: right; padding-right: 10px;">VALOR</th><th style="width: 40px;"></th></tr>
+                </thead>
+                <tbody id="bodyFluxoCaixa"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <div id="bulk-action-bar">
     <strong style="font-size: 1.2rem; color: var(--red);"><span id="bulk-count">0</span> SELECIONADOS</strong>
     <select id="bulk-status-select" style="width: auto;">
@@ -420,5 +479,4 @@
 
 <script src="script.js"></script>
 </body>
-
 </html>
