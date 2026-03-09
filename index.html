@@ -40,95 +40,92 @@
 </div>
 
 <div id="aba-cadastro" class="container">
-    <div class="card">
-        <h2 class="card-title">Lançar Drop / Pedido</h2>
+    <div class="card pdv-container">
         
-        <div class="form-section">
+        <div class="pdv-coluna-esq">
             <div class="form-section-title" style="display: flex; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    1. Dados do Cliente e Financeiro 
+                    1. Cliente e Entrega 
                     <span id="alertaClienteFiel" class="label-fiel">⭐ CLIENTE FIEL</span>
                 </div>
-                <button type="button" class="btn-nav" style="background: var(--gray); color: var(--black); font-size: 0.7rem; padding: 4px 10px; border-color: var(--border-color);" onclick="preencherVendaBalcao()">⚡ VENDA BALCÃO</button>
+                <button type="button" class="btn-nav" style="background: var(--gray); color: var(--black); font-size: 0.7rem; padding: 4px 10px; border-color: var(--border-color);" onclick="preencherVendaBalcao()">⚡ BALCÃO</button>
             </div>
             
-            <div class="form-grid">
-                <div class="input-group" style="flex: 1.2;">
-                    <label>WHATSAPP (Buscar)</label>
-                    <input type="text" id="whatsapp" maxlength="15" list="listaWhats" oninput="aplicarMascaraEPular(event); autocompletarCliente(this.value, 'whatsapp')">
-                    <datalist id="listaWhats"></datalist>
-                </div>
-                <div class="input-group" style="flex: 1.5;">
-                    <label>NOME DO CLIENTE</label>
-                    <input type="text" id="nome" list="listaNomes" oninput="autocompletarCliente(this.value, 'nome')">
-                    <datalist id="listaNomes"></datalist>
-                </div>
-                <div class="input-group" style="flex: 1;"><label>CPF (Envios)</label><input type="text" id="cpf" maxlength="14" oninput="aplicarMascaraCpf(event)"></div>
-                <div class="input-group" style="flex: 1.5;"><label>E-MAIL</label><input type="email" id="email" style="text-transform: lowercase;" placeholder="Opcional"></div>
-                <div class="input-group" style="flex: 1;">
-                    <label>ORIGEM</label>
-                    <select id="origemVenda"><option value="INSTAGRAM">INSTAGRAM</option><option value="WHATSAPP">WHATSAPP</option><option value="TIKTOK">TIKTOK</option><option value="SITE">SITE</option><option value="OUTRO">OUTRO</option></select>
-                </div>
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1;"><label>WHATSAPP</label><input type="text" id="whatsapp" maxlength="15" list="listaWhats" oninput="aplicarMascaraEPular(event); autocompletarCliente(this.value, 'whatsapp')"><datalist id="listaWhats"></datalist></div>
+                <div class="input-group" style="flex: 1.5;"><label>NOME DO CLIENTE</label><input type="text" id="nome" list="listaNomes" oninput="autocompletarCliente(this.value, 'nome')"><datalist id="listaNomes"></datalist></div>
+                <div class="input-group" style="flex: 1;"><label>CPF</label><input type="text" id="cpf" maxlength="14" oninput="aplicarMascaraCpf(event)"></div>
             </div>
 
-            <div class="form-grid" style="margin-bottom: 0;">
-                <div class="input-group" style="flex: 0.8;">
-                    <label style="display: flex; justify-content: space-between;">CEP <a href="#" onclick="cotarFrete()" style="color:var(--green); text-decoration:none;">🚚 COTAR FRETE</a></label>
-                    <input type="text" id="cep" maxlength="9" oninput="aplicarMascaraCepEPular(event)">
-                </div>
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1.5;"><label>E-MAIL</label><input type="email" id="email" style="text-transform: lowercase;" placeholder="Opcional"></div>
+                <div class="input-group" style="flex: 1;"><label>ORIGEM</label><select id="origemVenda"><option value="INSTAGRAM">INSTAGRAM</option><option value="WHATSAPP">WHATSAPP</option><option value="TIKTOK">TIKTOK</option><option value="SITE">SITE</option><option value="OUTRO">OUTRO</option></select></div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 0.8;"><label style="display: flex; justify-content: space-between;">CEP <a href="#" onclick="cotarFrete()" style="color:var(--green); text-decoration:none;">🚚 FRETE</a></label><input type="text" id="cep" maxlength="9" oninput="aplicarMascaraCepEPular(event)"></div>
                 <div class="input-group" style="flex: 2;"><label>ENDEREÇO (RUA)</label><input type="text" id="endereco"></div>
                 <div class="input-group" style="flex: 0.5;"><label>Nº</label><input type="text" id="numeroEnd"></div>
-                <div class="input-group" style="flex: 1;"><label>COMPLEMENTO</label><input type="text" id="complementoEnd"></div>
+                <div class="input-group" style="flex: 1;"><label>COMPLEM.</label><input type="text" id="complementoEnd"></div>
             </div>
             
-            <div class="form-section-title" style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted);">Custos de Envio & Descontos</div>
-            <div class="form-grid">
-                <div class="input-group"><label>FRETE COBRADO (R$)</label><input type="text" id="valorFrete" class="moeda" oninput="atualizarTelaCarrinho()"></div>
-                <div class="input-group"><label style="color: var(--text-muted);">CUSTO REAL DO FRETE (R$)</label><input type="text" id="valorFreteReal" class="moeda" oninput="atualizarTelaCarrinho()" style="border-color: var(--text-muted);"></div>
-                <div class="input-group"><label>CUSTO EMBALAGEM (R$)</label><input type="text" id="custoEmbalagem" class="moeda" value="R$ 4,50" oninput="atualizarTelaCarrinho()"></div>
-                <div class="input-group">
+            <div class="form-section-title" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">Custos & Descontos</div>
+            <div class="form-grid compact-grid">
+                <div class="input-group"><label>FRETE COBRADO</label><input type="text" id="valorFrete" class="moeda" oninput="atualizarTelaCarrinho()"></div>
+                <div class="input-group"><label style="color: var(--text-muted);">CUSTO REAL (FRETE)</label><input type="text" id="valorFreteReal" class="moeda" oninput="atualizarTelaCarrinho()" style="border-color: var(--text-muted);"></div>
+                <div class="input-group"><label>EMBALAGEM</label><input type="text" id="custoEmbalagem" class="moeda" value="R$ 4,50" oninput="atualizarTelaCarrinho()"></div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1.5;">
                     <label>DESCONTO APLICADO</label>
                     <div style="display: flex;">
-                        <select id="tipoDesconto" style="flex: 0.4; padding: 0.8rem 0.5rem; border-right: none;" onchange="mudarTipoDesconto()"><option value="R$">R$</option><option value="%">%</option></select>
+                        <select id="tipoDesconto" style="flex: 0.4; padding: 0.6rem 0.5rem; border-right: none;" onchange="mudarTipoDesconto()"><option value="R$">R$</option><option value="%">%</option></select>
                         <input type="text" id="valorDesconto" class="moeda" style="flex: 1;" oninput="atualizarTelaCarrinho()">
                     </div>
                 </div>
+                <div class="input-group" style="flex: 1;"><label>PAGAMENTO</label><select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
+                <div class="input-group" style="flex: 1;"><label>STATUS</label><select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select></div>
             </div>
-            
-            <div class="form-grid" style="margin-top: 1rem;">
-                <div class="input-group"><label>PAGAMENTO</label><select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
-                <div class="input-group"><label>STATUS</label><select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select></div>
-                <div class="input-group"><label>TOTAL COBRADO (AUTO)</label><input type="text" id="valorTotal" class="moeda" readonly style="color: var(--red); font-weight: 900; border-color: var(--red); font-size: 1.2rem;"></div>
-            </div>
-        </div>
-        
-        <div class="form-section" style="border-bottom: none;">
-            <div class="form-section-title">2. Adicionar Peças ao Pedido</div>
-            <div class="form-grid">
-                <input type="text" id="codigoEstampa" list="estampas-list" placeholder="BUSCAR CÓDIGO/NOME..." style="flex: 1;" oninput="autocompletarEstampa(this.value)">
-                <datalist id="estampas-list"></datalist>
-                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
-            </div>
-            <div class="form-grid">
-                <select id="tipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
-                <select id="tamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select>
-                <select id="cor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option><option value="OUTRA">OUTRA</option></select>
-                
-                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 0.5;">
-                <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
-            </div>
-            <button type="button" class="btn-add" onclick="adicionarAoCarrinho()">+ ADICIONAR PEÇA NESTE PEDIDO</button>
         </div>
 
-        <div id="carrinho-container">
-            <div class="form-section-title" style="margin-bottom: 0.5rem;">Resumo do Pedido:</div>
-            <div id="listaCarrinho"></div>
+        <div class="pdv-coluna-dir">
+            <div class="form-section-title">2. Adicionar Peças</div>
+            <div class="form-grid compact-grid">
+                <input type="text" id="codigoEstampa" list="estampas-list" placeholder="CÓDIGO/NOME..." style="flex: 1;" oninput="autocompletarEstampa(this.value)">
+                <datalist id="estampas-list"></datalist>
+                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1.5;">
+            </div>
+            
+            <div class="form-grid compact-grid">
+                <select id="tipoPeca" style="flex: 1.2;"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">TRADICIONAL</option></select>
+                <select id="tamanho" style="flex: 0.5;"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select>
+                <select id="cor" style="flex: 1;"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option><option value="OUTRA">OUTRA</option></select>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 1;">
+                <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.5;">
+                <button type="button" class="btn-add" onclick="adicionarAoCarrinho()" style="flex: 1.5; padding: 0.6rem;">+ ADICIONAR</button>
+            </div>
+
+            <div id="carrinho-container" style="flex-grow: 1; overflow-y: auto; max-height: 200px; margin-top: 0.5rem;">
+                <div class="form-section-title" style="margin-bottom: 0.5rem;">Carrinho:</div>
+                <div id="listaCarrinho"></div>
+            </div>
+
+            <div style="border-top: 2px dashed var(--border-color); padding-top: 1rem; margin-top: auto;">
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.9rem;">TOTAL A COBRAR</label>
+                    <input type="text" id="valorTotal" class="moeda" readonly style="color: var(--red); font-weight: 900; border-color: var(--red); font-size: 1.5rem; text-align: right; background: var(--gray);">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-add" style="flex: 0.3; color: var(--red); border-color: var(--red); background: var(--white);" onclick="limparFormularioPedido()">🗑️ LIMPAR</button>
+                    <button type="button" id="btnGerarOrdem" class="btn-primary" style="flex: 1; margin-top: 0;" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+                </div>
+            </div>
         </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
-            <button type="button" class="btn-add" style="flex: 0.3; color: var(--red); border-color: var(--red); background: var(--white);" onclick="limparFormularioPedido()">🗑️ LIMPAR TUDO</button>
-            <button type="button" id="btnGerarOrdem" class="btn-primary" style="flex: 1; margin-top: 0;" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
-        </div>
+
     </div>
 </div>
 
@@ -423,4 +420,5 @@
 
 <script src="script.js"></script>
 </body>
+
 </html>
