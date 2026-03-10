@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waller Clothing | ERP</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="layout.css">
+    <link rel="stylesheet" href="pdv.css">
+    <link rel="stylesheet" href="kanban.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<nav class="navbar" id="mainNavbar">
+    <h1>WALLER CLOTHING</h1>
+    <div class="nav-actions">
+        <button class="btn-nav" onclick="abrirBuscaGlobal()" title="Atalho: Ctrl+K">🔍 BUSCA</button>
+        <div style="position:relative; display:inline-block;">
+            <button class="btn-nav" onclick="toggleNotificacoes()">🔔 <span id="contadorNotificacoes" style="background:var(--red);color:var(--white);border-radius:50%;padding:2px 6px;font-size:0.6rem;display:none;">0</span></button>
+            <div id="painelNotificacoes" style="display:none; position:absolute; right:0; top:50px; background:var(--white); border:var(--border-thick); width:320px; max-height:400px; overflow-y:auto; box-shadow:6px 6px 0 var(--border-color); z-index:1001; padding:15px; flex-direction:column; gap:10px;"></div>
+        </div>
+        <button class="btn-nav" id="btnFoco" onclick="toggleModoFoco()">🎯 FOCO</button>
+        <button class="btn-nav" onclick="toggleTheme()">🌙</button>
+        <button class="btn-nav" onclick="abrirModalFluxoCaixa()" style="background: var(--white); color: var(--black);">💸 CAIXA</button>
+        <button class="btn-nav" onclick="abrirModalPDF()" style="background: var(--green); color: var(--black); border-color: var(--black);">📄 RELATÓRIOS</button>
+    </div>
+</nav>
+
+<div class="tab-menu" id="mainTabMenu">
+    <button id="tabCadastroBtn" class="tab-btn tab-active" onclick="mudarAba('cadastro')">📦 Lançar Drops (Alt+N)</button>
+    <button id="tabProducaoBtn" class="tab-btn" onclick="mudarAba('producao')">⚙️ Gestão & Kanban (Alt+K)</button>
+    <button id="tabEstampasBtn" class="tab-btn" onclick="mudarAba('estampas')">💀 Catálogo (Alt+E)</button>
+    <button id="tabClientesBtn" class="tab-btn" onclick="mudarAba('clientes')">🤝 CRM Clientes (Alt+C)</button>
+</div>
+
+<div id="aba-cadastro" class="container">
+    <div class="card pdv-container">
+        
+        <div class="pdv-coluna-esq">
+            <div class="form-section-title" style="display: flex; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    1. Cliente e Entrega 
+                    <span id="alertaClienteFiel" class="label-fiel">⭐ CLIENTE FIEL</span>
+                </div>
+                <button type="button" class="btn-nav" style="background: var(--gray); color: var(--black); font-size: 0.7rem; padding: 4px 10px; border-color: var(--border-color);" onclick="preencherVendaBalcao()">⚡ BALCÃO</button>
+            </div>
+            
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1;"><label>WHATSAPP</label><input type="text" id="whatsapp" maxlength="15" list="listaWhats" oninput="aplicarMascaraEPular(event); autocompletarCliente(this.value, 'whatsapp')"><datalist id="listaWhats"></datalist></div>
+                <div class="input-group" style="flex: 1.5;"><label>NOME DO CLIENTE</label><input type="text" id="nome" list="listaNomes" oninput="autocompletarCliente(this.value, 'nome')"><datalist id="listaNomes"></datalist></div>
+                <div class="input-group" style="flex: 1;"><label>CPF</label><input type="text" id="cpf" maxlength="14" oninput="aplicarMascaraCpf(event)"></div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1.5;"><label>E-MAIL</label><input type="email" id="email" style="text-transform: lowercase;" placeholder="Opcional"></div>
+                <div class="input-group" style="flex: 1;"><label>ORIGEM</label><select id="origemVenda"><option value="INSTAGRAM">INSTAGRAM</option><option value="WHATSAPP">WHATSAPP</option><option value="TIKTOK">TIKTOK</option><option value="SITE">SITE</option><option value="OUTRO">OUTRO</option></select></div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 0.8;"><label style="display: flex; justify-content: space-between;">CEP <a href="#" onclick="cotarFrete()" style="color:var(--green); text-decoration:none;">🚚 FRETE</a></label><input type="text" id="cep" maxlength="9" oninput="aplicarMascaraCepEPular(event)"></div>
+                <div class="input-group" style="flex: 2;"><label>ENDEREÇO (RUA)</label><input type="text" id="endereco"></div>
+                <div class="input-group" style="flex: 0.5;"><label>Nº</label><input type="text" id="numeroEnd"></div>
+                <div class="input-group" style="flex: 1;"><label>COMPLEM.</label><input type="text" id="complementoEnd"></div>
+            </div>
+            
+            <div class="form-section-title" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">Custos & Descontos</div>
+            <div class="form-grid compact-grid">
+                <div class="input-group"><label>FRETE COBRADO</label><input type="text" id="valorFrete" class="moeda" oninput="atualizarTelaCarrinho()"></div>
+                <div class="input-group"><label style="color: var(--text-muted);">CUSTO REAL (FRETE)</label><input type="text" id="valorFreteReal" class="moeda" oninput="atualizarTelaCarrinho()" style="border-color: var(--text-muted);"></div>
+                <div class="input-group"><label>EMBALAGEM</label><input type="text" id="custoEmbalagem" class="moeda" value="R$ 4,50" oninput="atualizarTelaCarrinho()"></div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div class="input-group" style="flex: 1.5;">
+                    <label>DESCONTO APLICADO</label>
+                    <div style="display: flex;">
+                        <select id="tipoDesconto" style="flex: 0.4; padding: 0.6rem 0.5rem; border-right: none;" onchange="mudarTipoDesconto()"><option value="R$">R$</option><option value="%">%</option></select>
+                        <input type="text" id="valorDesconto" class="moeda" style="flex: 1;" oninput="atualizarTelaCarrinho()">
+                    </div>
+                </div>
+                <div class="input-group" style="flex: 1;"><label>PAGAMENTO</label><select id="metodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
+                <div class="input-group" style="flex: 1;"><label>STATUS</label><select id="statusPagamento"><option value="PAGO">💰 PAGO</option><option value="PENDENTE">⏳ PENDENTE</option></select></div>
+            </div>
+        </div>
+
+        <div class="pdv-coluna-dir">
+            <div class="form-section-title">2. Adicionar Peças</div>
+            <div class="form-grid compact-grid">
+                <input type="text" id="codigoEstampa" list="estampas-list" placeholder="CÓDIGO/NOME..." style="flex: 1;" oninput="autocompletarEstampa(this.value)">
+                <datalist id="estampas-list"></datalist>
+                <input type="text" id="nomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1.5;">
+            </div>
+            
+            <div class="form-grid compact-grid">
+                <select id="tipoPeca" style="flex: 1.2;"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">TRADICIONAL</option></select>
+                <select id="tamanho" style="flex: 0.5;"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select>
+                <select id="cor" style="flex: 1;"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option><option value="OUTRA">OUTRA</option></select>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <input type="text" id="valorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 1;">
+                <input type="number" id="quantidade" placeholder="QTD" value="1" min="1" style="flex: 0.5;">
+                <button type="button" class="btn-add" onclick="adicionarAoCarrinho()" style="flex: 1.5; padding: 0.6rem;">+ ADICIONAR</button>
+            </div>
+
+            <div id="carrinho-container" style="flex-grow: 1; overflow-y: auto; max-height: 200px; margin-top: 0.5rem; display: none;">
+                <div class="form-section-title" style="margin-bottom: 0.5rem;">Carrinho:</div>
+                <div id="listaCarrinho"></div>
+            </div>
+
+            <div style="border-top: 2px dashed var(--border-color); padding-top: 1rem; margin-top: auto;">
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.9rem;">TOTAL A COBRAR</label>
+                    <input type="text" id="valorTotal" class="moeda" readonly style="color: var(--red); font-weight: 900; border-color: var(--red); font-size: 1.5rem; text-align: right; background: var(--gray);">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-add" style="flex: 0.3; color: var(--red); border-color: var(--red); background: var(--white);" onclick="limparFormularioPedido()">🗑️ LIMPAR</button>
+                    <button type="button" id="btnGerarOrdem" class="btn-primary" style="flex: 1; margin-top: 0;" onclick="salvarPedidoCompleto()">GERAR ORDEM DE SERVIÇO</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="aba-producao" class="container" style="display: none;">
+    <div class="dashboard-grid">
+        <div class="dash-card"><h3>Pedidos (Mês)</h3><span id="dashPedidosMes">0</span></div>
+        <div class="dash-card green-text">
+            <div style="display:flex; justify-content:space-between; width:100%;">
+                <h3>Faturamento Mensal</h3>
+                <select id="selectFaturamentoMes" onchange="calcularFaturamentoMensal()" style="width:auto; padding:0 5px; font-size:0.7rem;"><option value="ALL">...</option></select>
+            </div>
+            <span id="dashFaturamento">R$ 0,00</span>
+        </div>
+        <div class="dash-card" style="cursor:pointer; border-color:var(--red);" onclick="abrirModalDespesas()" title="Clique para gerenciar despesas">
+            <div style="display:flex; justify-content:space-between; width:100%;"><h3 style="color:var(--red);">Custos Fixos (Mês) ✏️</h3></div>
+            <span id="dashDespesas" style="color: var(--red);">R$ 0,00</span>
+        </div>
+        <div class="dash-card green-text" style="background-color: var(--black);">
+            <h3 style="color: var(--white);">Lucro Real (Mês)</h3>
+            <span id="dashLucro" style="color: var(--green);">R$ 0,00</span>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="toggle-itens-btn" onclick="toggleGrafico()" style="font-size: 1rem; margin-bottom: 0; border: none; padding: 0;">
+            <span style="font-weight: 900; text-transform: uppercase;">📊 VER GRÁFICOS DE DESEMPENHO</span><span id="seta-grafico">▼</span>
+        </div>
+        <div id="container-grafico" style="display: none; margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 20px; flex-wrap: wrap; gap: 20px;">
+            <div style="flex: 2; min-width: 300px;"><canvas id="graficoVendas" height="80"></canvas></div>
+            <div style="flex: 1; min-width: 200px; max-width: 300px;"><canvas id="graficoCategorias" height="200"></canvas></div>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+        <input type="text" id="inputBusca" placeholder="🔍 BUSCAR PEDIDO NA TELA (NOME, ZAP OU #NÚMERO)..." onkeyup="filtrarKanban()" style="margin-bottom:0;">
+    </div>
+
+    <div class="kanban-board">
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO FEITO')">
+            <div class="kanban-header">📥 PEDIDO FEITO</div><div id="col-PEDIDO-FEITO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'AGUARDANDO ESTAMPA')">
+            <div class="kanban-header">👕 FILA ESTAMPA</div><div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'ESTAMPA PRONTA')">
+            <div class="kanban-header">📦 PRONTO / ENVIAR</div><div id="col-ESTAMPA-PRONTA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="drop(event, 'PEDIDO ENVIADO')">
+            <div class="kanban-header">🚚 ENVIADO</div><div id="col-PEDIDO-ENVIADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="aba-estampas" class="container" style="display: none;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap:10px;">
+            <h2 class="card-title" style="margin: 0;" id="tituloPaginaCatalogo">Catálogo e Estoque</h2>
+            <div style="display:flex; gap:10px;" id="acoesAdminCatalogo">
+                <button class="btn-nav" style="border-color:var(--black); color:var(--green); font-weight:900;" onclick="copiarLinkVitrine()">🔗 LINK DA VITRINE</button>
+                <button class="btn-nav" style="border-color:var(--black); color:var(--black);" onclick="abrirBalancoMassa()">📋 BALANÇO RÁPIDO</button>
+                <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirModalEstampa()">+ NOVO PRODUTO</button>
+            </div>
+        </div>
+        <div id="dashBestSellersContainer" style="background: var(--gray); padding: 1rem; border: var(--border-thick); margin-bottom: 1.5rem;">
+            <strong style="color: var(--red);">🔥 CURVA A (Mais Vendidos):</strong> <span id="dashBestSellersList">Carregando...</span>
+        </div>
+        <div id="listaEstampas" class="catalog-grid"></div>
+    </div>
+</div>
+
+<div id="aba-clientes" class="container" style="display: none;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+            <h2 class="card-title" style="margin: 0;">Carteira de Clientes (CRM)</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-nav" id="btnFiltroNiver" style="background:#ffd700; color:#000; border-color:#000; font-weight:900;" onclick="toggleFiltroAniversariantes()">🎂 MÊS ATUAL</button>
+                <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirFichaNova()">+ NOVO CLIENTE</button>
+            </div>
+        </div>
+        <div id="listaClientesCRM" class="crm-grid"></div>
+    </div>
+</div>
+
+<div id="modalFrete" class="modal-overlay" onclick="fecharModalFrete(event)">
+    <div class="modal-box" style="max-width: 450px;" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="fecharModalFrete()">X</button>
+        <h2 class="card-title" style="margin-bottom: 0.5rem; font-size:1.2rem;">📦 OPÇÕES DE ENVIO</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 1rem;">Cotação rápida para o CEP: <strong id="lblCepCotacao" style="color:var(--black);"></strong></p>
+        <div id="listaOpcoesFrete" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+</div>
+
+<div id="modalBuscaGlobal" class="modal-overlay" onclick="fecharBuscaGlobal(event)">
+    <div class="modal-box" style="margin-top: 5vh; max-width: 600px; padding: 1.5rem;" onclick="event.stopPropagation()">
+        <h2 style="font-size: 1rem; font-weight: 900; color: var(--red); margin-top: 0; margin-bottom: 10px;">🔍 BUSCA GLOBAL (Ctrl+K)</h2>
+        <input type="text" id="inputBuscaGlobal" placeholder="Digite nome, ZAP, pedido, estampa..." style="font-size: 1.1rem; padding: 1rem; border-color: var(--red); margin-bottom: 1rem; background: var(--gray);" onkeyup="executarBuscaGlobal()">
+        <div id="resultadoBuscaGlobal" style="display:flex; flex-direction:column; gap:10px; max-height: 50vh; overflow-y: auto;"></div>
+    </div>
+</div>
+
+<div id="modalEstampa" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharModalEstampa()">X</button>
+        <h2 class="card-title" id="tituloModalEstampa" style="color: var(--red);">CADASTRAR PRODUTO</h2>
+        <form onsubmit="salvarNovaEstampa(event)">
+            <input type="hidden" id="editEstampaCodigoOriginal" value="">
+            <div class="form-grid">
+                <div class="input-group" style="flex: 0.5;"><label>CÓDIGO (SKU)</label><input type="text" id="cadCodigoEstampa" placeholder="Ex: SKULL-01" required></div>
+                <div class="input-group" style="flex: 1.5;"><label>NOME DO PRODUTO</label><input type="text" id="cadNomeEstampa" placeholder="Ex: GOOD VIBES" required></div>
+                <div class="input-group" style="flex: 1;">
+                    <label>CATEGORIA LIVRE</label>
+                    <input type="text" id="cadCategoriaEstampa" list="listaCategoriasBD" placeholder="Ex: MOLETOM..." required>
+                    <datalist id="listaCategoriasBD"></datalist>
+                </div>
+            </div>
+            <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">ESTOQUE INICIAL (GRADE)</div>
+            <div class="form-grid" style="gap: 5px;">
+                <div class="input-group"><label>P</label><input type="number" id="estP" value="0" min="0"></div>
+                <div class="input-group"><label>M</label><input type="number" id="estM" value="0" min="0"></div>
+                <div class="input-group"><label>G</label><input type="number" id="estG" value="0" min="0"></div>
+                <div class="input-group"><label>GG</label><input type="number" id="estGG" value="0" min="0"></div>
+            </div>
+            <div class="form-section-title" style="margin-top: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">MARGEM DE LUCRO BRUTO</div>
+            <div class="form-grid">
+                <div class="input-group"><label>CUSTO DE PRODUÇÃO (R$)</label><input type="text" id="cadCusto" class="moeda" required></div>
+                <div class="input-group"><label>PREÇO DE VENDA (R$)</label><input type="text" id="cadPreco" class="moeda" required></div>
+            </div>
+            <button type="submit" id="btnSalvarEstampa" class="btn-primary">SALVAR PRODUTO</button>
+        </form>
+    </div>
+</div>
+
+<div id="modalFichaCliente" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharFichaCliente()">X</button>
+        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; color: var(--red);">FICHA DO CLIENTE</h2>
+        <div style="background:var(--gray); padding:1rem; border:var(--border-thick); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong style="font-size:1.2rem; color:var(--black);" id="fichaQtdPedidos">0</strong> Pedidos Feitos</div>
+            <div style="color:var(--green); font-weight:900; font-size:1.2rem;" id="fichaTotalGasto">R$ 0,00</div>
+        </div>
+        
+        <div class="form-grid">
+            <div class="input-group" style="flex:2;"><label>NOME COMPLETO</label><input type="text" id="fichaNome" required></div>
+            <div class="input-group" style="flex:1;"><label>WHATSAPP</label><input type="text" id="fichaWhatsapp" oninput="aplicarMascaraEPular(event)" required></div>
+            <div class="input-group" style="flex:1;"><label>CPF</label><input type="text" id="fichaCPF" maxlength="14" oninput="aplicarMascaraCpf(event)"></div>
+        </div>
+        <div class="form-grid">
+            <div class="input-group" style="flex:1.5;"><label>E-MAIL</label><input type="email" id="fichaEmail" style="text-transform: lowercase;"></div>
+            <div class="input-group" style="flex:1;"><label>PERFIL / TAG</label><input type="text" id="fichaTag" list="listaTagsCRM" placeholder="Ex: VIP..."></div>
+            <div class="input-group" style="flex:1;"><label>@INSTAGRAM</label><input type="text" id="fichaInsta"></div>
+            <div class="input-group" style="flex:1;"><label>NASCIMENTO</label><input type="text" id="fichaDataNasc" placeholder="DD/MM/AAAA" maxlength="10" oninput="aplicarMascaraDataEPular(event)"></div>
+        </div>
+        <div class="form-grid">
+            <div class="input-group" style="flex:0.5;"><label>CEP</label><input type="text" id="fichaCEP" oninput="aplicarMascaraCepEPular(event)"></div>
+            <div class="input-group" style="flex:1.5;"><label>ENDEREÇO</label><input type="text" id="fichaEndereco"></div>
+            <div class="input-group" style="flex:0.5;"><label>Nº</label><input type="text" id="fichaNumero"></div>
+            <div class="input-group" style="flex:1;"><label>COMPLEMENTO</label><input type="text" id="fichaComplemento"></div>
+        </div>
+        <div class="input-group" style="margin-top: 10px;">
+            <label>OBSERVAÇÕES</label><textarea id="fichaObs"></textarea>
+        </div>
+        <button class="btn-primary" onclick="salvarFichaCliente()">SALVAR DADOS DO CLIENTE</button>
+        <div class="form-section-title" style="margin-top: 25px; margin-bottom: 10px;">📦 HISTÓRICO DE COMPRAS DESSE CLIENTE</div>
+        <div id="fichaHistoricoPedidos" style="max-height: 200px; overflow-y: auto; display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+</div>
+
+<div id="modalEdicao" class="modal-overlay">
+    <div class="modal-box">
+        <button class="btn-close-modal" onclick="fecharModalEdicao()">X</button>
+        <h2 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.5rem; padding-right: 40px;">EDITAR PEDIDO <span id="tituloEditPedido"></span></h2>
+        <input type="hidden" id="editId">
+        
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group"><label>NOME DO CLIENTE</label><input type="text" id="editNome"></div>
+            <div class="input-group"><label>WHATSAPP</label><input type="text" id="editWhatsapp"></div>
+            <div class="input-group"><label>CPF</label><input type="text" id="editCPF" maxlength="14" oninput="aplicarMascaraCpf(event)"></div>
+            <div class="input-group"><label>E-MAIL</label><input type="email" id="editEmail" style="text-transform: lowercase;"></div>
+        </div>
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group" style="flex: 0.5;"><label>CEP</label><input type="text" id="editCEP" maxlength="9" oninput="aplicarMascaraCepEPular(event)"></div>
+            <div class="input-group" style="flex: 2;"><label>ENDEREÇO (RUA)</label><input type="text" id="editEndereco"></div>
+            <div class="input-group" style="flex: 0.5;"><label>Nº</label><input type="text" id="editNumero"></div>
+            <div class="input-group" style="flex: 1;"><label>COMPLEMENTO</label><input type="text" id="editComplemento"></div>
+        </div>
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group"><label style="color: var(--green);">🚚 CÓDIGO DE RASTREIO</label><input type="text" id="editRastreio" placeholder="Ex: QA123456789BR"></div>
+        </div>
+        
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group"><label>FRETE COBRADO</label><input type="text" id="editValorFrete" class="moeda" oninput="recalcularSomaEdicao()"></div>
+            <div class="input-group"><label style="color: var(--text-muted);">FRETE REAL PAGO</label><input type="text" id="editValorFreteReal" class="moeda" style="border-color: var(--text-muted);"></div>
+            <div class="input-group"><label>DESCONTO (R$)</label><input type="text" id="editValorDesconto" class="moeda" oninput="recalcularSomaEdicao()"></div>
+        </div>
+
+        <div class="form-grid" style="margin-bottom: 2rem;">
+            <div class="input-group"><label>NOVO TOTAL COBRADO</label><input type="text" id="editValorTotal" class="moeda" readonly style="color: var(--red); background: var(--gray);"></div>
+            <div class="input-group"><label>STATUS DE PAGAMENTO</label><select id="editMetodoPagamento"><option value="PIX">PIX</option><option value="CARTÃO">CARTÃO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
+        </div>
+        
+        <div class="form-section-title" style="border-top: 1px dashed var(--border-color); padding-top: 15px;">ADICIONAR PEÇAS NESTE PEDIDO</div>
+        <div class="form-grid">
+            <input type="text" id="editCodigoEstampa" list="estampas-list" placeholder="BUSCAR CÓDIGO/NOME..." style="flex: 1;" oninput="autocompletarEstampaEdicao(this.value)">
+            <input type="text" id="editNomeEstampa" placeholder="NOME DA ESTAMPA" style="flex: 1;">
+        </div>
+        <div class="form-grid">
+            <select id="editTipoPeca"><option value="OVERSIZED">OVERSIZED</option><option value="MOLETOM">MOLETOM</option><option value="REGATA">REGATA</option><option value="CAMISETA TRADICIONAL">CAMISETA TRADICIONAL</option></select>
+            <select id="editTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select>
+            <select id="editCor"><option value="PRETA">PRETA</option><option value="BRANCA">BRANCA</option><option value="MESCLA">MESCLA</option><option value="OFF-WHITE">OFF-WHITE</option><option value="OUTRA">OUTRA</option></select>
+            <input type="text" id="editValorUnitario" class="moeda" placeholder="R$ PREÇO UN" style="flex: 0.5;">
+            <input type="number" id="editQuantidade" placeholder="QTD" value="1" min="1" style="flex: 0.3;">
+        </div>
+        <button type="button" class="btn-add" onclick="adicionarAoCarrinhoEdicao()" style="margin-bottom: 1.5rem;">+ INCLUIR ESTA PEÇA NO PEDIDO</button>
+
+        <div class="form-section-title">CARRINHO DO PEDIDO ATUAL:</div>
+        <div id="editItensContainer" style="max-height: 250px; overflow-y: auto;"></div>
+        
+        <button type="button" class="btn-primary" onclick="salvarAlteracoesEdicao()">SALVAR ALTERAÇÕES E SINCRONIZAR</button>
+    </div>
+</div>
+
+<div id="modalDespesas" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px;">
+        <button class="btn-close-modal" onclick="fecharModalDespesas()">X</button>
+        <h2 class="card-title" style="color: var(--red); margin-bottom: 1rem;">💸 CUSTOS FIXOS DO MÊS</h2>
+        <div style="background:var(--gray); padding:10px; font-weight:900; margin-bottom:1rem; text-align:center;">Mês Referência: <span id="lblMesDespesa" style="color:var(--red);"></span></div>
+        <form onsubmit="salvarNovaDespesa(event)" style="margin-bottom: 1.5rem;">
+            <div class="form-grid" style="align-items: flex-end;">
+                <div class="input-group" style="flex:2;"><label>DESCRIÇÃO (Ex: Luz, Tráfego)</label><input type="text" id="descDespesa" required></div>
+                <div class="input-group" style="flex:1;"><label>VALOR (R$)</label><input type="text" id="valorDespesa" class="moeda" required></div>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 0.8rem; margin-top: 0.5rem;">+ ADICIONAR DESPESA</button>
+        </form>
+        <div class="form-section-title">DESPESAS LANÇADAS NESTE MÊS:</div>
+        <div id="listaDespesasMes" style="max-height: 250px; overflow-y: auto; display:flex; flex-direction:column; gap:5px;"></div>
+    </div>
+</div>
+
+<div id="modalBalanco" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 95%;">
+        <button class="btn-close-modal" onclick="fecharBalancoMassa()">X</button>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">📋 BALANÇO DE ESTOQUE</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; font-weight: 700;">Ajuste as quantidades e salve tudo de uma vez no final da página.</p>
+        <div style="max-height: 60vh; overflow-y: auto; border: var(--border-thick);">
+            <table id="tabelaBalanco" style="min-width: 600px;">
+                <thead style="background: var(--black); color: var(--white); position: sticky; top: 0; z-index: 1;">
+                    <tr><th>CÓD</th><th>PRODUTO</th><th>P</th><th>M</th><th>G</th><th>GG</th></tr>
+                </thead>
+                <tbody id="bodyTabelaBalanco"></tbody>
+            </table>
+        </div>
+        <button class="btn-primary" onclick="salvarBalancoMassa()" id="btnSalvarBalanco">SALVAR NOVO ESTOQUE</button>
+    </div>
+</div>
+
+<div id="modalPDF" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <button class="btn-close-modal" onclick="fecharModalPDF()">X</button>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">GERAR RELATÓRIOS</h2>
+        <div class="grid-pdf-opcoes">
+            
+            <button class="btn-pdf-opcao" onclick="gerarPDFDetalhado('TODOS')" style="grid-column: 1 / -1; border-color: var(--border-color);">📄 O.S. FILA COMPLETA (Separado p/ Cliente)</button>
+            
+            <button class="btn-pdf-opcao" onclick="gerarPDFDetalhado('PEDIDO FEITO')">📥 PEDIDOS FEITOS (Separado p/ Cliente)</button>
+            <button class="btn-pdf-opcao" onclick="gerarPDFAgrupado('AGUARDANDO ESTAMPA')">👕 FILA ESTAMPA (Peças Somadas)</button>
+            
+            <button class="btn-pdf-opcao" onclick="gerarEtiquetasEnvio()">📦 ETIQUETAS PRONTOS</button>
+            <button class="btn-pdf-opcao" onclick="gerarDeclaracaoConteudo()" style="background: var(--black); color: var(--white);">📝 DECLARAÇÃO CORREIOS</button>
+            
+            <button class="btn-pdf-opcao" onclick="gerarPDFAgrupado('GERAL')" style="grid-column: 1 / -1; border-color: var(--black);">🗂️ BALANÇO DE PRODUÇÃO GERAL (Peças Somadas)</button>
+            
+            <div style="grid-column: 1 / -1; display:flex; flex-wrap:wrap; gap:10px; align-items:center; background:var(--gray); padding:15px; border:var(--border-thick); margin-top:10px;">
+                <div style="width: 100%; font-weight: 900; color: var(--red); margin-bottom: 5px;">💰 DRE FINANCEIRO (POR DATA)</div>
+                <div class="input-group"><label>DATA INICIAL</label><input type="date" id="pdfDataInicio"></div>
+                <div class="input-group"><label>DATA FINAL</label><input type="date" id="pdfDataFim"></div>
+                <button class="btn-primary" onclick="gerarPDFLucroLiquido()" style="margin-top: 0; padding: 0.8rem; flex: 1; min-width: 100%;">GERAR RELATÓRIO</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalFluxoCaixa" class="modal-overlay">
+    <div class="modal-box" style="max-width: 900px; width: 95%;">
+        <button class="btn-close-modal" onclick="fecharModalFluxoCaixa()">X</button>
+        <h2 class="card-title" style="color: var(--black); margin-bottom: 1rem;">💸 FLUXO DE CAIXA</h2>
+
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="dash-card" style="border-color: var(--green); box-shadow: 4px 4px 0px var(--green);">
+                <h3 style="color: var(--green);">TOTAL ENTRADAS</h3>
+                <span id="fcEntradas" style="color: var(--green); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="border-color: var(--red); box-shadow: 4px 4px 0px var(--red);">
+                <h3 style="color: var(--red);">TOTAL SAÍDAS</h3>
+                <span id="fcSaidas" style="color: var(--red); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="background: var(--black); box-shadow: 4px 4px 0px var(--border-color);">
+                <h3 style="color: var(--white);">SALDO DO MÊS</h3>
+                <span id="fcSaldo" style="color: var(--white); font-size: 1.8rem;">R$ 0,00</span>
+            </div>
+        </div>
+
+        <form onsubmit="salvarTransacaoManual(event)" style="background: var(--gray); padding: 15px; border: var(--border-thick); margin-bottom: 1.5rem;">
+            <div class="form-section-title" style="margin-bottom: 10px; color: var(--black);">+ ADICIONAR LANÇAMENTO MANUAL</div>
+            <div class="form-grid">
+                <div class="input-group" style="flex: 1;"><label>TIPO</label><select id="fcTipo"><option value="ENTRADA">🟢 ENTRADA</option><option value="SAIDA">🔴 SAÍDA</option></select></div>
+                <div class="input-group" style="flex: 2;"><label>DESCRIÇÃO</label><input type="text" id="fcDesc" placeholder="Ex: Aporte, Compra de Tecido..." required></div>
+                <div class="input-group" style="flex: 1;"><label>VALOR (R$)</label><input type="text" id="fcValor" class="moeda" required></div>
+                <div class="input-group" style="flex: 1;"><label>DATA</label><input type="date" id="fcData" required></div>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 0.8rem; margin-top: 10px;">REGISTRAR MOVIMENTAÇÃO</button>
+        </form>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div class="form-section-title" style="margin: 0;">EXTRATO DETALHADO:</div>
+            <input type="month" id="fcFiltroMes" onchange="renderizarFluxoCaixa()" style="width: auto; padding: 5px; font-weight: 900; border: var(--border-thick);">
+        </div>
+        <div style="max-height: 350px; overflow-y: auto; border: var(--border-thick);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead style="background: var(--black); color: var(--white); position: sticky; top: 0; z-index: 1;">
+                    <tr><th style="padding: 10px;">DATA</th><th>DESCRIÇÃO</th><th>ORIGEM</th><th style="text-align: right; padding-right: 10px;">VALOR</th><th style="width: 40px;"></th></tr>
+                </thead>
+                <tbody id="bodyFluxoCaixa"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="bulk-action-bar">
+    <strong style="font-size: 1.2rem; color: var(--red);"><span id="bulk-count">0</span> SELECIONADOS</strong>
+    <select id="bulk-status-select" style="width: auto;">
+        <option value="AGUARDANDO ESTAMPA">Mover p/ FILA ESTAMPA</option>
+        <option value="ESTAMPA PRONTA">Mover p/ PRONTO ENVIAR</option>
+        <option value="PEDIDO ENVIADO">Mover p/ ENVIADO</option>
+    </select>
+    <button class="btn-add" style="width: auto; background: var(--black); color: var(--bg-body);" onclick="executarBulkUpdate()">APLICAR</button>
+    <button class="btn-add" style="width: auto; color: var(--red);" onclick="limparBulk()">CANCELAR</button>
+</div>
+
+<script src="js1-firebase.js"></script>
+<script src="js2-utils.js"></script>
+<script src="js8-envios.js"></script>
+
+<script src="js3-pdv.js"></script>
+<script src="js4-kanban.js"></script>
+<script src="js5-catalogo.js"></script>
+<script src="js6-crm.js"></script>
+<script src="js7-caixa.js"></script>
+<script src="js9-pdfs.js"></script>
+<script src="js11-dashboard.js"></script> <script src="js10-main.js"></script>
