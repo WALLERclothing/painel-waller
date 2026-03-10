@@ -47,12 +47,16 @@ function renderizarKanban() {
                     btnEsquerdoInfo = `<button onclick="if(typeof enviarParaMelhorEnvio === 'function') enviarParaMelhorEnvio('${p.id}')" title="Gerar Etiqueta MelhorEnvio" style="color:var(--black); background:var(--white); border-right:var(--border-thick); flex: 1;"><span style="color:#ffb703; font-size:1rem;">🛒</span> ME</button>`;
                 }
 
+                // O novo botão "📁 Arquivar" aparece em todos do Kanban, bem ali na barra de baixo
+                let btnArquivar = `<button onclick="arquivarPedido('${p.id}')" title="Mandar para o Arquivo (Finalizados)" style="color:var(--black); flex: 0.8; font-size:1rem;">📁</button>`;
+
                 let cardString = `
                 <div class="pedido-card ${classeAlerta}" id="${p.id}" data-tipos="${tiposPecaPedido.join(',')}" data-mes="${p.dataMesAno}" style="display:flex; cursor: grab; flex-direction:column;">
                     <div class="pedido-header" style="display:flex; align-items:center;"><div class="header-linha-1" style="display:flex; align-items:center;">${checkboxHtml}<div class="id-container"><span class="pedido-id">${iconeRastreio}#${numPedido}</span>${badgeAlerta}</div><span class="pedido-data" style="margin-left:auto;">${dataFmt}</span></div>${btnPgto}</div>
                     <div class="pedido-body"><div class="cliente-nome">${nomeCliente} <br><span style="font-size:0.7rem; opacity:0.8; font-weight:500;">${zapCliente}</span>${infoCriador}</div><div class="cliente-financas">${totalVal} - ${metPgt}</div><div class="toggle-itens-btn" onclick="toggleItens('${p.id}')"><span>📦 PEÇAS (${itensCount})</span><span id="seta-${p.id}">▼</span></div><div class="pedido-itens-lista" id="itens-${p.id}" style="display:none;">${itensHtml}</div></div>
                     <div class="pedido-footer" style="margin-top:auto;">
                         ${btnEsquerdoInfo}
+                        ${btnArquivar}
                         <button onclick="abrirModalTroca('${p.id}')" title="Troca ou Devolução" style="color:var(--black); flex: 0.8; font-size:1rem;">🔁</button>
                         <button onclick="enviarMensagemStatus('${p.id}')" title="Avisar cliente" style="color:var(--green); flex: 1;">💬</button>
                         <button onclick="abrirModalEdicao('${p.id}')" title="Editar" style="flex: 1;">✏️</button>
@@ -99,6 +103,16 @@ function initSortable() {
     });
 }
 
+// === NOVO: Arquivar Pedido ===
+function arquivarPedido(id) {
+    if(confirm("Deseja mandar este pedido para os Finalizados (Arquivo)?\n\nIsso fará com que ele suma do Kanban para manter a tela limpa.")) {
+        db.collection("pedidos").doc(id).update({ status: 'PEDIDO FINALIZADO' }).then(() => {
+            tocarSomSucesso();
+            showToast("Pedido Arquivado com sucesso!");
+        });
+    }
+}
+
 // === NOVO: Funções para o Modal de Arquivo de Finalizados ===
 function abrirModalFinalizados() {
     renderizarFinalizados();
@@ -114,7 +128,7 @@ function renderizarFinalizados() {
     if (!tbody) return;
 
     let finalizados = todosPedidos.filter(p => p.statusAtualizado === 'PEDIDO FINALIZADO');
-    finalizados.sort((a,b) => b.dataCriacaoSafe - a.dataCriacaoSafe); // Do mais recente para o mais antigo
+    finalizados.sort((a,b) => b.dataCriacaoSafe - a.dataCriacaoSafe); 
 
     if(finalizados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; font-weight:bold; color:var(--text-muted);">Nenhum pedido finalizado ainda.</td></tr>';
@@ -144,7 +158,6 @@ function voltarParaKanban(id) {
         });
     }
 }
-// ============================================================
 
 function popularFiltroMeses() {
     let selectMes = document.getElementById('filtroMesKanban'); if(!selectMes) return;

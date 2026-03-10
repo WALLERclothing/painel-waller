@@ -539,5 +539,35 @@
 <script src="js11-dashboard.js"></script>
 <script src="js10-main.js"></script>
 
+<div id="modalConfirmarPagamento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center;">
+    <div class="modal-box" style="background:var(--white); padding:30px; width:90%; max-width:400px; border:var(--border-thick); box-shadow: 15px 15px 0px var(--black); text-align:center;">
+        <h2 style="margin-top:0; font-weight:900;">💰 CONFIRMAR PAGAMENTO</h2>
+        <p style="color:var(--text-muted); font-weight:bold; margin-bottom:20px;">O pedido está marcado como PAGO. Qual foi a forma de recebimento?</p>
+        <select id="modalPgtoSelect" style="width:100%; padding:15px; font-size:1.2rem; font-weight:900; margin-bottom:20px; border:2px solid var(--black);">
+            <option value="PIX">PIX</option>
+            <option value="CARTÃO">CARTÃO</option>
+            <option value="DINHEIRO">DINHEIRO</option>
+            <option value="MERCADO PAGO">MERCADO PAGO</option>
+            <option value="LINK DE PAGAMENTO">LINK DE PAGAMENTO</option>
+        </select>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-primary" style="flex:1; background:var(--red); color:var(--white);" onclick="fecharModalPagamento(false)">CANCELAR</button>
+            <button class="btn-primary" style="flex:1; background:var(--green); color:var(--black);" onclick="fecharModalPagamento(true)">CONFIRMAR</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalTipoVenda" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center;">
+    <div class="modal-box" style="background:var(--white); padding:30px; width:90%; max-width:500px; border:var(--border-thick); box-shadow: 15px 15px 0px var(--black); text-align:center;">
+        <h2 style="margin-top:0; font-weight:900;">🛒 TIPO DE VENDA</h2>
+        <p style="color:var(--text-muted); font-weight:bold; margin-bottom:20px;">Como esse pedido deve ser processado na logística da Waller?</p>
+        <div style="display:flex; flex-direction:column; gap:15px;">
+            <button class="btn-primary" style="background:var(--black); color:var(--white); padding:20px; font-size:1.1rem; border:2px solid var(--black);" onclick="fecharModalTipoVenda('NO_ATO')">🛍️ VENDA NO ATO / BALCÃO<br><span style="font-size:0.8rem; font-weight:normal; color:#ccc;">(Pronta Entrega - Vai direto para os Finalizados)</span></button>
+            <button class="btn-primary" style="background:var(--white); color:var(--black); padding:20px; font-size:1.1rem; border:2px solid var(--black);" onclick="fecharModalTipoVenda('ENCOMENDA')">📦 ENCOMENDA<br><span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Estampar/Separar - Vai para a Fila do Kanban)</span></button>
+            <button class="btn-add" style="color:var(--red); border:none; background:transparent; font-weight:900; margin-top:10px;" onclick="fecharModalTipoVenda(null)">CANCELAR SALVAMENTO</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

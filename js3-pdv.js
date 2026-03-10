@@ -23,8 +23,6 @@ document.addEventListener('keypress', function(e) {
 // Ação de decodificar e jogar pro carrinho (Serve para Físico e Câmera)
 function processarCodigoBarras(codigoBipado) {
     let codLimpo = codigoBipado.toUpperCase().trim();
-    
-    // O sistema sabe separar "002-G" em "002" e "G"
     let partes = codLimpo.split('-');
     let sku = partes[0];
     let tamanhoSugerido = partes[1] || null;
@@ -36,7 +34,6 @@ function processarCodigoBarras(codigoBipado) {
         let tamIdeal = 'M';
         let estq = catalogoEstampas[sku].estoqueGrade || {};
         
-        // Se o QR Code leu o tamanho, crava ele no formulário
         if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
             tamIdeal = tamanhoSugerido;
         } else {
@@ -58,44 +55,24 @@ function processarCodigoBarras(codigoBipado) {
 function abrirLeitorCamera() {
     let modal = document.getElementById('modalCamera');
     if(modal) modal.style.display = 'flex';
-    
-    if(!html5QrCode) {
-        html5QrCode = new Html5Qrcode("qr-reader");
-    }
-    
-    // Configuração para ler QR codes rapidamente com a câmera traseira
+    if(!html5QrCode) { html5QrCode = new Html5Qrcode("qr-reader"); }
     const config = { fps: 15, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
-    
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-    .catch(err => {
-        showToast("Erro ao aceder à câmera! Permite o acesso no navegador.", true);
-        fecharLeitorCamera();
-    });
+    .catch(err => { showToast("Erro ao aceder à câmera! Permite o acesso no navegador.", true); fecharLeitorCamera(); });
 }
 
 function fecharLeitorCamera() {
     let modal = document.getElementById('modalCamera');
     if(modal) modal.style.display = 'none';
-    
     if(html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-            html5QrCode.clear();
-        }).catch(err => console.error("Erro ao parar a câmera.", err));
+        html5QrCode.stop().then(() => { html5QrCode.clear(); }).catch(err => console.error(err));
     }
 }
 
 function onScanSuccess(decodedText, decodedResult) {
-    // Quando o celular lê o QR, ele apita, fecha a câmera e joga no carrinho
-    tocarSomDrop();
-    fecharLeitorCamera();
-    processarCodigoBarras(decodedText);
-    showToast("QR Code Lido com Sucesso!");
+    tocarSomDrop(); fecharLeitorCamera(); processarCodigoBarras(decodedText); showToast("QR Code Lido com Sucesso!");
 }
-
-function onScanFailure(error) {
-    // Ignora as falhas contínuas de "não estou a ver nada" enquanto o utilizador ajeita o celular
-}
-
+function onScanFailure(error) {}
 
 // ==========================================
 // RESTANTE DO CÓDIGO DO PDV
@@ -182,6 +159,34 @@ function limparFormularioPedido(ignorarConfirm = false) {
     document.getElementById('whatsapp').value = ''; document.getElementById('nome').value = ''; document.getElementById('cpf').value = ''; document.getElementById('origemVenda').value = 'INSTAGRAM'; document.getElementById('cep').value = ''; document.getElementById('endereco').value = ''; document.getElementById('numeroEnd').value = ''; document.getElementById('complementoEnd').value = ''; document.getElementById('valorFrete').value = ''; document.getElementById('valorFreteReal').value = ''; document.getElementById('custoEmbalagem').value = 'R$ 4,50'; if(document.getElementById('tipoDesconto')) document.getElementById('tipoDesconto').value = 'R$'; document.getElementById('valorDesconto').value = ''; document.getElementById('valorTotal').value = ''; document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('valorUnitario').value = ''; document.getElementById('quantidade').value = '1'; document.getElementById('alertaClienteFiel').style.display = 'none'; carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('whatsapp').focus(); 
 }
 
+// === LÓGICA DE PROMISES PARA OS MODAIS (Elegância) ===
+function pedirPagamentoModal(metodoAtual) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('modalConfirmarPagamento');
+        let select = document.getElementById('modalPgtoSelect');
+        select.value = metodoAtual;
+        modal.style.display = 'flex';
+        
+        window.fecharModalPagamento = function(confirmado) {
+            modal.style.display = 'none';
+            if(confirmado) resolve(select.value);
+            else resolve(null);
+        };
+    });
+}
+
+function pedirTipoVendaModal() {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('modalTipoVenda');
+        modal.style.display = 'flex';
+        
+        window.fecharModalTipoVenda = function(tipo) {
+            modal.style.display = 'none';
+            resolve(tipo); // Vai retornar 'NO_ATO', 'ENCOMENDA', ou null (cancelar)
+        };
+    });
+}
+
 async function salvarPedidoCompleto() {
     let w = document.getElementById('whatsapp').value; let nome = document.getElementById('nome').value.toUpperCase(); let cpfVal = document.getElementById('cpf').value;
     let faltantesGeral = [];
@@ -192,23 +197,22 @@ async function salvarPedidoCompleto() {
     
     if(faltantesGeral.length > 0) { showToast("Faltou preencher/corrigir: " + faltantesGeral.join(' | '), true); return; }
 
-    // --- LÓGICA DE ESCOLHA DE PAGAMENTO ---
+    // 1. Abre o Modal de Pagamento se estiver "PAGO"
     let statusPgto = document.getElementById('statusPagamento').value;
     let metodoPgto = document.getElementById('metodoPagamento').value;
 
     if (statusPgto === 'PAGO') {
-        let metodoEscolhido = prompt("💰 O pedido está marcado como PAGO.\nConfirme ou digite a forma de pagamento (ex: PIX, CARTÃO, DINHEIRO):", metodoPgto);
-        if (metodoEscolhido === null) {
-            showToast("Geração de OS cancelada.", true);
-            return; // Usuário cancelou
-        }
-        metodoPgto = metodoEscolhido.trim().toUpperCase() || metodoPgto;
-        document.getElementById('metodoPagamento').value = metodoPgto; // Atualiza o select visualmente
+        let metodoEscolhido = await pedirPagamentoModal(metodoPgto);
+        if (!metodoEscolhido) { showToast("Geração de OS cancelada.", true); return; }
+        metodoPgto = metodoEscolhido;
+        document.getElementById('metodoPagamento').value = metodoPgto; 
     }
 
-    // --- NOVA LÓGICA: VENDA NO ATO OU ENCOMENDA ---
-    let tipoVendaNoAto = confirm("Este pedido é uma VENDA PRESENCIAL NO ATO (Pronta Entrega)?\n\n[ OK ] = Sim (Vai direto para o Arquivo de Finalizados)\n[ CANCELAR ] = Não, é Encomenda (Vai para o Kanban de Produção)");
-    let statusInicialPedido = tipoVendaNoAto ? 'PEDIDO FINALIZADO' : 'PEDIDO FEITO';
+    // 2. Abre o Modal Elegante de Escolha do Tipo de Venda
+    let tipoVenda = await pedirTipoVendaModal();
+    if(!tipoVenda) { showToast("Geração de OS cancelada.", true); return; }
+    
+    let statusInicialPedido = tipoVenda === 'NO_ATO' ? 'PEDIDO FINALIZADO' : 'PEDIDO FEITO';
 
     let freteCobrado = safeNum(document.getElementById('valorFrete').value); let freteRealInput = safeNum(document.getElementById('valorFreteReal').value); let embalagem = safeNum(document.getElementById('custoEmbalagem').value);
     let somaVendaPecas = 0; carrinhoTemporario.forEach(item => { somaVendaPecas += (safeNum(item.valorUnitario) * parseInt(item.quantidade)); });
