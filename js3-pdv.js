@@ -1,9 +1,13 @@
 // ==========================================
-// PDV E LEITOR DE QR CODE INTELIGENTE
+// PDV, LEITOR FÍSICO E LEITOR DE CÂMERA DO CELULAR
 // ==========================================
+
+// Variável para a Câmera do Celular
+let html5QrCode = null;
+
+// Leitor Físico (Pistola USB/Bluetooth)
 let barcodeBuffer = '';
 let barcodeTimer = null;
-
 document.addEventListener('keypress', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         if (e.target.id !== 'codigoEstampa') return; 
@@ -16,10 +20,11 @@ document.addEventListener('keypress', function(e) {
     }, 60); 
 });
 
+// Ação de decodificar e jogar pro carrinho (Serve para Físico e Câmera)
 function processarCodigoBarras(codigoBipado) {
     let codLimpo = codigoBipado.toUpperCase().trim();
     
-    // O sistema agora sabe separar "002-G" em "002" e "G"
+    // O sistema sabe separar "002-G" em "002" e "G"
     let partes = codLimpo.split('-');
     let sku = partes[0];
     let tamanhoSugerido = partes[1] || null;
@@ -31,11 +36,10 @@ function processarCodigoBarras(codigoBipado) {
         let tamIdeal = 'M';
         let estq = catalogoEstampas[sku].estoqueGrade || {};
         
-        // Se o QR Code leu o tamanho (P, M, G, GG), crava ele no formulário
+        // Se o QR Code leu o tamanho, crava ele no formulário
         if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
             tamIdeal = tamanhoSugerido;
         } else {
-            // Se o QR for antigo e não tiver tamanho, escolhe um que tenha stock
             if (estq.M > 0) tamIdeal = 'M'; else if (estq.G > 0) tamIdeal = 'G'; else if (estq.P > 0) tamIdeal = 'P'; else if (estq.GG > 0) tamIdeal = 'GG';
         }
         
@@ -48,6 +52,54 @@ function processarCodigoBarras(codigoBipado) {
     }
 }
 
+// ==========================================
+// FUNÇÕES DA CÂMERA DO CELULAR
+// ==========================================
+function abrirLeitorCamera() {
+    let modal = document.getElementById('modalCamera');
+    if(modal) modal.style.display = 'flex';
+    
+    if(!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+    
+    // Configuração para ler QR codes rapidamente com a câmera traseira
+    const config = { fps: 15, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+    
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+    .catch(err => {
+        showToast("Erro ao aceder à câmera! Permite o acesso no navegador.", true);
+        fecharLeitorCamera();
+    });
+}
+
+function fecharLeitorCamera() {
+    let modal = document.getElementById('modalCamera');
+    if(modal) modal.style.display = 'none';
+    
+    if(html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+        }).catch(err => console.error("Erro ao parar a câmera.", err));
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Quando o celular lê o QR, ele apita, fecha a câmera e joga no carrinho
+    tocarSomDrop();
+    fecharLeitorCamera();
+    processarCodigoBarras(decodedText);
+    showToast("QR Code Lido com Sucesso!");
+}
+
+function onScanFailure(error) {
+    // Ignora as falhas contínuas de "não estou a ver nada" enquanto o utilizador ajeita o celular
+}
+
+
+// ==========================================
+// RESTANTE DO CÓDIGO DO PDV
+// ==========================================
 function mudarTipoDesconto() { document.getElementById('valorDesconto').value = ''; atualizarTelaCarrinho(); document.getElementById('valorDesconto').focus(); }
 
 function preencherVendaBalcao() {
