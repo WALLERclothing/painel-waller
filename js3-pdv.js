@@ -206,6 +206,10 @@ async function salvarPedidoCompleto() {
         document.getElementById('metodoPagamento').value = metodoPgto; // Atualiza o select visualmente
     }
 
+    // --- NOVA LÓGICA: VENDA NO ATO OU ENCOMENDA ---
+    let tipoVendaNoAto = confirm("Este pedido é uma VENDA PRESENCIAL NO ATO (Pronta Entrega)?\n\n[ OK ] = Sim (Vai direto para o Arquivo de Finalizados)\n[ CANCELAR ] = Não, é Encomenda (Vai para o Kanban de Produção)");
+    let statusInicialPedido = tipoVendaNoAto ? 'PEDIDO FINALIZADO' : 'PEDIDO FEITO';
+
     let freteCobrado = safeNum(document.getElementById('valorFrete').value); let freteRealInput = safeNum(document.getElementById('valorFreteReal').value); let embalagem = safeNum(document.getElementById('custoEmbalagem').value);
     let somaVendaPecas = 0; carrinhoTemporario.forEach(item => { somaVendaPecas += (safeNum(item.valorUnitario) * parseInt(item.quantidade)); });
     let tipoDescEl = document.getElementById('tipoDesconto'); let tipoDesc = tipoDescEl ? tipoDescEl.value : 'R$'; let descontoInput = safeNum(document.getElementById('valorDesconto').value); let descontoRealDB = tipoDesc === '%' ? somaVendaPecas * (descontoInput / 100) : descontoInput; let totalCobrado = safeNum(document.getElementById('valorTotal').value);
@@ -218,9 +222,6 @@ async function salvarPedidoCompleto() {
     let enderecoMontado = dadosObj.endereco + (dadosObj.numero ? ", " + dadosObj.numero : "");
     
     let userCriador = typeof currentUserName !== 'undefined' && currentUserName ? currentUserName : (typeof currentUserEmail !== 'undefined' && currentUserEmail ? currentUserEmail.split('@')[0] : 'Desconhecido');
-
-    // --- NOVA LÓGICA DE STATUS: Venda Balcão vai para PEDIDO FINALIZADO (ARQUIVO) ---
-    let statusInicialPedido = (nome === 'CLIENTE AVULSO / BALCÃO' || document.getElementById('origemVenda').value === 'OUTRO') ? 'PEDIDO FINALIZADO' : 'PEDIDO FEITO';
 
     try {
         await db.collection("pedidos").add({ 
