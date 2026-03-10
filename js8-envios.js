@@ -83,8 +83,6 @@ async function enviarParaMelhorEnvio(pedidoId) {
     let cepDestino = (p.cep || '').replace(/\D/g, '');
     if(cepDestino.length !== 8) { alert("⚠️ ERRO: CEP do cliente inválido."); return; }
 
-    showToast("Analisando volume da caixa e rotas... ⏳", false);
-
     let nomeCliente = p.nome ? p.nome.trim() : "Cliente"; if(nomeCliente.split(' ').length < 2) nomeCliente += " Waller";
     let phoneLimpo = p.whatsapp ? p.whatsapp.replace(/\D/g, '') : ''; if(phoneLimpo.length < 10 || phoneLimpo.length > 11) phoneLimpo = "11999999999"; 
     let emailCliente = p.email && p.email.includes('@') ? p.email.trim().toLowerCase() : "cliente@email.com";

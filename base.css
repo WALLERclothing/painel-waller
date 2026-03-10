@@ -1,0 +1,118 @@
+/* === ESTILO BRUTALISTA WALLER: BERSERK & HORROR EDITION === */
+:root {
+    color-scheme: light;
+    --black: #111111;
+    --white: #ffffff;
+    --gray: #f0f0f0;
+    --border-color: #111111;
+    --border-thick: 3px solid var(--border-color);
+    --red: #c1121f;
+    --green: #2a9d8f;
+    --text-muted: #666666;
+    --bg-body: #ffffff;
+    --bg-dots: #e0e0e0;
+    --shadow-main: 5px 5px 0px var(--black);
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --black: #eeeeee;
+    --white: #1a1a1a;
+    --gray: #252525;
+    --border-color: #4a4a4a;
+    --red: #880808;
+    --green: #386641;
+    --text-muted: #888888;
+    --bg-body: #0a0a0a;
+    --bg-dots: #1c1c1c;
+    --shadow-main: 5px 5px 0px #000000;
+}
+
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    background-color: var(--bg-body); 
+    color: var(--black); 
+    margin: 0; 
+    padding: 0; 
+    background-image: radial-gradient(var(--bg-dots) 2px, transparent 1px); 
+    background-size: 24px 24px; 
+    transition: background-color 0.3s, color 0.3s; 
+    overflow-x: hidden; /* Previne scroll horizontal acidental na página inteira */
+}
+
+/* === INTERAÇÕES BRUTALISTAS (UX) === */
+.btn-primary, .btn-nav, .btn-add, .tab-btn {
+    transition: all 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-main);
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover, .btn-nav:hover, .btn-add:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 8px 8px 0px var(--red);
+}
+
+.btn-primary:active, .btn-nav:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px var(--black);
+}
+
+.pedido-card:hover, .catalog-card:hover {
+    transform: scale(1.01) rotate(0.5deg);
+    box-shadow: 12px 12px 0px var(--black);
+    z-index: 10;
+}
+
+.btn-remove-item:hover, .btn-remove-item:active {
+    animation: horror-shake 0.2s infinite;
+    color: var(--red) !important;
+}
+
+@keyframes horror-shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    25% { transform: translate(-1px, -2px) rotate(-1deg); }
+    50% { transform: translate(-2px, 0px) rotate(1deg); }
+    75% { transform: translate(2px, 1px) rotate(-1deg); }
+    100% { transform: translate(-1px, -1px) rotate(0deg); }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+.container { animation: fadeIn 0.4s ease-out; }
+.modal-box { 
+    animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); 
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--gray); }
+::-webkit-scrollbar-thumb { background: var(--black); border: 1px solid var(--gray); }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+h1, h2, h3, .kanban-header, .form-section-title, .card-title {
+    font-family: 'Oswald', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+canvas { border-radius: 0 !important; }
+
+.atraso-absoluto {
+    background-color: var(--red) !important;
+    color: var(--white) !important;
+    border-color: var(--black) !important;
+    animation: horror-shake 0.5s infinite;
+}
+.atraso-absoluto * { color: var(--white) !important; border-color: var(--white) !important; }
+.atraso-absoluto .btn-pgto { background-color: var(--black) !important; }
+
+.checkbox-batch {
+    width: 24px; height: 24px;
+    cursor: pointer;
+    accent-color: var(--black);
+    margin-right: 10px;
+    border: 2px solid var(--black);
+}
