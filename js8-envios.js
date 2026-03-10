@@ -100,7 +100,6 @@ async function enviarParaMelhorEnvio(pedidoId) {
 
     let cubagem = calcularCaixaEPeso(p.itens || []);
     
-    // NOVO: Separar as peças para o Melhor Envio
     let valorTotalPecas = 0; 
     let produtosME = [];
 
@@ -116,7 +115,6 @@ async function enviarParaMelhorEnvio(pedidoId) {
         });
     });
 
-    // Caso o pedido não tenha itens (fallback de segurança)
     if (produtosME.length === 0) {
         produtosME.push({ "name": "Vestuário Waller", "quantity": 1, "unitary_value": 50.00 });
     }
@@ -133,15 +131,17 @@ async function enviarParaMelhorEnvio(pedidoId) {
         "service": selectedServiceId, 
         "from": { "name": "Waller Clothing", "phone": "11999999999", "email": "contato@wallerclothing.com.br", "document": ME_CPF_ORIGEM, "postal_code": "02475001", "address": "Rua Conselheiro Moreira de Barros", "number": "100", "district": "Santana", "city": "São Paulo", "state_abbr": "SP", "country_id": "BR" },
         "to": { "name": nomeCliente, "phone": phoneLimpo, "email": emailCliente, "document": cpfCliente, "address": logradouro, "number": numeroEnd, "complement": complementoEnvio, "district": bairro, "city": cidade, "state_abbr": uf, "country_id": "BR", "postal_code": cepDestino, "note": "Pedido #" + (p.numeroPedido || '') },
-        "products": produtosME, // ARRAY DE PEÇAS DETALHADA APLICADA AQUI
+        "products": produtosME, 
         "volumes": [ { "height": cubagem.height, "width": cubagem.width, "length": cubagem.length, "weight": cubagem.weight } ],
         "options": { "insurance_value": valorTotalPecas > 0 ? valorTotalPecas : 50.00, "receipt": false, "own_hand": false, "reverse_attach": false, "non_commercial": true }
     };
 
     try {
-        let response = await chamarApiCarrinhoME(payload); let respString = JSON.stringify(response.data);
+        let response = await chamarApiCarrinhoME(payload); 
+        let respString = JSON.stringify(response.data, null, 2);
+        
         if (!response.ok && (respString.includes("Transportadora não atende") || respString.includes("Transportadora nao atende"))) {
-            payload.service = 2; response = await chamarApiCarrinhoME(payload); respString = JSON.stringify(response.data);
+            payload.service = 2; response = await chamarApiCarrinhoME(payload); respString = JSON.stringify(response.data, null, 2);
         }
 
         if (response.ok && response.data.id) {
@@ -149,13 +149,23 @@ async function enviarParaMelhorEnvio(pedidoId) {
             window.open("https://melhorenvio.com.br/carrinho", "_blank");
         } else {
             if (response.isVercelError) { alert("⚠️ ERRO DE SERVIDOR VERCEL:\n\nO seu site tentou se comunicar com o MelhorEnvio, mas a configuração 'vercel.json' não foi encontrada."); return; }
-            let detalhes = "Erro desconhecido.";
-            if(response.data.message === "Unauthenticated.") detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio e cole no 8-envios.js.";
-            else if(response.data.errors) detalhes = Object.entries(response.data.errors).map(([k, v]) => `- ${k.toUpperCase()}: ${v.join(', ')}`).join('\n');
-            else if (response.data.error) detalhes = response.data.error; 
-            else if (response.data.message) detalhes = response.data.message;
-            else detalhes = respString;
-            alert(`❌ O MelhorEnvio rejeitou a etiqueta.\n\nMOTIVO:\n${detalhes}\n\nEdite o pedido e corrija a informação.`);
+            
+            let detalhes = "";
+            if (response.data.message === "Unauthenticated.") {
+                detalhes = "O seu Token expirou ou é inválido. Gere um novo no painel do MelhorEnvio.";
+            } else if (response.data.errors) {
+                detalhes = Object.entries(response.data.errors)
+                    .map(([k, v]) => `👉 ${k.toUpperCase()}: ${Array.isArray(v) ? v.join(', ') : JSON.stringify(v)}`)
+                    .join('\n');
+            } else if (response.data.error) {
+                detalhes = typeof response.data.error === 'object' ? JSON.stringify(response.data.error, null, 2) : response.data.error;
+            } else if (response.data.message) {
+                detalhes = typeof response.data.message === 'object' ? JSON.stringify(response.data.message, null, 2) : response.data.message;
+            } else {
+                detalhes = respString;
+            }
+
+            alert(`❌ O MelhorEnvio rejeitou a etiqueta.\n\nMOTIVO:\n${detalhes}\n\nEdite o pedido clicando no lápis (✏️) e corrija a informação.`);
         }
-    } catch (e) { alert("⚠️ Falha crítica ao conectar com a API do MelhorEnvio."); }
+    } catch (e) { alert("⚠️ Falha crítica ao conectar com a API do MelhorEnvio.\n\n" + e); }
 }
