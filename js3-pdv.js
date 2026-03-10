@@ -1,6 +1,53 @@
 // ==========================================
-// PDV / LANÇAR DROPS
+// PDV E LEITOR DE QR CODE INTELIGENTE
 // ==========================================
+let barcodeBuffer = '';
+let barcodeTimer = null;
+
+document.addEventListener('keypress', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.target.id !== 'codigoEstampa') return; 
+    }
+    if (e.key !== 'Enter') barcodeBuffer += e.key;
+    clearTimeout(barcodeTimer);
+    barcodeTimer = setTimeout(() => {
+        if (barcodeBuffer.length >= 3) { processarCodigoBarras(barcodeBuffer); }
+        barcodeBuffer = '';
+    }, 60); 
+});
+
+function processarCodigoBarras(codigoBipado) {
+    let codLimpo = codigoBipado.toUpperCase().trim();
+    
+    // O sistema agora sabe separar "002-G" em "002" e "G"
+    let partes = codLimpo.split('-');
+    let sku = partes[0];
+    let tamanhoSugerido = partes[1] || null;
+
+    if (catalogoEstampas[sku]) {
+        document.getElementById('codigoEstampa').value = sku;
+        autocompletarEstampa(sku); 
+        
+        let tamIdeal = 'M';
+        let estq = catalogoEstampas[sku].estoqueGrade || {};
+        
+        // Se o QR Code leu o tamanho (P, M, G, GG), crava ele no formulário
+        if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
+            tamIdeal = tamanhoSugerido;
+        } else {
+            // Se o QR for antigo e não tiver tamanho, escolhe um que tenha stock
+            if (estq.M > 0) tamIdeal = 'M'; else if (estq.G > 0) tamIdeal = 'G'; else if (estq.P > 0) tamIdeal = 'P'; else if (estq.GG > 0) tamIdeal = 'GG';
+        }
+        
+        document.getElementById('tamanho').value = tamIdeal;
+        document.getElementById('quantidade').value = 1;
+        adicionarAoCarrinho(); 
+        tocarSomDrop();
+    } else {
+        showToast("Código não encontrado no catálogo!", true);
+    }
+}
+
 function mudarTipoDesconto() { document.getElementById('valorDesconto').value = ''; atualizarTelaCarrinho(); document.getElementById('valorDesconto').focus(); }
 
 function preencherVendaBalcao() {
@@ -18,13 +65,15 @@ function autocompletarCliente(termo, tipo) {
     } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
 }
 
-async function sincronizarClienteEmMassa(whatsapp, dadosObj) {
-    if(!whatsapp || whatsapp.length < 10) return;
-    try { await db.collection("clientes").doc(whatsapp).set(dadosObj, {merge: true}); } catch(e) { console.error(e); }
-    try {
-        let snap = await db.collection("pedidos").where("whatsapp", "==", whatsapp).get();
-        if(!snap.empty) { let batch = db.batch(); snap.forEach(doc => { batch.update(doc.ref, { nome: dadosObj.nome, cpf: dadosObj.cpf, email: dadosObj.email, cep: dadosObj.cep, endereco: dadosObj.endereco, numeroEnd: dadosObj.numero, complemento: dadosObj.complemento }); }); await batch.commit(); }
-    } catch(e) { console.error(e); }
+function autocompletarEstampa(val) {
+    let code = val.toUpperCase().trim();
+    if(catalogoEstampas[code]) {
+        document.getElementById('nomeEstampa').value = catalogoEstampas[code].nome;
+        document.getElementById('valorUnitario').value = formatCurrency(catalogoEstampas[code].precoVenda);
+        let c = catalogoEstampas[code].categoria ? catalogoEstampas[code].categoria.toUpperCase() : '';
+        let selectTipo = document.getElementById('tipoPeca');
+        for(let i=0; i<selectTipo.options.length; i++) { if(c.includes(selectTipo.options[i].value)) { selectTipo.selectedIndex = i; break; } }
+    }
 }
 
 function adicionarAoCarrinho() {
@@ -36,25 +85,18 @@ function adicionarAoCarrinho() {
     const val = safeNum(document.getElementById('valorUnitario').value); 
     const qtd = parseInt(document.getElementById('quantidade').value) || 1;
     
-    // NOVO: Verifica detalhadamente o que faltou preencher na peça
     let faltantesPeca = [];
     if(!cod) faltantesPeca.push("CÓDIGO/SKU");
     if(!nom) faltantesPeca.push("NOME DA PEÇA");
     if(val <= 0) faltantesPeca.push("PREÇO");
+    if(faltantesPeca.length > 0) { showToast("Faltou na peça: " + faltantesPeca.join(', '), true); return; }
     
-    if(faltantesPeca.length > 0) { 
-        showToast("Faltou na peça: " + faltantesPeca.join(', '), true); 
-        return; 
-    }
-    
-    if(catalogoEstampas[cod] && (catalogoEstampas[cod].estoque[tam] || 0) < qtd) showToast(`Aviso: Estoque baixo para tamanho ${tam}!`, true); 
+    if(catalogoEstampas[cod] && (catalogoEstampas[cod].estoqueGrade[tam] || 0) < qtd) showToast(`Aviso: Estoque baixo para tamanho ${tam}!`, true); 
     const custoProduto = catalogoEstampas[cod] ? safeNum(catalogoEstampas[cod].custo) : 0;
     
     carrinhoTemporario.push({ codigoEstampa: cod, nomeEstampa: nom, tipoPeca: tip, tamanho: tam, cor: cor, quantidade: qtd, valorUnitario: val, custoUnitario: custoProduto });
     atualizarTelaCarrinho(); 
-    document.getElementById('codigoEstampa').value = ''; 
-    document.getElementById('nomeEstampa').value = ''; 
-    document.getElementById('codigoEstampa').focus();
+    document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('codigoEstampa').focus();
 }
 
 function removerDoCarrinho(i) { carrinhoTemporario.splice(i, 1); atualizarTelaCarrinho(); }
@@ -62,42 +104,65 @@ function removerDoCarrinho(i) { carrinhoTemporario.splice(i, 1); atualizarTelaCa
 function atualizarTelaCarrinho() {
     let somaProdutos = 0; document.getElementById('listaCarrinho').innerHTML = '';
     carrinhoTemporario.forEach((p, i) => { somaProdutos += (p.quantidade * safeNum(p.valorUnitario)); document.getElementById('listaCarrinho').innerHTML += `<div class="carrinho-item"><span><strong>${p.quantidade}x</strong> ${p.tipoPeca} (${p.tamanho}) - [${p.codigoEstampa}]</span><div><span style="color:var(--red); font-weight:900;">${formatCurrency(p.valorUnitario)}</span> <button class="btn-remove-item" onclick="removerDoCarrinho(${i})">X</button></div></div>`; });
-    let freteCobrado = safeNum(document.getElementById('valorFrete').value); let tipoDescEl = document.getElementById('tipoDesconto'); let tipoDesc = tipoDescEl ? tipoDescEl.value : 'R$'; let descontoInput = safeNum(document.getElementById('valorDesconto').value); let descontoReal = tipoDesc === '%' ? somaProdutos * (descontoInput / 100) : descontoInput;
-    let total = Math.max(0, somaProdutos + freteCobrado - descontoReal); document.getElementById('valorTotal').value = formatCurrency(total); document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
+
+    let freteInput = document.getElementById('valorFrete');
+    if(somaProdutos >= 300) { freteInput.value = 'R$ 0,00'; freteInput.style.color = 'var(--green)'; freteInput.style.borderColor = 'var(--green)'; } 
+    else { freteInput.style.color = ''; freteInput.style.borderColor = ''; }
+
+    let freteCobrado = safeNum(freteInput.value); 
+    let tipoDescEl = document.getElementById('tipoDesconto'); let tipoDesc = tipoDescEl ? tipoDescEl.value : 'R$'; let descontoInput = safeNum(document.getElementById('valorDesconto').value); let descontoReal = tipoDesc === '%' ? somaProdutos * (descontoInput / 100) : descontoInput;
+    let total = Math.max(0, somaProdutos + freteCobrado - descontoReal); 
+    document.getElementById('valorTotal').value = formatCurrency(total); 
+    document.getElementById('carrinho-container').style.display = carrinhoTemporario.length === 0 ? 'none' : 'block'; 
+
+    let metodo = document.getElementById('metodoPagamento').value;
+    let containerTroco = document.getElementById('containerTroco');
+    if (metodo === 'DINHEIRO' && containerTroco) {
+        containerTroco.style.display = 'flex';
+        let valorRecebido = safeNum(document.getElementById('valorRecebido').value);
+        let troco = valorRecebido > total ? valorRecebido - total : 0;
+        document.getElementById('valorTroco').value = formatCurrency(troco);
+    } else if (containerTroco) { containerTroco.style.display = 'none'; document.getElementById('valorRecebido').value = ''; }
 }
 
 function limparFormularioPedido(ignorarConfirm = false) {
-    if(!ignorarConfirm && !confirm("Tem certeza que deseja apagar tudo?")) return;
+    if(!ignorarConfirm && !confirm("Tens a certeza que queres apagar tudo?")) return;
     document.getElementById('whatsapp').value = ''; document.getElementById('nome').value = ''; document.getElementById('cpf').value = ''; document.getElementById('origemVenda').value = 'INSTAGRAM'; document.getElementById('cep').value = ''; document.getElementById('endereco').value = ''; document.getElementById('numeroEnd').value = ''; document.getElementById('complementoEnd').value = ''; document.getElementById('valorFrete').value = ''; document.getElementById('valorFreteReal').value = ''; document.getElementById('custoEmbalagem').value = 'R$ 4,50'; if(document.getElementById('tipoDesconto')) document.getElementById('tipoDesconto').value = 'R$'; document.getElementById('valorDesconto').value = ''; document.getElementById('valorTotal').value = ''; document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('valorUnitario').value = ''; document.getElementById('quantidade').value = '1'; document.getElementById('alertaClienteFiel').style.display = 'none'; carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('whatsapp').focus(); 
 }
 
 async function salvarPedidoCompleto() {
-    let w = document.getElementById('whatsapp').value; 
-    let nome = document.getElementById('nome').value.toUpperCase(); 
-    
-    // NOVO: Verifica detalhadamente o que faltou preencher no formulário geral
+    let w = document.getElementById('whatsapp').value; let nome = document.getElementById('nome').value.toUpperCase(); let cpfVal = document.getElementById('cpf').value;
     let faltantesGeral = [];
     if(!nome || nome.trim() === '') faltantesGeral.push("NOME DO CLIENTE");
     if(!w || w.replace(/\D/g, '').length < 10) faltantesGeral.push("WHATSAPP INVÁLIDO");
     if(carrinhoTemporario.length === 0) faltantesGeral.push("1 PEÇA NO CARRINHO");
+    if(cpfVal && cpfVal.length > 0 && !validarCPF(cpfVal)) faltantesGeral.push("CPF FALSO OU INCORRETO");
     
-    if(faltantesGeral.length > 0) { 
-        showToast("Faltou preencher: " + faltantesGeral.join(' | '), true); 
-        return; 
-    }
+    if(faltantesGeral.length > 0) { showToast("Faltou preencher/corrigir: " + faltantesGeral.join(' | '), true); return; }
 
     let freteCobrado = safeNum(document.getElementById('valorFrete').value); let freteRealInput = safeNum(document.getElementById('valorFreteReal').value); let embalagem = safeNum(document.getElementById('custoEmbalagem').value);
     let somaVendaPecas = 0; carrinhoTemporario.forEach(item => { somaVendaPecas += (safeNum(item.valorUnitario) * parseInt(item.quantidade)); });
     let tipoDescEl = document.getElementById('tipoDesconto'); let tipoDesc = tipoDescEl ? tipoDescEl.value : 'R$'; let descontoInput = safeNum(document.getElementById('valorDesconto').value); let descontoRealDB = tipoDesc === '%' ? somaVendaPecas * (descontoInput / 100) : descontoInput; let totalCobrado = safeNum(document.getElementById('valorTotal').value);
     let somaCustoPecas = 0; carrinhoTemporario.forEach(item => { somaCustoPecas += (safeNum(item.custoUnitario) * parseInt(item.quantidade)); });
-    let freteRealCalculo = freteRealInput > 0 ? freteRealInput : freteCobrado; let custoTotal = somaCustoPecas + embalagem + freteRealCalculo; let lucroCalculado = totalCobrado - custoTotal;
+    
+    let custoTotal = somaCustoPecas + embalagem + freteRealInput; let lucroCalculado = totalCobrado - custoTotal;
+    
     let btnSalvar = document.getElementById('btnGerarOrdem'); btnSalvar.innerText = "SALVANDO..."; btnSalvar.disabled = true; let numGerado = Math.floor(1000 + Math.random() * 9000).toString();
-    let dadosObj = { whatsapp: w, nome: nome, cpf: document.getElementById('cpf').value, email: document.getElementById('email').value.toLowerCase().trim(), cep: document.getElementById('cep').value, endereco: document.getElementById('endereco').value, numero: document.getElementById('numeroEnd').value, complemento: document.getElementById('complementoEnd').value, apagadoCRM: false };
+    let dadosObj = { whatsapp: w, nome: nome, cpf: cpfVal, email: document.getElementById('email').value.toLowerCase().trim(), cep: document.getElementById('cep').value, endereco: document.getElementById('endereco').value, numero: document.getElementById('numeroEnd').value, complemento: document.getElementById('complementoEnd').value, apagadoCRM: false };
     let enderecoMontado = dadosObj.endereco + (dadosObj.numero ? ", " + dadosObj.numero : "");
+    
+    let userCriador = typeof currentUserName !== 'undefined' && currentUserName ? currentUserName : (typeof currentUserEmail !== 'undefined' && currentUserEmail ? currentUserEmail.split('@')[0] : 'Desconhecido');
+
     try {
-        await db.collection("pedidos").add({ numeroPedido: numGerado, nome: dadosObj.nome, whatsapp: w, cpf: dadosObj.cpf, email: dadosObj.email, origemVenda: document.getElementById('origemVenda').value, cep: dadosObj.cep, endereco: enderecoMontado, numeroEnd: dadosObj.numero, complemento: dadosObj.complemento, valorFrete: freteCobrado, valorFreteReal: freteRealInput, custoEmbalagem: embalagem, valorDesconto: descontoRealDB, valorTotal: totalCobrado, custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado, apagado: false, metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value, itens: carrinhoTemporario, status: 'PEDIDO FEITO', rastreio: '', dataCriacao: firebase.firestore.FieldValue.serverTimestamp() });
-        await sincronizarClienteEmMassa(w, dadosObj);
+        await db.collection("pedidos").add({ 
+            numeroPedido: numGerado, nome: dadosObj.nome, whatsapp: w, cpf: dadosObj.cpf, email: dadosObj.email, origemVenda: document.getElementById('origemVenda').value, cep: dadosObj.cep, endereco: enderecoMontado, numeroEnd: dadosObj.numero, complemento: dadosObj.complemento, valorFrete: freteCobrado, valorFreteReal: freteRealInput, custoEmbalagem: embalagem, valorDesconto: descontoRealDB, valorTotal: totalCobrado, custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado, apagado: false, metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value, itens: carrinhoTemporario, status: 'PEDIDO FEITO', rastreio: '', 
+            criadoPor: userCriador,
+            dataCriacao: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        if(typeof sincronizarClienteEmMassa === 'function') await sincronizarClienteEmMassa(w, dadosObj);
         carrinhoTemporario.forEach(item => { if(item.codigoEstampa && catalogoEstampas[item.codigoEstampa]) { db.collection("estampas").doc(item.codigoEstampa).update({ ["estoqueGrade." + item.tamanho]: firebase.firestore.FieldValue.increment(-item.quantidade) }); } });
+        
         limparFormularioPedido(true); tocarSomSucesso(); showToast(`PEDIDO #${numGerado} SALVO!`);
+        setTimeout(() => document.getElementById('whatsapp').focus(), 100);
     } catch (e) { showToast("Erro ao salvar", true); } finally { btnSalvar.innerText = "GERAR ORDEM DE SERVIÇO"; btnSalvar.disabled = false; }
 }
