@@ -192,6 +192,20 @@ async function salvarPedidoCompleto() {
     
     if(faltantesGeral.length > 0) { showToast("Faltou preencher/corrigir: " + faltantesGeral.join(' | '), true); return; }
 
+    // --- LÓGICA DE ESCOLHA DE PAGAMENTO ---
+    let statusPgto = document.getElementById('statusPagamento').value;
+    let metodoPgto = document.getElementById('metodoPagamento').value;
+
+    if (statusPgto === 'PAGO') {
+        let metodoEscolhido = prompt("💰 O pedido está marcado como PAGO.\nConfirme ou digite a forma de pagamento (ex: PIX, CARTÃO, DINHEIRO):", metodoPgto);
+        if (metodoEscolhido === null) {
+            showToast("Geração de OS cancelada.", true);
+            return; // Usuário cancelou
+        }
+        metodoPgto = metodoEscolhido.trim().toUpperCase() || metodoPgto;
+        document.getElementById('metodoPagamento').value = metodoPgto; // Atualiza o select visualmente
+    }
+
     let freteCobrado = safeNum(document.getElementById('valorFrete').value); let freteRealInput = safeNum(document.getElementById('valorFreteReal').value); let embalagem = safeNum(document.getElementById('custoEmbalagem').value);
     let somaVendaPecas = 0; carrinhoTemporario.forEach(item => { somaVendaPecas += (safeNum(item.valorUnitario) * parseInt(item.quantidade)); });
     let tipoDescEl = document.getElementById('tipoDesconto'); let tipoDesc = tipoDescEl ? tipoDescEl.value : 'R$'; let descontoInput = safeNum(document.getElementById('valorDesconto').value); let descontoRealDB = tipoDesc === '%' ? somaVendaPecas * (descontoInput / 100) : descontoInput; let totalCobrado = safeNum(document.getElementById('valorTotal').value);
@@ -205,9 +219,12 @@ async function salvarPedidoCompleto() {
     
     let userCriador = typeof currentUserName !== 'undefined' && currentUserName ? currentUserName : (typeof currentUserEmail !== 'undefined' && currentUserEmail ? currentUserEmail.split('@')[0] : 'Desconhecido');
 
+    // --- NOVA LÓGICA DE STATUS: Venda Balcão vai para PEDIDO FINALIZADO (ARQUIVO) ---
+    let statusInicialPedido = (nome === 'CLIENTE AVULSO / BALCÃO' || document.getElementById('origemVenda').value === 'OUTRO') ? 'PEDIDO FINALIZADO' : 'PEDIDO FEITO';
+
     try {
         await db.collection("pedidos").add({ 
-            numeroPedido: numGerado, nome: dadosObj.nome, whatsapp: w, cpf: dadosObj.cpf, email: dadosObj.email, origemVenda: document.getElementById('origemVenda').value, cep: dadosObj.cep, endereco: enderecoMontado, numeroEnd: dadosObj.numero, complemento: dadosObj.complemento, valorFrete: freteCobrado, valorFreteReal: freteRealInput, custoEmbalagem: embalagem, valorDesconto: descontoRealDB, valorTotal: totalCobrado, custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado, apagado: false, metodoPagamento: document.getElementById('metodoPagamento').value, statusPagamento: document.getElementById('statusPagamento').value, itens: carrinhoTemporario, status: 'PEDIDO FEITO', rastreio: '', 
+            numeroPedido: numGerado, nome: dadosObj.nome, whatsapp: w, cpf: dadosObj.cpf, email: dadosObj.email, origemVenda: document.getElementById('origemVenda').value, cep: dadosObj.cep, endereco: enderecoMontado, numeroEnd: dadosObj.numero, complemento: dadosObj.complemento, valorFrete: freteCobrado, valorFreteReal: freteRealInput, custoEmbalagem: embalagem, valorDesconto: descontoRealDB, valorTotal: totalCobrado, custoTotalPedido: somaCustoPecas, lucroTotalPedido: lucroCalculado, apagado: false, metodoPagamento: metodoPgto, statusPagamento: statusPgto, itens: carrinhoTemporario, status: statusInicialPedido, rastreio: '', 
             criadoPor: userCriador,
             dataCriacao: firebase.firestore.FieldValue.serverTimestamp() 
         });
