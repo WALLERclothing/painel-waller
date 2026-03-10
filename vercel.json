@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/me/:path*",
+      "destination": "https://melhorenvio.com.br/api/v2/me/:path*"
+    }
+  ]
+}
