@@ -1,68 +1,135 @@
 // ==========================================
-// INICIALIZAÇÃO E NAVEGAÇÃO GERAL
+// MAIN - INTERAÇÕES GERAIS DE TELA E NAVEGAÇÃO
 // ==========================================
 
-window.onload = () => { 
-    if(isVitrine) { document.body.classList.add('modo-vitrine'); mudarAba('estampas'); document.title = "Catálogo - Waller Clothing"; } 
-};
+// Controla a troca de abas principais do sistema
+function mudarAba(abaId) {
+    // Esconde todas as abas
+    document.getElementById('aba-cadastro').style.display = 'none';
+    document.getElementById('aba-producao').style.display = 'none';
+    document.getElementById('aba-estampas').style.display = 'none';
+    document.getElementById('aba-clientes').style.display = 'none';
+    
+    // Reseta o estilo visual dos botões
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+    
+    // Mostra a aba clicada
+    document.getElementById('aba-' + abaId).style.display = 'block';
+    
+    // Marca o botão como ativo e re-renderiza o painel caso necessário
+    if(abaId === 'cadastro') document.getElementById('tabCadastroBtn').classList.add('tab-active');
+    if(abaId === 'producao') {
+        document.getElementById('tabProducaoBtn').classList.add('tab-active');
+        if(typeof renderizarKanban === 'function') renderizarKanban();
+    }
+    if(abaId === 'estampas') {
+        document.getElementById('tabEstampasBtn').classList.add('tab-active');
+        if(typeof renderizarCatalogo === 'function') renderizarCatalogo();
+    }
+    if(abaId === 'clientes') {
+        document.getElementById('tabClientesBtn').classList.add('tab-active');
+        if(typeof renderizarCRM === 'function') renderizarCRM();
+    }
+}
 
-document.addEventListener('keydown', (e) => {
-    if(isVitrine) return;
-    if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); }
-    if (e.altKey && e.key.toLowerCase() === 'c') { e.preventDefault(); mudarAba('clientes'); }
-    if (e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); mudarAba('producao'); }
-    if (e.altKey && e.key.toLowerCase() === 'e') { e.preventDefault(); mudarAba('estampas'); }
-    if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); abrirBuscaGlobal(); }
-});
+// Controla a expansão dos itens dentro dos cards do Kanban
+function toggleItens(id) {
+    let div = document.getElementById('itens-' + id);
+    let seta = document.getElementById('seta-' + id);
+    if (div && seta) {
+        if (div.style.display === 'none' || div.style.display === '') {
+            div.style.display = 'block';
+            seta.innerText = '▲';
+        } else {
+            div.style.display = 'none';
+            seta.innerText = '▼';
+        }
+    }
+}
 
-function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light'); }
-function toggleTheme() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; localStorage.setItem('waller_theme', isDark ? 'light' : 'dark'); applyTheme(isDark ? 'light' : 'dark'); }
-applyTheme(localStorage.getItem('waller_theme') || 'light');
+// Controla a exibição dos gráficos na aba de Gestão
+function toggleGrafico() {
+    let container = document.getElementById('container-grafico');
+    let seta = document.getElementById('seta-grafico');
+    if(container && seta) {
+        if(container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'flex';
+            seta.innerText = '▲';
+        } else {
+            container.style.display = 'none';
+            seta.innerText = '▼';
+        }
+    }
+}
 
+// Modo Foco (Esconde abas e foca apenas na tela atual de trabalho)
 function toggleModoFoco() {
-    document.body.classList.toggle('modo-foco-ativo'); let btn = document.getElementById('btnFoco');
-    if(document.body.classList.contains('modo-foco-ativo')) { btn.innerText = '❌ SAIR DO FOCO'; mudarAba('cadastro'); showToast("Modo Foco Ativado!"); } 
-    else { btn.innerText = '🎯 FOCO'; }
-}
-
-function abrirBuscaGlobal() { document.getElementById('modalBuscaGlobal').style.display = 'flex'; document.getElementById('inputBuscaGlobal').focus(); document.getElementById('resultadoBuscaGlobal').innerHTML = ''; }
-function fecharBuscaGlobal(e) { if(e && e.target.id !== 'modalBuscaGlobal') return; document.getElementById('modalBuscaGlobal').style.display = 'none'; document.getElementById('inputBuscaGlobal').value = ''; }
-
-function executarBuscaGlobal() {
-    let termo = document.getElementById('inputBuscaGlobal').value.toUpperCase().trim(); let res = document.getElementById('resultadoBuscaGlobal');
-    if(termo.length < 2) { res.innerHTML = ''; return; } let html = '';
+    let navbar = document.getElementById('mainNavbar');
+    let tabMenu = document.getElementById('mainTabMenu');
+    let btnFoco = document.getElementById('btnFoco');
     
-    todosPedidos.filter(p => (p.nome&&p.nome.includes(termo)) || (p.whatsapp&&p.whatsapp.includes(termo)) || (p.numeroPedido&&p.numeroPedido.includes(termo))).slice(0,5).forEach(p => { 
-        html += `<div class="brutal-toast" style="cursor:pointer; margin-bottom:5px; border-color:var(--black); color:var(--black);" onclick="mudarAba('producao'); abrirModalEdicao('${p.id}'); fecharBuscaGlobal();">📦 PEDIDO #${p.numeroPedido} - ${p.nome}</div>`; 
-    });
-    
-    Object.keys(clientesCadastrados).forEach(w => { 
-        let c = clientesCadastrados[w]; 
-        if(!c.apagadoCRM && ((c.nome&&c.nome.includes(termo)) || w.includes(termo))) { 
-            html += `<div class="brutal-toast" style="cursor:pointer; margin-bottom:5px; border-color:var(--green); color:var(--green);" onclick="mudarAba('clientes'); abrirFichaCliente('${w}'); fecharBuscaGlobal();">👤 CLIENTE - ${c.nome}</div>`; 
-        } 
-    });
-    
-    Object.values(catalogoEstampas).filter(c => c.nome.includes(termo) || c.codigo.includes(termo)).slice(0,5).forEach(c => { 
-        html += `<div class="brutal-toast" style="cursor:pointer; margin-bottom:5px; border-color:#ffb703; color:#000;" onclick="mudarAba('estampas'); fecharBuscaGlobal();">👕 PRODUTO - [${c.codigo}] ${c.nome}</div>`; 
-    });
-    
-    res.innerHTML = html || '<div style="padding:10px; font-weight:900; color:var(--red);">NENHUM RESULTADO ENCONTRADO.</div>';
+    if(navbar && tabMenu && btnFoco) {
+        if(tabMenu.style.display === 'none') {
+            tabMenu.style.display = 'flex';
+            navbar.style.padding = '15px 20px';
+            btnFoco.style.background = '';
+            btnFoco.style.color = '';
+        } else {
+            tabMenu.style.display = 'none';
+            navbar.style.padding = '5px 20px';
+            btnFoco.style.background = 'var(--red)';
+            btnFoco.style.color = 'var(--white)';
+        }
+    }
 }
 
-function mudarAba(aba) { 
-    ['cadastro', 'producao', 'estampas', 'clientes'].forEach(a => document.getElementById('aba-' + a).style.display = a === aba ? 'block' : 'none'); 
-    ['Cadastro', 'Producao', 'Estampas', 'Clientes'].forEach(a => document.getElementById('tab' + a + 'Btn').classList.toggle('tab-active', a.toLowerCase() === aba)); 
+// Busca Global Básica (Atalho Ctrl+K)
+function abrirBuscaGlobal() {
+    let termo = prompt("🔍 BUSCA GLOBAL: Digite um Nome, WhatsApp, Código do Produto ou #Pedido:");
+    if(!termo) return;
+    termo = termo.toUpperCase().trim();
+    
+    // Tenta achar no CRM
+    let achouCliente = Object.keys(clientesCadastrados).find(w => w.includes(termo) || (clientesCadastrados[w].nome || '').toUpperCase().includes(termo));
+    if(achouCliente) {
+        mudarAba('clientes');
+        setTimeout(() => abrirFichaCliente(achouCliente), 500);
+        return;
+    }
+    
+    // Tenta achar no Kanban/Pedidos
+    let achouPedido = todosPedidos.find(p => (p.numeroPedido || '').includes(termo.replace('#','')) || (p.nome||'').toUpperCase().includes(termo) || (p.whatsapp || '').includes(termo));
+    if(achouPedido) {
+        mudarAba('producao');
+        let inputBusca = document.getElementById('inputBusca');
+        if(inputBusca) {
+            inputBusca.value = termo;
+            if(typeof filtrarKanban === 'function') filtrarKanban();
+        }
+        return;
+    }
+    
+    // Tenta achar no Catálogo
+    let achouEstampa = catalogoEstampas[termo];
+    if(achouEstampa) {
+        mudarAba('estampas');
+        setTimeout(() => prepararEdicaoEstampa(termo), 500);
+        return;
+    }
+    
+    showToast("Nenhum resultado direto encontrado para: " + termo, true);
 }
 
-function toggleItens(id) { 
-    let lista = document.getElementById('itens-' + id); let seta = document.getElementById('seta-' + id); 
-    if(lista.style.display === 'none') { lista.style.display = 'flex'; seta.innerHTML = '▲'; } 
-    else { lista.style.display = 'none'; seta.innerHTML = '▼'; } 
-}
-
-function toggleGrafico() { 
-    let cont = document.getElementById('container-grafico'); let seta = document.getElementById('seta-grafico'); 
-    if(cont.style.display === 'none') { cont.style.display = 'flex'; seta.innerText = '▲'; } 
-    else { cont.style.display = 'none'; seta.innerText = '▼'; } 
-}
+// Atalhos de Teclado (Alt+N, Alt+K, Alt+E, Alt+C, Ctrl+K)
+document.addEventListener('keydown', function(e) {
+    if (e.altKey) {
+        if (e.key.toLowerCase() === 'n') { e.preventDefault(); mudarAba('cadastro'); }
+        if (e.key.toLowerCase() === 'k') { e.preventDefault(); mudarAba('producao'); }
+        if (e.key.toLowerCase() === 'e') { e.preventDefault(); mudarAba('estampas'); }
+        if (e.key.toLowerCase() === 'c') { e.preventDefault(); mudarAba('clientes'); }
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        abrirBuscaGlobal();
+    }
+});

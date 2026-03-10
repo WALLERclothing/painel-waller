@@ -1,5 +1,5 @@
 // ==========================================
-// CRM E CARTEIRA DE CLIENTES
+// CRM E CARTEIRA DE CLIENTES (SPRINT 3)
 // ==========================================
 function atualizarListasDeSugestao() {
     let htmlNomes = ''; let htmlWhats = '';
@@ -28,14 +28,56 @@ function renderizarCRM() {
             return true;
         }).sort((a,b) => b[1].totalGasto - a[1].totalGasto);
         
+        let totalClientesValidos = crmList.length;
+        let limiteCurvaA = Math.ceil(totalClientesValidos * 0.20); 
+
         document.getElementById('listaClientesCRM').innerHTML = crmList.map((c, index) => {
             let zapLimpo = c[0].replace(/\D/g,''); let dataUc = c[1].ultimaCompra ? c[1].ultimaCompra.toLocaleDateString('pt-BR') : 'Sem dados'; let tktMedio = c[1].qtd > 0 ? (c[1].totalGasto / c[1].qtd) : 0;
-            let perfilCadastrado = clientesCadastrados[c[0]] || {}; let tagHtml = perfilCadastrado.tag && perfilCadastrado.tag !== 'NORMAL' ? `<span class="badge-vip" style="background:#111; color:#fff;">${perfilCadastrado.tag}</span>` : '';
-            let medalha = !filtroAniversarioAtivo ? (index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '') : ''; let badgeNiver = perfilCadastrado.dataNasc && perfilCadastrado.dataNasc.length === 10 && perfilCadastrado.dataNasc.split('/')[1] === mAtualNiver ? `<span class="tag-niver">🎂 NIVER MÊS</span>` : ''; let diasSumido = c[1].ultimaCompra ? Math.floor((new Date() - c[1].ultimaCompra) / (1000 * 60 * 60 * 24)) : 0; let classeSumido = diasSumido > 90 ? 'sumido' : ''; let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido}d)</span>` : '';
+            let perfilCadastrado = clientesCadastrados[c[0]] || {}; 
+            let tagHtml = perfilCadastrado.tag && perfilCadastrado.tag !== 'NORMAL' ? `<span class="badge-vip" style="background:#111; color:#fff;">${perfilCadastrado.tag}</span>` : '';
             
-            return `<div class="crm-card ${classeSumido}" style="height: 100%; display: flex; flex-direction: column;"><div><h3 class="crm-card-title">${medalha}${c[1].nome}</h3><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px; min-height: 22px;">${tagHtml} ${badgeNiver} ${badgeSumido}</div><div class="crm-card-subtitle">${c[0]}</div></div><div style="margin-top: auto;"><div class="crm-stats"><span>Pedidos: <span style="color:var(--red);">${c[1].qtd}</span></span><span>T. Médio: <span>${formatCurrency(tktMedio)}</span></span></div><div style="font-size: 0.8rem; margin: 10px 0;"><div><strong>Última Compra:</strong> ${dataUc}</div><div><strong style="color:var(--green);">Total Gasto:</strong> ${formatCurrency(c[1].totalGasto)}</div></div><div class="crm-actions"><button onclick="abrirFichaCliente('${c[0]}')">👤 FICHA</button><a href="https://wa.me/55${zapLimpo}" target="_blank">💬 CHAT</a><button onclick="excluirFichaCliente('${c[0]}')" style="color: var(--red); flex: 0.3;">X</button></div></div></div>`;
+            let badgeCurvaA = (index < limiteCurvaA && c[1].totalGasto > 0 && !filtroAniversarioAtivo) ? `<span style="background:var(--black); color:#ffd700; font-size:0.65rem; padding:2px 6px; font-weight:900;">🌟 VIP ABC</span>` : '';
+            
+            let badgeNiver = perfilCadastrado.dataNasc && perfilCadastrado.dataNasc.length === 10 && perfilCadastrado.dataNasc.split('/')[1] === mAtualNiver ? `<span class="tag-niver">🎂 NIVER MÊS</span>` : ''; 
+            let diasSumido = c[1].ultimaCompra ? Math.floor((new Date() - c[1].ultimaCompra) / (1000 * 60 * 60 * 24)) : 0; 
+            let classeSumido = diasSumido > 90 ? 'sumido' : ''; 
+            let badgeSumido = diasSumido > 90 ? `<span class="badge-soldout">SUMIDO (${diasSumido}d)</span>` : '';
+            
+            let primeiroNome = c[1].nome ? c[1].nome.split(' ')[0] : 'Cliente';
+            let msgNiver = `Fala ${primeiroNome}, tudo beleza? Aqui é da Waller Clothing! 💀\n\nVimos que este mês é o teu aniversário e não podíamos deixar passar em branco. Liberamos um cupão de desconto exclusivo para garantires um drop novo: *NIVERWALLER*\n\nAproveita o teu dia, estamos juntos! 👊`;
+            let btnWhats = filtroAniversarioAtivo ? 
+                `<button onclick="window.open('https://wa.me/55${zapLimpo}?text=${encodeURIComponent(msgNiver)}')">🎁 MANDAR CUPÃO</button>` : 
+                `<a href="https://wa.me/55${zapLimpo}" target="_blank">💬 CHAT</a>`;
+
+            return `<div class="crm-card ${classeSumido}" style="height: 100%; display: flex; flex-direction: column;"><div><h3 class="crm-card-title">${c[1].nome}</h3><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:5px; min-height: 22px;">${badgeCurvaA} ${tagHtml} ${badgeNiver} ${badgeSumido}</div><div class="crm-card-subtitle">${c[0]}</div></div><div style="margin-top: auto;"><div class="crm-stats"><span>Pedidos: <span style="color:var(--red);">${c[1].qtd}</span></span><span>T. Médio: <span>${formatCurrency(tktMedio)}</span></span></div><div style="font-size: 0.8rem; margin: 10px 0;"><div><strong>Última Compra:</strong> ${dataUc}</div><div><strong style="color:var(--green);">Total Gasto:</strong> ${formatCurrency(c[1].totalGasto)}</div></div><div class="crm-actions"><button onclick="abrirFichaCliente('${c[0]}')">👤 FICHA</button>${btnWhats}<button onclick="excluirFichaCliente('${c[0]}')" style="color: var(--red); flex: 0.3;">X</button></div></div></div>`;
         }).join('');
     } catch(e){}
+}
+
+function exportarLeadsCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,NOME,WHATSAPP,EMAIL,TOTAL_GASTO,PEDIDOS,ULTIMA_COMPRA\n";
+    
+    Object.keys(mapaClientes).forEach(w => {
+        let dc = mapaClientes[w];
+        let perfil = clientesCadastrados[w] || {};
+        if(perfil.apagadoCRM) return;
+        
+        let nome = (dc.nome || perfil.nome || '').replace(/,/g, '');
+        let email = (perfil.email || '').replace(/,/g, '');
+        let ultima = dc.ultimaCompra ? dc.ultimaCompra.toLocaleDateString('pt-BR') : '';
+        let gasto = dc.totalGasto || 0;
+        
+        csvContent += `${nome},${w},${email},${gasto},${dc.qtd},${ultima}\n`;
+    });
+
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `waller_leads_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Planilha de Leads Baixada!");
 }
 
 function abrirFichaNova() { 
@@ -55,13 +97,21 @@ function abrirFichaCliente(whatsapp) {
 function fecharFichaCliente() { document.getElementById('modalFichaCliente').style.display = 'none'; }
 
 async function salvarFichaCliente() { 
-    let w = document.getElementById('fichaWhatsapp').value; if(!w || w.length < 10) { showToast("Digite um Whatsapp Válido", true); return; } 
+    let w = document.getElementById('fichaWhatsapp').value; if(!w || w.length < 10) { showToast("Digita um WhatsApp Válido", true); return; } 
     let dadosObj = { whatsapp: w, nome: document.getElementById('fichaNome').value.toUpperCase(), cpf: document.getElementById('fichaCPF').value, email: document.getElementById('fichaEmail') ? document.getElementById('fichaEmail').value.toLowerCase().trim() : '', cep: document.getElementById('fichaCEP').value, endereco: document.getElementById('fichaEndereco').value, numero: document.getElementById('fichaNumero').value, complemento: document.getElementById('fichaComplemento').value, insta: document.getElementById('fichaInsta').value, dataNasc: document.getElementById('fichaDataNasc').value, tag: document.getElementById('fichaTag').value.toUpperCase(), obs: document.getElementById('fichaObs').value, apagadoCRM: false };
-    showToast("Sincronizando ficha e pedidos... ⏳", false);
     if(typeof sincronizarClienteEmMassa === 'function') await sincronizarClienteEmMassa(w, dadosObj);
     showToast("Ficha e Pedidos Sincronizados com Sucesso! 🎉"); fecharFichaCliente(); 
 }
 
 function excluirFichaCliente(whatsapp) { if(confirm(`Ocultar a ficha de ${whatsapp}?`)) db.collection("clientes").doc(whatsapp).set({ apagadoCRM: true }, { merge: true }).then(() => { showToast("Cliente removido!"); }); }
 
-function toggleFiltroAniversariantes() { filtroAniversarioAtivo = !filtroAniversarioAtivo; let btn = document.getElementById('btnFiltroNiver'); if (filtroAniversarioAtivo) { btn.style.background = 'var(--black)'; btn.style.color = '#ffd700'; btn.innerText = '🔙 TODOS'; showToast("Só aniversariantes!"); } else { btn.style.background = '#ffd700'; btn.style.color = '#000'; btn.innerText = '🎂 MÊS ATUAL'; } renderizarCRM(); }
+function toggleFiltroAniversariantes() { 
+    filtroAniversarioAtivo = !filtroAniversarioAtivo; 
+    let btn = document.getElementById('btnFiltroNiver'); 
+    if (filtroAniversarioAtivo) { 
+        btn.style.background = 'var(--black)'; btn.style.color = '#ffd700'; btn.innerText = '🔙 TODOS'; 
+    } else { 
+        btn.style.background = '#ffd700'; btn.style.color = '#000'; btn.innerText = '🎂 MÊS ATUAL'; 
+    } 
+    renderizarCRM(); 
+}
