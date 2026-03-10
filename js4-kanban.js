@@ -5,7 +5,7 @@ let pedidosSelecionadosBulk = new Set();
 
 function renderizarKanban() {
     try {
-        let htmlFeito = ''; let htmlFila = ''; let htmlPronta = ''; let htmlEnviado = '';
+        let htmlFeito = ''; let htmlFila = ''; let htmlPronta = ''; let htmlEnviado = ''; let htmlFinalizado = '';
         todosPedidos.forEach(p => {
             try {
                 let statusRender = p.statusAtualizado || 'PEDIDO FEITO';
@@ -24,23 +24,25 @@ function renderizarKanban() {
                 let d = p.dataCriacaoSafe || new Date(); let diasAtraso = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24));
                 let classeAlerta = ''; let badgeAlerta = '';
 
-                if (statusRender !== 'PEDIDO ENVIADO') {
+                if (statusRender !== 'PEDIDO ENVIADO' && statusRender !== 'PEDIDO FINALIZADO') {
                     if (diasAtraso >= 7) { classeAlerta = 'atraso-absoluto'; badgeAlerta = `<span style="background: #000; color: #fff; font-size: 0.65rem; padding: 2px 6px; font-weight: 900; display: inline-block; margin-left: 5px;">💀 ${diasAtraso}D ATRASO</span>`; }
                     else if (diasAtraso >= 5) { classeAlerta = 'atraso-critico'; badgeAlerta = `<span style="background: var(--red); color: var(--white); font-size: 0.65rem; padding: 2px 6px; font-weight: 900; display: inline-block; margin-left: 5px;">🚨 ${diasAtraso}D</span>`; }
                     else if (diasAtraso >= 3) { classeAlerta = 'atraso-medio'; badgeAlerta = `<span style="background: #ffb703; color: #000; font-size: 0.65rem; padding: 2px 6px; font-weight: 900; display: inline-block; margin-left: 5px;">⚠️ ${diasAtraso}D</span>`; }
                 }
 
                 let isChecked = pedidosSelecionadosBulk.has(p.id) ? 'checked' : '';
-                let checkboxHtml = statusRender !== 'PEDIDO ENVIADO' ? `<input type="checkbox" class="checkbox-batch" onchange="toggleBulkSelection('${p.id}', this.checked)" ${isChecked}>` : '';
+                let checkboxHtml = (statusRender !== 'PEDIDO ENVIADO' && statusRender !== 'PEDIDO FINALIZADO') ? `<input type="checkbox" class="checkbox-batch" onchange="toggleBulkSelection('${p.id}', this.checked)" ${isChecked}>` : '';
 
                 let iconeRastreio = p.rastreio ? '🚚 ' : ''; let numPedido = p.numeroPedido || '0000'; let dataFmt = p.dataFormatada || '--/--/----'; let nomeCliente = p.nome || 'Cliente'; let zapCliente = p.whatsapp || ''; let totalVal = formatCurrency(p.valorTotal); let metPgt = p.metodoPagamento || 'PIX';
                 let infoCriador = p.criadoPor ? `<span style="font-size:0.65rem; color:var(--red); font-weight:900; display:block; margin-top:3px; text-transform:uppercase;">👤 Lançado por: ${p.criadoPor}</span>` : '';
 
                 let btnEsquerdoInfo = '';
-                if (statusRender === 'PEDIDO ENVIADO' && diasAtraso >= 7) {
+                if ((statusRender === 'PEDIDO ENVIADO' || statusRender === 'PEDIDO FINALIZADO') && diasAtraso >= 7) {
                     btnEsquerdoInfo = `<button onclick="pedirFeedback('${p.id}')" title="Pedir Avaliação do Cliente" style="color:var(--white); background:var(--black); border-right:var(--border-thick); flex: 1.5; font-size:0.7rem;">⭐ FEEDBACK</button>`;
-                } else {
+                } else if (statusRender !== 'PEDIDO FINALIZADO') {
                     btnEsquerdoInfo = `<button onclick="if(typeof enviarParaMelhorEnvio === 'function') enviarParaMelhorEnvio('${p.id}')" title="Gerar Etiqueta MelhorEnvio" style="color:var(--black); background:var(--white); border-right:var(--border-thick); flex: 1;"><span style="color:#ffb703; font-size:1rem;">🛒</span> ME</button>`;
+                } else {
+                    btnEsquerdoInfo = `<div style="flex:1; border-right:var(--border-thick); background:var(--gray); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:bold; color:var(--text-muted);">✔️ ARQUIVADO</div>`;
                 }
 
                 let cardString = `
@@ -59,6 +61,7 @@ function renderizarKanban() {
                 if (statusRender === 'AGUARDANDO ESTAMPA') htmlFila += cardString;
                 else if (statusRender === 'ESTAMPA PRONTA') htmlPronta += cardString;
                 else if (statusRender === 'PEDIDO ENVIADO') htmlEnviado += cardString;
+                else if (statusRender === 'PEDIDO FINALIZADO') htmlFinalizado += cardString;
                 else htmlFeito += cardString;
             } catch (err) {}
         });
@@ -67,6 +70,7 @@ function renderizarKanban() {
         let col2 = document.getElementById('col-AGUARDANDO-ESTAMPA'); if(col2) col2.innerHTML = htmlFila;
         let col3 = document.getElementById('col-ESTAMPA-PRONTA'); if(col3) col3.innerHTML = htmlPronta;
         let col4 = document.getElementById('col-PEDIDO-ENVIADO'); if(col4) col4.innerHTML = htmlEnviado;
+        let col5 = document.getElementById('col-PEDIDO-FINALIZADO'); if(col5) col5.innerHTML = htmlFinalizado;
 
         filtrarKanban();
         popularFiltroMeses();
@@ -77,8 +81,8 @@ function renderizarKanban() {
 
 function initSortable() {
     if(typeof Sortable === 'undefined') return;
-    const cols = ['col-PEDIDO-FEITO', 'col-AGUARDANDO-ESTAMPA', 'col-ESTAMPA-PRONTA', 'col-PEDIDO-ENVIADO'];
-    const statusMap = { 'col-PEDIDO-FEITO': 'PEDIDO FEITO', 'col-AGUARDANDO-ESTAMPA': 'AGUARDANDO ESTAMPA', 'col-ESTAMPA-PRONTA': 'ESTAMPA PRONTA', 'col-PEDIDO-ENVIADO': 'PEDIDO ENVIADO' };
+    const cols = ['col-PEDIDO-FEITO', 'col-AGUARDANDO-ESTAMPA', 'col-ESTAMPA-PRONTA', 'col-PEDIDO-ENVIADO', 'col-PEDIDO-FINALIZADO'];
+    const statusMap = { 'col-PEDIDO-FEITO': 'PEDIDO FEITO', 'col-AGUARDANDO-ESTAMPA': 'AGUARDANDO ESTAMPA', 'col-ESTAMPA-PRONTA': 'ESTAMPA PRONTA', 'col-PEDIDO-ENVIADO': 'PEDIDO ENVIADO', 'col-PEDIDO-FINALIZADO': 'PEDIDO FINALIZADO' };
 
     cols.forEach(colId => {
         let el = document.getElementById(colId);
