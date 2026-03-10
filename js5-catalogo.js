@@ -184,7 +184,6 @@ function atualizarBotoesModalQR() {
 }
 
 function atualizarBotaoGlobalFila() {
-    // Cria ou atualiza um botão global na tela de catálogo para imprimir a fila sem precisar abrir um modal de produto
     let containerAcoes = document.getElementById('acoesAdminCatalogo');
     if (!containerAcoes) return;
 
@@ -240,7 +239,6 @@ function adicionarAFilaQR() {
     showToast(`${total} etiquetas do [${p.codigo}] adicionadas à fila!`);
     atualizarBotoesModalQR();
     
-    // Zera os inputs para facilitar nova adição
     document.getElementById('qrQtdP').value = 0;
     document.getElementById('qrQtdM').value = 0;
     document.getElementById('qrQtdG').value = 0;
@@ -253,7 +251,6 @@ function imprimirFilaQR() {
         return;
     }
 
-    // Altera os botões visualmente para mostrar carregamento
     let container = document.getElementById('containerBotoesQR');
     if(container) container.innerHTML = `<button class="btn-primary" disabled style="width:100%; padding:15px; background:var(--black);">A GERAR ${filaDeImpressaoQR.length} ETIQUETAS... ⏳</button>`;
     
@@ -263,27 +260,40 @@ function imprimirFilaQR() {
     let html = `<html><head><title>Fila de Impressão Waller</title><style>
         body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-        .tag { border: 2px dashed #000; padding: 15px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-inside: avoid; }
-        .qr { width: 90px; height: 90px; margin: 10px 0; }
+        .tag { border: 2px dashed #000; padding: 15px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-inside: avoid; break-inside: avoid; }
+        .qr { width: 90px; height: 90px; margin: 10px 0; object-fit: contain; }
         .nome { font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-transform: uppercase; }
         .preco { font-size: 15px; font-weight: 900; color: #000; margin-top: 5px; }
         .tamanho { font-size: 16px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; margin-top: 5px; border-radius: 4px; }
     </style></head><body><div class="grid">`;
 
-    // Monta o grid com todas as etiquetas misturadas na fila
     filaDeImpressaoQR.forEach(tag => {
-        let qrData = `${tag.codigo}-${tag.tamanho}`;
-        let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&margin=0`;
+        // Correção 1: Usar encodeURIComponent para evitar que espaços ou caracteres quebrem a URL
+        let qrData = encodeURIComponent(`${tag.codigo}-${tag.tamanho}`);
+        // Correção 2: Troca do servidor para um mais rápido e confiável (QuickChart)
+        let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=150&margin=0`;
         html += `<div class="tag">
             <span style="font-weight:900; font-size:13px; text-transform:uppercase;">WALLER CLOTHING</span>
             <span class="nome">${tag.nome}</span>
-            <img class="qr" src="${qrUrl}">
+            <img class="qr" src="${qrUrl}" crossorigin="anonymous">
             <span class="tamanho">TAM: ${tag.tamanho}</span>
             <span class="preco">${formatCurrency(tag.precoVenda)}</span>
         </div>`;
     });
 
-    html += `</div></body></html>`;
+    // Correção 3: Script embutido que obriga a tela de impressão a esperar 100% das imagens carregarem
+    html += `</div>
+    <script>
+        window.onload = function() {
+            Promise.all(Array.from(document.images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => { img.onload = img.onerror = resolve; });
+            })).then(() => {
+                setTimeout(() => window.print(), 300);
+            });
+        };
+    </script>
+    </body></html>`;
 
     let iframe = document.getElementById('printFrame');
     if(!iframe) {
@@ -298,27 +308,19 @@ function imprimirFilaQR() {
     doc.write(html);
     doc.close();
 
-    // Dá um tempo para garantir que todas as imagens dos QR Codes renderizem antes de abrir a aba de impressão
-    let tempoEspera = 1000 + (filaDeImpressaoQR.length * 50);
-
+    // Restaura a fila no sistema original após disparar a geração
     setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        
-        // Esvazia a fila após enviar para impressão
         filaDeImpressaoQR = [];
         atualizarBotaoGlobalFila();
-        
         fecharModalQRCode();
-        showToast("Impressão em lote enviada!");
-    }, Math.min(tempoEspera, 4000)); // Limita a espera em no máximo 4 segundos
+        showToast("Preparando impressão! Aguarde o navegador abrir a tela...");
+    }, 1500);
 }
 
 function renderizarCatalogo() {
     let container = document.getElementById('listaEstampas');
     if (!container) return;
 
-    // Garante que o botão global da fila é checado/criado sempre que a página carrega
     atualizarBotaoGlobalFila();
 
     let html = '';
