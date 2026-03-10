@@ -55,6 +55,7 @@
         </div>
         <button class="btn-nav" id="btnFoco" onclick="toggleModoFoco()">🎯 FOCO</button>
         <button class="btn-nav" onclick="toggleTheme()">🌙</button>
+        <button class="btn-nav" onclick="abrirModalFinalizados()" style="background: var(--black); color: var(--white); border-color: var(--black);">📁 ARQUIVO</button>
         <button class="btn-nav" onclick="abrirModalFluxoCaixa()" style="background: var(--white); color: var(--black);">💸 CAIXA</button>
         <button class="btn-nav" onclick="abrirModalPDF()" style="background: var(--green); color: var(--black); border-color: var(--black);">📄 RELATÓRIOS</button>
         <button class="btn-nav" id="btnPerfilNome" onclick="abrirModalPerfil()" style="background: var(--black); color: var(--white); border-color: var(--black);">👤 PERFIL</button>
@@ -190,7 +191,6 @@
         <div class="kanban-col" id="col-AGUARDANDO-ESTAMPA-WRAP"><div class="kanban-header">👕 FILA ESTAMPA</div><div id="col-AGUARDANDO-ESTAMPA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div></div>
         <div class="kanban-col" id="col-ESTAMPA-PRONTA-WRAP"><div class="kanban-header">📦 PRONTO / ENVIAR</div><div id="col-ESTAMPA-PRONTA" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div></div>
         <div class="kanban-col" id="col-PEDIDO-ENVIADO-WRAP"><div class="kanban-header">🚚 ENVIADO</div><div id="col-PEDIDO-ENVIADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div></div>
-        <div class="kanban-col" id="col-PEDIDO-FINALIZADO-WRAP"><div class="kanban-header">📁 FINALIZADOS (ARQUIVO)</div><div id="col-PEDIDO-FINALIZADO" style="min-height: 100px; display:flex; flex-direction:column; gap:1rem;"></div></div>
     </div>
 </div>
 
@@ -220,6 +220,27 @@
             </div>
         </div>
         <div id="listaClientesCRM" class="crm-grid"></div>
+    </div>
+</div>
+
+<div id="modalArquivo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-box" style="background:var(--white); padding:30px; width:95%; max-width:900px; max-height:90vh; overflow-y:auto; border:var(--border-thick); box-shadow: 15px 15px 0px var(--black);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:3px solid var(--black); padding-bottom:15px;">
+            <h2 style="margin:0; font-size: 1.8rem; font-weight:900; font-style:italic;">📁 PEDIDOS FINALIZADOS (ARQUIVO)</h2>
+            <button onclick="fecharModalFinalizados()" style="background:var(--red); color:var(--white); border:none; padding:8px 15px; font-weight:900; font-size: 1.2rem; cursor:pointer; transition:0.2s;">X</button>
+        </div>
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.95rem;">
+            <thead style="background:var(--black); color:var(--white);">
+                <tr>
+                    <th style="padding:10px;">DATA</th>
+                    <th style="padding:10px;">PEDIDO</th>
+                    <th style="padding:10px;">CLIENTE</th>
+                    <th style="padding:10px;">TOTAL</th>
+                    <th style="padding:10px; text-align:center;">AÇÕES</th>
+                </tr>
+            </thead>
+            <tbody id="bodyTabelaFinalizados"></tbody>
+        </table>
     </div>
 </div>
 
