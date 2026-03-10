@@ -1,0 +1,52 @@
+/* === ESTILO BRUTALISTA TOM SOBRE TOM === */
+:root {
+    color-scheme: light;
+    --black: #111111;
+    --white: #ffffff;
+    --gray: #f0f0f0;
+    --border-color: #111111;
+    --border-thick: 2px solid var(--border-color);
+    --red: #c1121f;
+    --green: #2a9d8f;
+    --text-muted: #666666;
+    --bg-body: #ffffff;
+    --bg-dots: #e0e0e0;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --black: #dfdfdf;        
+    --white: #181818;        
+    --gray: #2b2b2b;         
+    --border-color: #3f3f3f; 
+    --red: #c94040;          
+    --green: #4b9e73;        
+    --text-muted: #aaaaaa;
+    --bg-body: #111111;      
+    --bg-dots: #222222;
+}
+
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    background-color: var(--bg-body); 
+    color: var(--black); 
+    margin: 0; 
+    padding: 0; 
+    background-image: radial-gradient(var(--bg-dots) 2px, transparent 1px); 
+    background-size: 20px 20px; 
+    transition: background-color 0.3s, color 0.3s; 
+}
+
+/* SCROLLBAR BRUTALISTA */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--gray); border-left: 1px solid var(--border-color); }
+::-webkit-scrollbar-thumb { background: var(--black); }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+/* ANIMAÇÕES BASE */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.container { animation: fadeIn 0.3s ease-in-out; }
+.modal-box { animation: slideUp 0.3s ease-out; }
