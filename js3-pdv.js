@@ -25,22 +25,24 @@ function processarCodigoBarras(codigoBipado) {
     // 1. Limpa espaços acidentais e converte para maiúsculas
     let codBruto = codigoBipado.toUpperCase().trim();
     
-    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga com o nome)
+    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta com nome)
     let textoPrincipal = codBruto.split('|')[0].trim();
     
     // 3. Lógica INTELIGENTE para separar o SKU do Tamanho (mesmo que o SKU tenha traços!)
     let lastDashIndex = textoPrincipal.lastIndexOf('-');
-    let sku = textoPrincipal;
+    let sku = textoPrincipal; // Por padrão, assume que tudo é o SKU
     let tamanhoSugerido = null;
     
-    // Verifica se existe um traço e se o que vem depois dele é um tamanho válido
+    // Verifica se existe um traço
     if (lastDashIndex !== -1) {
         let possibleSize = textoPrincipal.substring(lastDashIndex + 1).trim();
-        if (['P', 'M', 'G', 'GG'].includes(possibleSize)) {
-            // Separa exatamente no último traço
+        // Se o que está depois do último traço for P, M, G ou GG...
+        if ['P', 'M', 'G', 'GG'].includes(possibleSize) {
+            // Então separa o SKU do Tamanho
             sku = textoPrincipal.substring(0, lastDashIndex).trim();
             tamanhoSugerido = possibleSize;
-        }
+        } 
+        // Se não for (ex: OV-003), ele ignora e o SKU continua sendo a palavra inteira!
     }
 
     // 4. Procura na base de dados (catalogoEstampas)
