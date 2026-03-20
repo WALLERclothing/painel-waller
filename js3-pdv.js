@@ -22,14 +22,18 @@ document.addEventListener('keypress', function(e) {
 
 // Ação de decodificar e jogar pro carrinho (Serve para Físico e Câmera)
 function processarCodigoBarras(codigoBipado) {
-    // 1. Limpa os detalhes extras (tudo o que estiver depois do "|")
-    let textoPrincipal = codigoBipado.split('|')[0].toUpperCase().trim();
+    // 1. Limpa espaços acidentais e converte para maiúsculas
+    let codBruto = codigoBipado.toUpperCase().trim();
     
-    // 2. Separa o código do tamanho
+    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga)
+    let textoPrincipal = codBruto.split('|')[0].trim();
+    
+    // 3. Separa o código do tamanho
     let partes = textoPrincipal.split('-');
     let sku = partes[0].trim();
     let tamanhoSugerido = partes[1] ? partes[1].trim() : null;
 
+    // 4. Procura na base de dados (catalogoEstampas)
     if (catalogoEstampas[sku]) {
         document.getElementById('codigoEstampa').value = sku;
         autocompletarEstampa(sku); 
@@ -37,11 +41,9 @@ function processarCodigoBarras(codigoBipado) {
         let tamIdeal = 'M';
         let estq = catalogoEstampas[sku].estoqueGrade || {};
         
-        // 3. Verifica o tamanho limpo (agora vai ler o "GG" corretamente)
         if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
             tamIdeal = tamanhoSugerido;
         } else {
-            // Fallback de segurança se a etiqueta não tiver tamanho
             if (estq.M > 0) tamIdeal = 'M'; else if (estq.G > 0) tamIdeal = 'G'; else if (estq.P > 0) tamIdeal = 'P'; else if (estq.GG > 0) tamIdeal = 'GG';
         }
         
@@ -50,7 +52,8 @@ function processarCodigoBarras(codigoBipado) {
         adicionarAoCarrinho(); 
         tocarSomDrop();
     } else {
-        showToast("Código não encontrado no catálogo!", true);
+        // MENSAGEM DETETIVE: Diz-nos exatamente onde o sistema se perdeu
+        showToast(`❌ ERRO: A câmara leu [${codBruto}] e tentou buscar o SKU [${sku}]. Verifica no Catálogo!`, true);
     }
 }
 
