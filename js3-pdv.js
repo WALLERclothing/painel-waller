@@ -25,7 +25,7 @@ function processarCodigoBarras(codigoBipado) {
     // 1. Limpa espaços acidentais e converte para maiúsculas
     let codBruto = codigoBipado.toUpperCase().trim();
     
-    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta com nome)
+    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga com nome)
     let textoPrincipal = codBruto.split('|')[0].trim();
     
     // 3. Lógica INTELIGENTE para separar o SKU do Tamanho (mesmo que o SKU tenha traços!)
@@ -36,13 +36,13 @@ function processarCodigoBarras(codigoBipado) {
     // Verifica se existe um traço
     if (lastDashIndex !== -1) {
         let possibleSize = textoPrincipal.substring(lastDashIndex + 1).trim();
-        // Se o que está depois do último traço for P, M, G ou GG...
-        if ['P', 'M', 'G', 'GG'].includes(possibleSize) {
+        // CORREÇÃO: Faltavam os parênteses aqui em baixo!
+        if (['P', 'M', 'G', 'GG'].includes(possibleSize)) {
             // Então separa o SKU do Tamanho
             sku = textoPrincipal.substring(0, lastDashIndex).trim();
             tamanhoSugerido = possibleSize;
         } 
-        // Se não for (ex: OV-003), ele ignora e o SKU continua sendo a palavra inteira!
+        // Se não for tamanho válido (ex: OV-003), ele ignora e o SKU continua sendo a palavra inteira!
     }
 
     // 4. Procura na base de dados (catalogoEstampas)
@@ -179,7 +179,6 @@ function limparFormularioPedido(ignorarConfirm = false) {
     document.getElementById('whatsapp').value = ''; document.getElementById('nome').value = ''; document.getElementById('cpf').value = ''; document.getElementById('origemVenda').value = 'INSTAGRAM'; document.getElementById('cep').value = ''; document.getElementById('endereco').value = ''; document.getElementById('numeroEnd').value = ''; document.getElementById('complementoEnd').value = ''; document.getElementById('valorFrete').value = ''; document.getElementById('valorFreteReal').value = ''; document.getElementById('custoEmbalagem').value = 'R$ 4,50'; if(document.getElementById('tipoDesconto')) document.getElementById('tipoDesconto').value = 'R$'; document.getElementById('valorDesconto').value = ''; document.getElementById('valorTotal').value = ''; document.getElementById('codigoEstampa').value = ''; document.getElementById('nomeEstampa').value = ''; document.getElementById('valorUnitario').value = ''; document.getElementById('quantidade').value = '1'; document.getElementById('alertaClienteFiel').style.display = 'none'; carrinhoTemporario = []; atualizarTelaCarrinho(); document.getElementById('whatsapp').focus(); 
 }
 
-// === LÓGICA DE PROMISES PARA OS MODAIS (Elegância) ===
 function pedirPagamentoModal(metodoAtual) {
     return new Promise((resolve) => {
         let modal = document.getElementById('modalConfirmarPagamento');
@@ -202,7 +201,7 @@ function pedirTipoVendaModal() {
         
         window.fecharModalTipoVenda = function(tipo) {
             modal.style.display = 'none';
-            resolve(tipo); // Vai retornar 'NO_ATO', 'ENCOMENDA', ou null (cancelar)
+            resolve(tipo); 
         };
     });
 }
@@ -217,7 +216,6 @@ async function salvarPedidoCompleto() {
     
     if(faltantesGeral.length > 0) { showToast("Faltou preencher/corrigir: " + faltantesGeral.join(' | '), true); return; }
 
-    // 1. Abre o Modal de Pagamento se estiver "PAGO"
     let statusPgto = document.getElementById('statusPagamento').value;
     let metodoPgto = document.getElementById('metodoPagamento').value;
 
@@ -228,7 +226,6 @@ async function salvarPedidoCompleto() {
         document.getElementById('metodoPagamento').value = metodoPgto; 
     }
 
-    // 2. Abre o Modal Elegante de Escolha do Tipo de Venda
     let tipoVenda = await pedirTipoVendaModal();
     if(!tipoVenda) { showToast("Geração de OS cancelada.", true); return; }
     
