@@ -79,14 +79,31 @@ function fecharModalEstampa() {
     if(btnEl) btnEl.innerText = 'SALVAR PRODUTO'; 
 }
 
+// ==========================================
+// PREPARAR EDIÇÃO DE ESTAMPA E SALVAR (COM LÓGICA DE PREFIXO)
+// ==========================================
 function prepararEdicaoEstampa(cod) { 
     let p = catalogoEstampas[cod]; 
     if(!p) return;
     let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
 
     let setVal = (id, val) => { let el = document.getElementById(id); if(el) el.value = val; };
-    setVal('cadCodigoEstampa', cod);
-    let codEl = document.getElementById('cadCodigoEstampa'); if(codEl) codEl.disabled = true;
+    
+    // Extrai apenas o número (tira as 2 primeiras letras se baterem com a categoria atual)
+    let catLimpa = (p.categoria || '').toUpperCase().trim();
+    let prefixo = catLimpa.length >= 2 ? catLimpa.substring(0, 2) : '';
+    let numApenas = cod;
+    
+    if (prefixo && cod.startsWith(prefixo)) {
+        numApenas = cod.substring(2);
+    }
+
+    setVal('cadCodigoEstampa', numApenas);
+    
+    // Desbloqueia o campo para poderes editar o número
+    let codEl = document.getElementById('cadCodigoEstampa'); 
+    if(codEl) codEl.disabled = false;
+    
     setVal('cadNomeEstampa', p.nome); 
     setVal('estP', estq.P || 0); 
     setVal('estM', estq.M || 0); 
@@ -95,6 +112,8 @@ function prepararEdicaoEstampa(cod) {
     setVal('cadCusto', formatCurrency(p.custo)); 
     setVal('cadPreco', formatCurrency(p.precoVenda)); 
     setVal('cadCategoriaEstampa', p.categoria || ''); 
+    
+    // Guarda o código antigo completo (ex: OV001) para podermos migrar se a categoria/número mudar
     setVal('editEstampaCodigoOriginal', cod); 
 
     let titleEl = document.getElementById('tituloModalEstampa');
@@ -104,11 +123,29 @@ function prepararEdicaoEstampa(cod) {
     abrirModalEstampa(); 
 }
 
-function salvarNovaEstampa(e) { 
+async function salvarNovaEstampa(e) { 
     e.preventDefault(); 
-    let cod = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim(); 
-    let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim(); 
+    
+    // Pega a categoria e gera o prefixo (2 primeiras letras)
     let cat = document.getElementById('cadCategoriaEstampa').value.toUpperCase().trim(); 
+    if (cat.length < 2) {
+        showToast("A categoria precisa ter pelo menos 2 letras!", true);
+        return;
+    }
+    let prefixo = cat.substring(0, 2);
+
+    // Pega o número digitado
+    let numDigitado = document.getElementById('cadCodigoEstampa').value.toUpperCase().trim(); 
+    
+    // Prevenção ninja: se tu digitares a categoria por engano (ex: OV001), o sistema limpa e não duplica
+    if (numDigitado.startsWith(prefixo)) {
+        numDigitado = numDigitado.substring(2);
+    }
+
+    // O casamento perfeito: 2 Letras da Categoria + O teu número
+    let codFinal = prefixo + numDigitado;
+
+    let nom = document.getElementById('cadNomeEstampa').value.toUpperCase().trim(); 
     let grade = { 
         P: parseInt(document.getElementById('estP').value)||0, 
         M: parseInt(document.getElementById('estM').value)||0, 
@@ -117,13 +154,42 @@ function salvarNovaEstampa(e) {
     }; 
     let custo = safeNum(document.getElementById('cadCusto').value); 
     let preco = safeNum(document.getElementById('cadPreco').value); 
-    let docId = document.getElementById('editEstampaCodigoOriginal').value || cod; 
     
-    db.collection("estampas").doc(docId).set({ 
-        codigo: docId, nome: nom, categoria: cat, estoqueGrade: grade, custo: custo, precoVenda: preco, apagado: false 
-    }, { merge: true }).then(() => { 
-        fecharModalEstampa(); showToast("Produto Salvo!"); 
-    }); 
+    // Pegamos o código antigo que estava guardado
+    let oldCode = document.getElementById('editEstampaCodigoOriginal').value; 
+    
+    let btnSalvar = document.getElementById('btnSalvarEstampa');
+    if(btnSalvar) { btnSalvar.innerText = "A GRAVAR..."; btnSalvar.disabled = true; }
+
+    try {
+        if (oldCode && oldCode !== codFinal) {
+            // O CÓDIGO FINAL FOI ALTERADO! Vamos apagar o velho e criar o novo na DB
+            let batch = db.batch();
+            
+            let newRef = db.collection("estampas").doc(codFinal);
+            batch.set(newRef, { codigo: codFinal, nome: nom, categoria: cat, estoqueGrade: grade, custo: custo, precoVenda: preco, apagado: false });
+            
+            let oldRef = db.collection("estampas").doc(oldCode);
+            batch.delete(oldRef);
+            
+            await batch.commit();
+            showToast(`SKU atualizado de [${oldCode}] para [${codFinal}]! 💀`);
+        } else {
+            // Produto novo ou atualização normal sem alterar o código
+            let docId = oldCode || codFinal; 
+            await db.collection("estampas").doc(docId).set({ 
+                codigo: docId, nome: nom, categoria: cat, estoqueGrade: grade, custo: custo, precoVenda: preco, apagado: false 
+            }, { merge: true });
+            showToast("Produto Guardado!"); 
+        }
+        
+        fecharModalEstampa(); 
+    } catch (err) {
+        console.error("Erro ao guardar estampa:", err);
+        showToast("Erro ao guardar produto!", true);
+    } finally {
+        if(btnSalvar) { btnSalvar.innerText = "SALVAR PRODUTO"; btnSalvar.disabled = false; }
+    }
 }
 
 function excluirEstampa(id) { 
