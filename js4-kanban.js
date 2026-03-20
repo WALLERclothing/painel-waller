@@ -10,7 +10,6 @@ function renderizarKanban() {
             try {
                 let statusRender = p.statusAtualizado || 'PEDIDO FEITO';
                 
-                // Ignora os finalizados na tela do Kanban principal
                 if (statusRender === 'PEDIDO FINALIZADO') return;
 
                 let btnPgto = p.statusPagamento === 'PAGO' ? `<button class="btn-pgto pgto-pago" onclick="trocarPgto('${p.id}','PENDENTE')">💰 PAGO</button>` : `<button class="btn-pgto pgto-pendente" onclick="trocarPgto('${p.id}','PAGO')">⏳ PEND</button>`;
@@ -47,7 +46,6 @@ function renderizarKanban() {
                     btnEsquerdoInfo = `<button onclick="if(typeof enviarParaMelhorEnvio === 'function') enviarParaMelhorEnvio('${p.id}')" title="Gerar Etiqueta MelhorEnvio" style="color:var(--black); background:var(--white); border-right:var(--border-thick); flex: 1;"><span style="color:#ffb703; font-size:1rem;">🛒</span> ME</button>`;
                 }
 
-                // O novo botão "📁 Arquivar" aparece em todos do Kanban, bem ali na barra de baixo
                 let btnArquivar = `<button onclick="arquivarPedido('${p.id}')" title="Mandar para o Arquivo (Finalizados)" style="color:var(--black); flex: 0.8; font-size:1rem;">📁</button>`;
 
                 let cardString = `
@@ -103,7 +101,6 @@ function initSortable() {
     });
 }
 
-// === NOVO: Arquivar Pedido ===
 function arquivarPedido(id) {
     if(confirm("Deseja mandar este pedido para os Finalizados (Arquivo)?\n\nIsso fará com que ele suma do Kanban para manter a tela limpa.")) {
         db.collection("pedidos").doc(id).update({ status: 'PEDIDO FINALIZADO' }).then(() => {
@@ -113,7 +110,6 @@ function arquivarPedido(id) {
     }
 }
 
-// === NOVO: Funções para o Modal de Arquivo de Finalizados ===
 function abrirModalFinalizados() {
     renderizarFinalizados();
     document.getElementById('modalArquivo').style.display = 'flex';
@@ -233,7 +229,6 @@ async function executarBulkUpdate() {
 
 function trocarPgto(id, status) { db.collection("pedidos").doc(id).update({ statusPagamento: status }); }
 
-// EXCLUSÃO COM ESTORNO DE ESTOQUE
 async function excluirPedido(id) { 
     if (confirm("Tens a certeza? Se apagares, os itens deste pedido vão VOLTAR PARA O ESTOQUE automaticamente.")) {
         let p = todosPedidos.find(x => x.id === id);
@@ -275,7 +270,6 @@ function enviarMensagemStatus(pedidoId) {
     let linkFinal = `https://wa.me/55${zap}?text=${encodeURIComponent(texto)}`; window.open(linkFinal, '_blank');
 }
 
-// LOGÍSTICA REVERSA (TROCAS E DEVOLUÇÕES)
 function abrirModalTroca(id) {
     const p = todosPedidos.find(x => x.id === id); if(!p) return;
     document.getElementById('trocaPedidoId').value = p.id;
@@ -351,6 +345,21 @@ function abrirModalEdicao(id) {
 function autocompletarEstampaEdicao(val) { 
     let code = val.toUpperCase().trim(); 
     if(catalogoEstampas[code]) { document.getElementById('editNomeEstampa').value = catalogoEstampas[code].nome; document.getElementById('editValorUnitario').value = formatCurrency(catalogoEstampas[code].precoVenda); } 
+}
+
+// NOVO: Autocompletar por NOME na Edição de Pedido
+function autocompletarEstampaPorNomeEdicao(val) {
+    let nomeBuscado = val.toUpperCase().trim();
+    let p = Object.values(catalogoEstampas).find(x => !x.apagado && x.nome.toUpperCase() === nomeBuscado);
+    if (p) {
+        document.getElementById('editCodigoEstampa').value = p.codigo;
+        document.getElementById('editValorUnitario').value = formatCurrency(p.precoVenda);
+        let c = p.categoria ? p.categoria.toUpperCase() : '';
+        let selectTipo = document.getElementById('editTipoPeca');
+        if(selectTipo) {
+            for(let i=0; i<selectTipo.options.length; i++) { if(c.includes(selectTipo.options[i].value)) { selectTipo.selectedIndex = i; break; } }
+        }
+    }
 }
 
 function renderizarItensEdicao() {
