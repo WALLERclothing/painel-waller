@@ -158,11 +158,12 @@ function iniciarListenersFirestore() {
         if(typeof renderizarCRM === 'function') renderizarCRM(); 
     });
 
-    // Removido o where("apagado", "==", false) para evitar bugs com produtos antigos
     db.collection("estampas").onSnapshot(snap => { 
         catalogoEstampas = {}; 
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; catalogoEstampas[d.codigo] = d; }); 
         if(typeof renderizarCatalogo === 'function') renderizarCatalogo(); 
+        // AQUI ESTÁ A MÁGICA QUE CARREGA AS TUAS SUGESTÕES DE AUTOCOMPLETAR
+        if(typeof atualizarListasDeSugestaoEstampas === 'function') atualizarListasDeSugestaoEstampas();
     });
 
     db.collection("pedidos").where("apagado", "==", false).onSnapshot(snap => {
