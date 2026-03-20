@@ -22,30 +22,21 @@ document.addEventListener('keypress', function(e) {
 
 // Ação de decodificar e jogar pro carrinho (Serve para Físico e Câmera)
 function processarCodigoBarras(codigoBipado) {
-    // 1. Limpa espaços acidentais e converte para maiúsculas
     let codBruto = codigoBipado.toUpperCase().trim();
-    
-    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga com nome)
     let textoPrincipal = codBruto.split('|')[0].trim();
     
-    // 3. Lógica INTELIGENTE para separar o SKU do Tamanho (mesmo que o SKU tenha traços!)
     let lastDashIndex = textoPrincipal.lastIndexOf('-');
-    let sku = textoPrincipal; // Por padrão, assume que tudo é o SKU
+    let sku = textoPrincipal;
     let tamanhoSugerido = null;
     
-    // Verifica se existe um traço
     if (lastDashIndex !== -1) {
         let possibleSize = textoPrincipal.substring(lastDashIndex + 1).trim();
-        // CORREÇÃO: Faltavam os parênteses aqui em baixo!
         if (['P', 'M', 'G', 'GG'].includes(possibleSize)) {
-            // Então separa o SKU do Tamanho
             sku = textoPrincipal.substring(0, lastDashIndex).trim();
             tamanhoSugerido = possibleSize;
         } 
-        // Se não for tamanho válido (ex: OV-003), ele ignora e o SKU continua sendo a palavra inteira!
     }
 
-    // 4. Procura na base de dados (catalogoEstampas)
     if (catalogoEstampas[sku]) {
         document.getElementById('codigoEstampa').value = sku;
         autocompletarEstampa(sku); 
@@ -64,7 +55,6 @@ function processarCodigoBarras(codigoBipado) {
         adicionarAoCarrinho(); 
         tocarSomDrop();
     } else {
-        // MENSAGEM DETETIVE
         showToast(`❌ ERRO: A câmara leu [${codBruto}] e tentou buscar o SKU [${sku}]. Verifica no Catálogo!`, true);
     }
 }
@@ -95,7 +85,7 @@ function onScanSuccess(decodedText, decodedResult) {
 function onScanFailure(error) {}
 
 // ==========================================
-// RESTANTE DO CÓDIGO DO PDV
+// RESTANTE DO CÓDIGO DO PDV E AUTOCOMPLETAR
 // ==========================================
 function mudarTipoDesconto() { document.getElementById('valorDesconto').value = ''; atualizarTelaCarrinho(); document.getElementById('valorDesconto').focus(); }
 
@@ -114,6 +104,25 @@ function autocompletarCliente(termo, tipo) {
     } else { document.getElementById('alertaClienteFiel').style.display = 'none'; }
 }
 
+// Atualiza as listas do datalist no HTML
+function atualizarListasDeSugestaoEstampas() {
+    let htmlNomes = '';
+    let htmlCodigos = '';
+    Object.values(catalogoEstampas).forEach(p => {
+        if (!p.apagado) {
+            htmlNomes += `<option value="${p.nome}">[${p.codigo}]</option>`;
+            htmlCodigos += `<option value="${p.codigo}">${p.nome}</option>`;
+        }
+    });
+    
+    let dlCod = document.getElementById('estampas-list');
+    if(dlCod) dlCod.innerHTML = htmlCodigos;
+    
+    let dlNome = document.getElementById('nomes-estampas-list');
+    if(dlNome) dlNome.innerHTML = htmlNomes;
+}
+
+// Pesquisa pelo SKU (Código)
 function autocompletarEstampa(val) {
     let code = val.toUpperCase().trim();
     if(catalogoEstampas[code]) {
@@ -122,6 +131,22 @@ function autocompletarEstampa(val) {
         let c = catalogoEstampas[code].categoria ? catalogoEstampas[code].categoria.toUpperCase() : '';
         let selectTipo = document.getElementById('tipoPeca');
         for(let i=0; i<selectTipo.options.length; i++) { if(c.includes(selectTipo.options[i].value)) { selectTipo.selectedIndex = i; break; } }
+    }
+}
+
+// Pesquisa pelo Nome (Novo!)
+function autocompletarEstampaPorNome(val) {
+    let nomeBuscado = val.toUpperCase().trim();
+    let p = Object.values(catalogoEstampas).find(x => !x.apagado && x.nome.toUpperCase() === nomeBuscado);
+    
+    if (p) {
+        document.getElementById('codigoEstampa').value = p.codigo;
+        document.getElementById('valorUnitario').value = formatCurrency(p.precoVenda);
+        let c = p.categoria ? p.categoria.toUpperCase() : '';
+        let selectTipo = document.getElementById('tipoPeca');
+        for(let i=0; i<selectTipo.options.length; i++) { 
+            if(c.includes(selectTipo.options[i].value)) { selectTipo.selectedIndex = i; break; } 
+        }
     }
 }
 
