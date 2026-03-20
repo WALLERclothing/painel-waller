@@ -159,7 +159,6 @@ function fecharModalQRCode() {
 }
 
 function atualizarBotoesModalQR() {
-    // Essa função substitui automaticamente o botão antigo do HTML por dois botões dinâmicos
     let btnAntigo = document.getElementById('btnImprimirQR');
     let container = document.getElementById('containerBotoesQR');
     
@@ -268,9 +267,7 @@ function imprimirFilaQR() {
     </style></head><body><div class="grid">`;
 
     filaDeImpressaoQR.forEach(tag => {
-        // Correção 1: Usar encodeURIComponent para evitar que espaços ou caracteres quebrem a URL
         let qrData = encodeURIComponent(`${tag.codigo}-${tag.tamanho}`);
-        // Correção 2: Troca do servidor para um mais rápido e confiável (QuickChart)
         let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=150&margin=0`;
         html += `<div class="tag">
             <span style="font-weight:900; font-size:13px; text-transform:uppercase;">WALLER CLOTHING</span>
@@ -281,7 +278,6 @@ function imprimirFilaQR() {
         </div>`;
     });
 
-    // Correção 3: Script embutido que obriga a tela de impressão a esperar 100% das imagens carregarem
     html += `</div>
     <script>
         window.onload = function() {
@@ -308,7 +304,6 @@ function imprimirFilaQR() {
     doc.write(html);
     doc.close();
 
-    // Restaura a fila no sistema original após disparar a geração
     setTimeout(() => {
         filaDeImpressaoQR = [];
         atualizarBotaoGlobalFila();
@@ -367,4 +362,46 @@ function renderizarCatalogo() {
     });
     
     container.innerHTML = html;
+}
+
+// ==========================================
+// DESCARREGAR QR CODE EM PNG (INDIVIDUAL - COM DETALHES)
+// ==========================================
+async function baixarQRPng(codigo, tamanho) {
+    if (!codigo) {
+        showToast("Nenhum produto selecionado!", true);
+        return;
+    }
+
+    let p = catalogoEstampas[codigo];
+    if (!p) return;
+
+    let nomeLimpo = p.nome || "Produto";
+    let catLimpa = p.categoria || "Geral";
+
+    let textoQR = `${codigo}-${tamanho} | ${nomeLimpo} | ${catLimpa}`;
+    let qrData = encodeURIComponent(textoQR);
+    let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=800&margin=1`;
+
+    try {
+        showToast(`A gerar PNG [${codigo}-${tamanho}]... ⏳`);
+        
+        let response = await fetch(qrUrl);
+        let blob = await response.blob();
+        
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `QR_${codigo}_${tamanho}.png`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(link.href);
+        
+        showToast(`PNG transferido com Detalhes! 💀✅`);
+    } catch (error) {
+        showToast("Erro ao descarregar o ficheiro PNG!", true);
+        console.error(error);
+    }
 }
