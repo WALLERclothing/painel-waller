@@ -25,13 +25,23 @@ function processarCodigoBarras(codigoBipado) {
     // 1. Limpa espaços acidentais e converte para maiúsculas
     let codBruto = codigoBipado.toUpperCase().trim();
     
-    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga)
+    // 2. Remove qualquer lixo depois da barra vertical (caso leias uma etiqueta antiga com o nome)
     let textoPrincipal = codBruto.split('|')[0].trim();
     
-    // 3. Separa o código do tamanho
-    let partes = textoPrincipal.split('-');
-    let sku = partes[0].trim();
-    let tamanhoSugerido = partes[1] ? partes[1].trim() : null;
+    // 3. Lógica INTELIGENTE para separar o SKU do Tamanho (mesmo que o SKU tenha traços!)
+    let lastDashIndex = textoPrincipal.lastIndexOf('-');
+    let sku = textoPrincipal;
+    let tamanhoSugerido = null;
+    
+    // Verifica se existe um traço e se o que vem depois dele é um tamanho válido
+    if (lastDashIndex !== -1) {
+        let possibleSize = textoPrincipal.substring(lastDashIndex + 1).trim();
+        if (['P', 'M', 'G', 'GG'].includes(possibleSize)) {
+            // Separa exatamente no último traço
+            sku = textoPrincipal.substring(0, lastDashIndex).trim();
+            tamanhoSugerido = possibleSize;
+        }
+    }
 
     // 4. Procura na base de dados (catalogoEstampas)
     if (catalogoEstampas[sku]) {
@@ -41,7 +51,7 @@ function processarCodigoBarras(codigoBipado) {
         let tamIdeal = 'M';
         let estq = catalogoEstampas[sku].estoqueGrade || {};
         
-        if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
+        if (tamanhoSugerido) {
             tamIdeal = tamanhoSugerido;
         } else {
             if (estq.M > 0) tamIdeal = 'M'; else if (estq.G > 0) tamIdeal = 'G'; else if (estq.P > 0) tamIdeal = 'P'; else if (estq.GG > 0) tamIdeal = 'GG';
@@ -52,7 +62,7 @@ function processarCodigoBarras(codigoBipado) {
         adicionarAoCarrinho(); 
         tocarSomDrop();
     } else {
-        // MENSAGEM DETETIVE: Diz-nos exatamente onde o sistema se perdeu
+        // MENSAGEM DETETIVE
         showToast(`❌ ERRO: A câmara leu [${codBruto}] e tentou buscar o SKU [${sku}]. Verifica no Catálogo!`, true);
     }
 }
