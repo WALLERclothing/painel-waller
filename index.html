@@ -505,24 +505,38 @@
         <input type="hidden" id="qrCodigoProduto">
         <p id="nomeProdutoQR" style="font-weight:900; color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:1.1rem; text-transform:uppercase;"></p>
         <h3 style="font-size:1rem; margin-bottom:10px;">SELECIONE AS QUANTIDADES DE ETIQUETAS:</h3>
+        
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
             <div class="input-group" style="background:var(--gray); padding:10px; border:2px dashed var(--border-color);">
-                <label style="font-size:1.2rem; text-align:center; color:var(--black);">TAMANHO P</label>
+                <label style="font-size:1.2rem; text-align:center; color:var(--black); display:flex; justify-content:center; align-items:center; gap:10px;">
+                    TAMANHO P
+                    <button type="button" class="btn-nav" style="padding:2px 8px; font-size:0.7rem; margin:0; border-color:var(--black);" onclick="baixarQRPng(document.getElementById('qrCodigoProduto').value, 'P')" title="Baixar apenas o QR em PNG">⬇️ PNG</button>
+                </label>
                 <input type="number" id="qrQtdP" value="0" min="0" style="text-align:center; font-size:1.5rem; color:var(--red); font-weight:900;">
             </div>
             <div class="input-group" style="background:var(--gray); padding:10px; border:2px dashed var(--border-color);">
-                <label style="font-size:1.2rem; text-align:center; color:var(--black);">TAMANHO M</label>
+                <label style="font-size:1.2rem; text-align:center; color:var(--black); display:flex; justify-content:center; align-items:center; gap:10px;">
+                    TAMANHO M
+                    <button type="button" class="btn-nav" style="padding:2px 8px; font-size:0.7rem; margin:0; border-color:var(--black);" onclick="baixarQRPng(document.getElementById('qrCodigoProduto').value, 'M')" title="Baixar apenas o QR em PNG">⬇️ PNG</button>
+                </label>
                 <input type="number" id="qrQtdM" value="0" min="0" style="text-align:center; font-size:1.5rem; color:var(--red); font-weight:900;">
             </div>
             <div class="input-group" style="background:var(--gray); padding:10px; border:2px dashed var(--border-color);">
-                <label style="font-size:1.2rem; text-align:center; color:var(--black);">TAMANHO G</label>
+                <label style="font-size:1.2rem; text-align:center; color:var(--black); display:flex; justify-content:center; align-items:center; gap:10px;">
+                    TAMANHO G
+                    <button type="button" class="btn-nav" style="padding:2px 8px; font-size:0.7rem; margin:0; border-color:var(--black);" onclick="baixarQRPng(document.getElementById('qrCodigoProduto').value, 'G')" title="Baixar apenas o QR em PNG">⬇️ PNG</button>
+                </label>
                 <input type="number" id="qrQtdG" value="0" min="0" style="text-align:center; font-size:1.5rem; color:var(--red); font-weight:900;">
             </div>
             <div class="input-group" style="background:var(--gray); padding:10px; border:2px dashed var(--border-color);">
-                <label style="font-size:1.2rem; text-align:center; color:var(--black);">TAMANHO GG</label>
+                <label style="font-size:1.2rem; text-align:center; color:var(--black); display:flex; justify-content:center; align-items:center; gap:10px;">
+                    TAMANHO GG
+                    <button type="button" class="btn-nav" style="padding:2px 8px; font-size:0.7rem; margin:0; border-color:var(--black);" onclick="baixarQRPng(document.getElementById('qrCodigoProduto').value, 'GG')" title="Baixar apenas o QR em PNG">⬇️ PNG</button>
+                </label>
                 <input type="number" id="qrQtdGG" value="0" min="0" style="text-align:center; font-size:1.5rem; color:var(--red); font-weight:900;">
             </div>
         </div>
+
         <button class="btn-primary" id="btnImprimirQR" onclick="gerarEImprimirQR()" style="width:100%; padding:15px; font-size:1.1rem;">🖨️ GERAR E IMPRIMIR</button>
     </div>
 </div>
