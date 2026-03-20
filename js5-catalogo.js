@@ -446,3 +446,91 @@ async function baixarQRPng(codigo, tamanho) {
         console.error(error);
     }
 }
+
+// ==========================================
+// GERAR RELATÓRIO DE ESTOQUE EM PDF
+// ==========================================
+function gerarRelatorioEstoquePDF() {
+    // Inicializa o jsPDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4'); // Retrato, Pontos, A4
+
+    // Título Brutalista
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("RAIO-X DE ESTOQUE | WALLER CLOTHING", 40, 40);
+
+    // Subtítulo / Data
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 60);
+
+    let tableData = [];
+    let totalPecasGeral = 0;
+
+    // 1. Filtrar produtos que não estão apagados
+    let produtos = Object.values(catalogoEstampas).filter(p => !p.apagado);
+    
+    // 2. Ordenar por Categoria e depois por Nome
+    produtos.sort((a, b) => {
+        let catA = (a.categoria || 'GERAL').toUpperCase();
+        let catB = (b.categoria || 'GERAL').toUpperCase();
+        if (catA < catB) return -1;
+        if (catA > catB) return 1;
+        return (a.nome || '').localeCompare(b.nome || '');
+    });
+
+    // 3. Montar as linhas da tabela
+    produtos.forEach(p => {
+        let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
+        let pQtd = parseInt(estq.P || 0);
+        let mQtd = parseInt(estq.M || 0);
+        let gQtd = parseInt(estq.G || 0);
+        let ggQtd = parseInt(estq.GG || 0);
+        
+        let totalProduto = pQtd + mQtd + gQtd + ggQtd;
+        totalPecasGeral += totalProduto;
+
+        tableData.push([
+            (p.categoria || 'GERAL').toUpperCase(),
+            p.codigo || '-',
+            (p.nome || '').toUpperCase(),
+            pQtd.toString(),
+            mQtd.toString(),
+            gQtd.toString(),
+            ggQtd.toString(),
+            totalProduto.toString()
+        ]);
+    });
+
+    // 4. Desenhar a Tabela usando AutoTable
+    doc.autoTable({
+        startY: 80,
+        head: [['CATEGORIA', 'SKU', 'PRODUTO', 'P', 'M', 'G', 'GG', 'TOTAL']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [17, 17, 17], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: {
+            0: { cellWidth: 80, fontStyle: 'bold' }, // Categoria
+            1: { cellWidth: 60 }, // SKU
+            2: { cellWidth: 'auto' }, // Produto
+            3: { halign: 'center', cellWidth: 30 }, // P
+            4: { halign: 'center', cellWidth: 30 }, // M
+            5: { halign: 'center', cellWidth: 30 }, // G
+            6: { halign: 'center', cellWidth: 30 }, // GG
+            7: { halign: 'center', fontStyle: 'bold', cellWidth: 40, textColor: [193, 18, 31] } // Total em Vermelho Waller
+        }
+    });
+
+    // 5. Rodapé com o Resumo Total
+    let finalY = doc.lastAutoTable.finalY || 80;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(`TOTAL DE PEÇAS NO ESTOQUE: ${totalPecasGeral} UNIDADES`, 40, finalY + 30);
+
+    // 6. Fazer o Download
+    let nomeArquivo = `Waller_Estoque_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+    showToast("Relatório de Estoque baixado com sucesso! 💀📄");
+}
