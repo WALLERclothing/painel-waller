@@ -365,7 +365,7 @@ function renderizarCatalogo() {
 }
 
 // ==========================================
-// DESCARREGAR QR CODE EM PNG (INDIVIDUAL - COM DETALHES)
+// DESCARREGAR ETIQUETA VISUAL EM PNG (QR CODE + TEXTOS LATERAIS)
 // ==========================================
 async function baixarQRPng(codigo, tamanho) {
     if (!codigo) {
@@ -379,29 +379,70 @@ async function baixarQRPng(codigo, tamanho) {
     let nomeLimpo = p.nome || "Produto";
     let catLimpa = p.categoria || "Geral";
 
+    // Dados internos que a câmara lê
     let textoQR = `${codigo}-${tamanho} | ${nomeLimpo} | ${catLimpa}`;
     let qrData = encodeURIComponent(textoQR);
-    let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=800&margin=1`;
+    let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=400&margin=1`;
 
     try {
-        showToast(`A gerar PNG [${codigo}-${tamanho}]... ⏳`);
+        showToast(`A desenhar etiqueta visual [${codigo}-${tamanho}]... ⏳`);
         
-        let response = await fetch(qrUrl);
-        let blob = await response.blob();
+        // 1. Criar o "Canvas" (tela de desenho) em memória
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
         
-        let link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `QR_${codigo}_${tamanho}.png`;
+        // Dimensões da Etiqueta: 1000px de largura por 400px de altura
+        canvas.width = 1000;
+        canvas.height = 400;
         
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Pintar o Fundo de Branco
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        URL.revokeObjectURL(link.href);
+        // 2. Carregar a imagem do QR Code
+        let img = new Image();
+        img.crossOrigin = "Anonymous"; // Necessário para o navegador deixar exportar
         
-        showToast(`PNG transferido com Detalhes! 💀✅`);
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = qrUrl;
+        });
+        
+        // Desenhar o QR Code na esquerda (Posição X: 20, Y: 20, Tamanho: 360x360)
+        ctx.drawImage(img, 20, 20, 360, 360);
+        
+        // 3. Escrever os Textos na direita
+        ctx.fillStyle = "#000000";
+        ctx.textBaseline = "middle";
+        
+        // Linha 1: Código e Categoria
+        ctx.font = "bold 30px 'Montserrat', Arial, sans-serif";
+        ctx.fillText(`CÓDIGO: ${codigo}  |  CAT: ${catLimpa}`, 410, 100, 560); // 560 é o limite de largura para não cortar
+        
+        // Linha 2: Nome da Estampa
+        ctx.font = "900 45px 'Montserrat', Arial, sans-serif";
+        ctx.fillText(`${nomeLimpo.toUpperCase()}`, 410, 200, 560);
+        
+        // Linha 3: Tamanho
+        ctx.font = "900 70px 'Montserrat', Arial, sans-serif";
+        ctx.fillText(`TAM: ${tamanho}`, 410, 310, 560);
+        
+        // 4. Converter a tela final para PNG e fazer o Download
+        canvas.toBlob((blob) => {
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Etiqueta_${codigo}_${tamanho}.png`; // Nome final do ficheiro
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            showToast(`Etiqueta PNG concluída e descarregada! 💀✅`);
+        }, "image/png");
+        
     } catch (error) {
-        showToast("Erro ao descarregar o ficheiro PNG!", true);
+        showToast("Erro ao gerar a etiqueta PNG!", true);
         console.error(error);
     }
 }
