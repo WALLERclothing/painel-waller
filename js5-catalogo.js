@@ -471,16 +471,14 @@ function gerarRelatorioEstoquePDF() {
     // 1. Filtrar produtos que não estão apagados
     let produtos = Object.values(catalogoEstampas).filter(p => !p.apagado);
     
-    // 2. Ordenar por Categoria e depois por Nome
+    // 2. Ordenar pelo CÓDIGO DO PRODUTO (SKU)
     produtos.sort((a, b) => {
-        let catA = (a.categoria || 'GERAL').toUpperCase();
-        let catB = (b.categoria || 'GERAL').toUpperCase();
-        if (catA < catB) return -1;
-        if (catA > catB) return 1;
-        return (a.nome || '').localeCompare(b.nome || '');
+        let codA = (a.codigo || '').toString().toUpperCase();
+        let codB = (b.codigo || '').toString().toUpperCase();
+        return codA.localeCompare(codB);
     });
 
-    // 3. Montar as linhas da tabela
+    // 3. Montar as linhas da tabela (SKU primeiro)
     produtos.forEach(p => {
         let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
         let pQtd = parseInt(estq.P || 0);
@@ -492,8 +490,8 @@ function gerarRelatorioEstoquePDF() {
         totalPecasGeral += totalProduto;
 
         tableData.push([
-            (p.categoria || 'GERAL').toUpperCase(),
             p.codigo || '-',
+            (p.categoria || 'GERAL').toUpperCase(),
             (p.nome || '').toUpperCase(),
             pQtd.toString(),
             mQtd.toString(),
@@ -506,14 +504,14 @@ function gerarRelatorioEstoquePDF() {
     // 4. Desenhar a Tabela usando AutoTable
     doc.autoTable({
         startY: 80,
-        head: [['CATEGORIA', 'SKU', 'PRODUTO', 'P', 'M', 'G', 'GG', 'TOTAL']],
+        head: [['SKU', 'CATEGORIA', 'PRODUTO', 'P', 'M', 'G', 'GG', 'TOTAL']],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [17, 17, 17], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
         styles: { fontSize: 9, cellPadding: 4 },
         columnStyles: {
-            0: { cellWidth: 80, fontStyle: 'bold' }, // Categoria
-            1: { cellWidth: 60 }, // SKU
+            0: { cellWidth: 60, fontStyle: 'bold' }, // SKU
+            1: { cellWidth: 80 }, // Categoria
             2: { cellWidth: 'auto' }, // Produto
             3: { halign: 'center', cellWidth: 30 }, // P
             4: { halign: 'center', cellWidth: 30 }, // M
