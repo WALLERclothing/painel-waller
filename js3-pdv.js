@@ -22,10 +22,13 @@ document.addEventListener('keypress', function(e) {
 
 // Ação de decodificar e jogar pro carrinho (Serve para Físico e Câmera)
 function processarCodigoBarras(codigoBipado) {
-    let codLimpo = codigoBipado.toUpperCase().trim();
-    let partes = codLimpo.split('-');
-    let sku = partes[0];
-    let tamanhoSugerido = partes[1] || null;
+    // 1. Limpa os detalhes extras (tudo o que estiver depois do "|")
+    let textoPrincipal = codigoBipado.split('|')[0].toUpperCase().trim();
+    
+    // 2. Separa o código do tamanho
+    let partes = textoPrincipal.split('-');
+    let sku = partes[0].trim();
+    let tamanhoSugerido = partes[1] ? partes[1].trim() : null;
 
     if (catalogoEstampas[sku]) {
         document.getElementById('codigoEstampa').value = sku;
@@ -34,9 +37,11 @@ function processarCodigoBarras(codigoBipado) {
         let tamIdeal = 'M';
         let estq = catalogoEstampas[sku].estoqueGrade || {};
         
+        // 3. Verifica o tamanho limpo (agora vai ler o "GG" corretamente)
         if (tamanhoSugerido && ['P', 'M', 'G', 'GG'].includes(tamanhoSugerido)) {
             tamIdeal = tamanhoSugerido;
         } else {
+            // Fallback de segurança se a etiqueta não tiver tamanho
             if (estq.M > 0) tamIdeal = 'M'; else if (estq.G > 0) tamIdeal = 'G'; else if (estq.P > 0) tamIdeal = 'P'; else if (estq.GG > 0) tamIdeal = 'GG';
         }
         
