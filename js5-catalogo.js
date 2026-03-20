@@ -431,7 +431,7 @@ function renderizarCatalogo() {
 }
 
 // ==========================================
-// DESCARREGAR ETIQUETA VISUAL EM PNG (QR CODE + TEXTOS LATERAIS)
+// DESCARREGAR ETIQUETA VISUAL EM PNG (QR CODE PURO + TEXTOS LATERAIS)
 // ==========================================
 async function baixarQRPng(codigo, tamanho) {
     if (!codigo) {
@@ -445,29 +445,27 @@ async function baixarQRPng(codigo, tamanho) {
     let nomeLimpo = p.nome || "Produto";
     let catLimpa = p.categoria || "Geral";
 
-    // Dados internos que a câmara lê
-    let textoQR = `${codigo}-${tamanho} | ${nomeLimpo} | ${catLimpa}`;
+    // AQUI ESTÁ O SEGREDO: O QR Code interno volta a ser apenas o CÓDIGO-TAMANHO.
+    // Assim o leitor USB ou a câmara do sistema não se engasgam com símbolos e espaços!
+    let textoQR = `${codigo}-${tamanho}`;
     let qrData = encodeURIComponent(textoQR);
     let qrUrl = `https://quickchart.io/qr?text=${qrData}&size=400&margin=1`;
 
     try {
         showToast(`A desenhar etiqueta visual [${codigo}-${tamanho}]... ⏳`);
         
-        // 1. Criar o "Canvas" (tela de desenho) em memória
+        // Cria a tela em branco
         let canvas = document.createElement('canvas');
         let ctx = canvas.getContext('2d');
-        
-        // Dimensões da Etiqueta: 1000px de largura por 400px de altura
         canvas.width = 1000;
         canvas.height = 400;
         
-        // Pintar o Fundo de Branco
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // 2. Carregar a imagem do QR Code
+        // Puxa a imagem do QR Code
         let img = new Image();
-        img.crossOrigin = "Anonymous"; // Necessário para o navegador deixar exportar
+        img.crossOrigin = "Anonymous";
         
         await new Promise((resolve, reject) => {
             img.onload = resolve;
@@ -475,30 +473,27 @@ async function baixarQRPng(codigo, tamanho) {
             img.src = qrUrl;
         });
         
-        // Desenhar o QR Code na esquerda (Posição X: 20, Y: 20, Tamanho: 360x360)
+        // Desenha o QR Code na esquerda
         ctx.drawImage(img, 20, 20, 360, 360);
         
-        // 3. Escrever os Textos na direita
+        // Textos na Direita (Isto é para o humano ler, não a máquina)
         ctx.fillStyle = "#000000";
         ctx.textBaseline = "middle";
         
-        // Linha 1: Código e Categoria
         ctx.font = "bold 30px 'Montserrat', Arial, sans-serif";
-        ctx.fillText(`CÓDIGO: ${codigo}  |  CAT: ${catLimpa}`, 410, 100, 560); // 560 é o limite de largura para não cortar
+        ctx.fillText(`CÓDIGO: ${codigo}  |  CAT: ${catLimpa}`, 410, 100, 560);
         
-        // Linha 2: Nome da Estampa
         ctx.font = "900 45px 'Montserrat', Arial, sans-serif";
         ctx.fillText(`${nomeLimpo.toUpperCase()}`, 410, 200, 560);
         
-        // Linha 3: Tamanho
         ctx.font = "900 70px 'Montserrat', Arial, sans-serif";
         ctx.fillText(`TAM: ${tamanho}`, 410, 310, 560);
         
-        // 4. Converter a tela final para PNG e fazer o Download
+        // Exporta o PNG
         canvas.toBlob((blob) => {
             let link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `Etiqueta_${codigo}_${tamanho}.png`; // Nome final do ficheiro
+            link.download = `Etiqueta_${codigo}_${tamanho}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -511,90 +506,4 @@ async function baixarQRPng(codigo, tamanho) {
         showToast("Erro ao gerar a etiqueta PNG!", true);
         console.error(error);
     }
-}
-
-// ==========================================
-// GERAR RELATÓRIO DE ESTOQUE EM PDF
-// ==========================================
-function gerarRelatorioEstoquePDF() {
-    // Inicializa o jsPDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4'); // Retrato, Pontos, A4
-
-    // Título Brutalista
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("RAIO-X DE ESTOQUE | WALLER CLOTHING", 40, 40);
-
-    // Subtítulo / Data
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 60);
-
-    let tableData = [];
-    let totalPecasGeral = 0;
-
-    // 1. Filtrar produtos que não estão apagados
-    let produtos = Object.values(catalogoEstampas).filter(p => !p.apagado);
-    
-    // 2. Ordenar pelo CÓDIGO DO PRODUTO (SKU)
-    produtos.sort((a, b) => {
-        let codA = (a.codigo || '').toString().toUpperCase();
-        let codB = (b.codigo || '').toString().toUpperCase();
-        return codA.localeCompare(codB);
-    });
-
-    // 3. Montar as linhas da tabela (SKU primeiro)
-    produtos.forEach(p => {
-        let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
-        let pQtd = parseInt(estq.P || 0);
-        let mQtd = parseInt(estq.M || 0);
-        let gQtd = parseInt(estq.G || 0);
-        let ggQtd = parseInt(estq.GG || 0);
-        
-        let totalProduto = pQtd + mQtd + gQtd + ggQtd;
-        totalPecasGeral += totalProduto;
-
-        tableData.push([
-            p.codigo || '-',
-            (p.categoria || 'GERAL').toUpperCase(),
-            (p.nome || '').toUpperCase(),
-            pQtd.toString(),
-            mQtd.toString(),
-            gQtd.toString(),
-            ggQtd.toString(),
-            totalProduto.toString()
-        ]);
-    });
-
-    // 4. Desenhar a Tabela usando AutoTable
-    doc.autoTable({
-        startY: 80,
-        head: [['SKU', 'CATEGORIA', 'PRODUTO', 'P', 'M', 'G', 'GG', 'TOTAL']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [17, 17, 17], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 9, cellPadding: 4 },
-        columnStyles: {
-            0: { cellWidth: 60, fontStyle: 'bold' }, // SKU
-            1: { cellWidth: 80 }, // Categoria
-            2: { cellWidth: 'auto' }, // Produto
-            3: { halign: 'center', cellWidth: 30 }, // P
-            4: { halign: 'center', cellWidth: 30 }, // M
-            5: { halign: 'center', cellWidth: 30 }, // G
-            6: { halign: 'center', cellWidth: 30 }, // GG
-            7: { halign: 'center', fontStyle: 'bold', cellWidth: 40, textColor: [193, 18, 31] } // Total em Vermelho Waller
-        }
-    });
-
-    // 5. Rodapé com o Resumo Total
-    let finalY = doc.lastAutoTable.finalY || 80;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(`TOTAL DE PEÇAS NO ESTOQUE: ${totalPecasGeral} UNIDADES`, 40, finalY + 30);
-
-    // 6. Fazer o Download
-    let nomeArquivo = `Waller_Estoque_${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(nomeArquivo);
-    showToast("Relatório de Estoque baixado com sucesso! 💀📄");
 }
