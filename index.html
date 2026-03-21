@@ -589,5 +589,31 @@
     </div>
 </div>
 
+
+<button id="btnCarrinhoVitrine" class="btn-primary" style="display:none; position:fixed; bottom:20px; right:20px; width:65px; height:65px; border-radius:50%; font-size:1.8rem; z-index:9999; box-shadow:5px 5px 0px var(--black); padding:0; justify-content:center; align-items:center;" onclick="abrirCarrinhoVitrine()">
+    🛒
+    <span id="badgeCarrinhoVitrine" style="position:absolute; top:-5px; right:-5px; background:var(--red); color:var(--white); font-size:0.9rem; padding:3px 8px; border-radius:50%; border:2px solid var(--black); display:none;">0</span>
+</button>
+
+<div id="modalCarrinhoVitrine" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:99999; justify-content:center; align-items:center;">
+    <div class="modal-box" style="background:var(--white); padding:30px; width:95%; max-width:500px; max-height:90vh; overflow-y:auto; border:var(--border-thick); box-shadow: 15px 15px 0px var(--black);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:3px solid var(--black); padding-bottom:15px;">
+            <h2 style="margin:0; font-size: 1.8rem; font-weight:900; font-style:italic;">🛒 TEU CARRINHO</h2>
+            <button onclick="fecharCarrinhoVitrine()" style="background:var(--red); color:var(--white); border:none; padding:8px 15px; font-weight:900; font-size: 1.2rem; cursor:pointer;">X</button>
+        </div>
+        <div id="listaItensVitrine" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px; max-height:40vh; overflow-y:auto;"></div>
+        <div style="text-align:right; margin-bottom:20px; font-size:1.4rem; font-weight:900;">TOTAL: <span id="totalCarrinhoVitrine" style="color:var(--green);">R$ 0,00</span></div>
+        
+        <div style="background:var(--gray); padding:15px; border:2px dashed var(--border-color); margin-bottom:15px;">
+            <h3 style="margin-top:0; font-size:1rem; margin-bottom:10px;">PREENCHA PRA FINALIZAR</h3>
+            <div class="input-group" style="margin-bottom:0;">
+                <input type="text" id="vitrineNomeCliente" placeholder="DIGITE SEU NOME COMPLETO" style="width:100%; font-size:1.1rem; padding:12px; font-weight:bold; border:2px solid var(--black);">
+            </div>
+        </div>
+        
+        <button class="btn-primary" onclick="enviarPedidoWhatsApp()" style="width:100%; padding:20px; font-size:1.2rem; background:var(--green); color:var(--black);">📲 ENVIAR PEDIDO NO WHATSAPP</button>
+    </div>
+</div>
+    
 </body>
 </html>
