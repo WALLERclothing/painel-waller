@@ -203,7 +203,6 @@
             <div style="display:flex; gap:10px;" id="acoesAdminCatalogo">
                 <button class="btn-nav" style="border-color:var(--black); color:var(--green); font-weight:900;" onclick="copiarLinkVitrine(true)">🔗 VITRINE (SÓ ESTOQUE)</button>
                 <button class="btn-nav" style="border-color:var(--black); color:var(--black);" onclick="copiarLinkVitrine(false)">🔗 VITRINE (COMPLETA)</button>
-                
                 <button class="btn-nav" style="border-color:var(--black); color:var(--black);" onclick="abrirBalancoMassa()">📋 BALANÇO RÁPIDO</button>
                 <button class="btn-nav" style="background:var(--gray); border-color:var(--black); color:var(--black);" onclick="gerarRelatorioEstoquePDF()">📄 PDF ESTOQUE</button>
                 <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirModalEstampa()">+ NOVO PRODUTO</button>
@@ -384,21 +383,34 @@
 </div>
 
 <div id="modalEstampa" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-    <div class="modal-box" style="background:var(--white); padding:20px; width:90%; max-width:500px; border:var(--border-thick);">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <h2 style="margin:0;" id="tituloModalEstampa">CADASTRAR PRODUTO</h2>
+    <div class="modal-box" style="background:var(--white); padding:20px; width:90%; max-width:500px; border:var(--border-thick); max-height: 90vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:3px solid var(--black); padding-bottom:10px;">
+            <h2 style="margin:0; font-weight: 900;" id="tituloModalEstampa">CADASTRAR PRODUTO</h2>
             <button onclick="fecharModalEstampa()" style="background:var(--red); color:var(--white); border:none; padding:5px 10px; font-weight:900; cursor:pointer;">X</button>
         </div>
         <form onsubmit="salvarNovaEstampa(event)">
             <input type="hidden" id="editEstampaCodigoOriginal">
-            <div style="display:flex; gap:10px;"><div class="input-group" style="flex:1;"><label>NÚMERO DA PEÇA</label><input type="text" id="cadCodigoEstampa" required></div><div class="input-group" style="flex:2;"><label>NOME DA PEÇA</label><input type="text" id="cadNomeEstampa" required></div></div>
+            
+            <div style="display:flex; gap:10px;">
+                <div class="input-group" style="flex:1;"><label>NÚMERO DA PEÇA</label><input type="text" id="cadCodigoEstampa" required></div>
+                <div class="input-group" style="flex:2;"><label>NOME DA PEÇA</label><input type="text" id="cadNomeEstampa" required></div>
+            </div>
+            
             <div class="input-group"><label>CATEGORIA</label><input type="text" id="cadCategoriaEstampa" placeholder="Ex: OVERSIZED PRETA"></div>
-            <div style="display:flex; gap:10px;"><div class="input-group"><label>CUSTO PRODUTO</label><input type="text" id="cadCusto" class="moeda" required></div><div class="input-group"><label>PREÇO VENDA</label><input type="text" id="cadPreco" class="moeda" required></div></div>
+            
+            <div style="display:flex; gap:10px;">
+                <div class="input-group"><label>CUSTO PRODUTO</label><input type="text" id="cadCusto" class="moeda" required></div>
+                <div class="input-group"><label>PREÇO VENDA</label><input type="text" id="cadPreco" class="moeda" required></div>
+            </div>
+            
             <label style="font-weight:900; margin-top:10px; display:block;">ESTOQUE ATUAL</label>
             <div style="display:flex; gap:10px; background:var(--gray); padding:10px; border:2px dashed var(--border-color); margin-bottom:15px;">
-                <div style="flex:1;"><label>P</label><input type="number" id="estP" value="0"></div><div style="flex:1;"><label>M</label><input type="number" id="estM" value="0"></div><div style="flex:1;"><label>G</label><input type="number" id="estG" value="0"></div><div style="flex:1;"><label>GG</label><input type="number" id="estGG" value="0"></div>
+                <div style="flex:1;"><label>P</label><input type="number" id="estP" value="0"></div>
+                <div style="flex:1;"><label>M</label><input type="number" id="estM" value="0"></div>
+                <div style="flex:1;"><label>G</label><input type="number" id="estG" value="0"></div>
+                <div style="flex:1;"><label>GG</label><input type="number" id="estGG" value="0"></div>
             </div>
-            <button type="submit" class="btn-primary" id="btnSalvarEstampa" style="width:100%; padding:15px;">SALVAR PRODUTO</button>
+            <button type="submit" class="btn-primary" id="btnSalvarEstampa" style="width:100%; padding:15px;">💾 SALVAR PRODUTO</button>
         </form>
     </div>
 </div>
@@ -547,18 +559,6 @@
     </div>
 </div>
 
-<script src="js1-firebase.js?v=8"></script>
-<script src="js2-utils.js?v=4"></script>
-<script src="js8-envios.js?v=4"></script>
-<script src="js3-pdv.js?v=4"></script>
-<script src="js4-kanban.js?v=4"></script>
-<script src="js5-catalogo.js?v=6"></script>
-<script src="js6-crm.js?v=4"></script>
-<script src="js7-caixa.js?v=4"></script>
-<script src="js9-pdfs.js?v=4"></script>
-<script src="js11-dashboard.js?v=4"></script>
-<script src="js10-main.js?v=4"></script>
-
 <div id="modalConfirmarPagamento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center;">
     <div class="modal-box" style="background:var(--white); padding:30px; width:90%; max-width:400px; border:var(--border-thick); box-shadow: 15px 15px 0px var(--black); text-align:center;">
         <h2 style="margin-top:0; font-weight:900;">💰 CONFIRMAR PAGAMENTO</h2>
@@ -589,7 +589,6 @@
     </div>
 </div>
 
-
 <button id="btnCarrinhoVitrine" class="btn-primary" style="display:none; position:fixed; bottom:20px; right:20px; width:65px; height:65px; border-radius:50%; font-size:1.8rem; z-index:9999; box-shadow:5px 5px 0px var(--black); padding:0; justify-content:center; align-items:center;" onclick="abrirCarrinhoVitrine()">
     🛒
     <span id="badgeCarrinhoVitrine" style="position:absolute; top:-5px; right:-5px; background:var(--red); color:var(--white); font-size:0.9rem; padding:3px 8px; border-radius:50%; border:2px solid var(--black); display:none;">0</span>
@@ -609,10 +608,18 @@
         <button class="btn-primary" onclick="transferirVitrineParaPDV()" style="width:100%; padding:20px; font-size:1.2rem; background:var(--black); color:var(--white);">📥 TRANSFERIR PARA O CAIXA (PDV)</button>
     </div>
 </div>
-        
-        <button class="btn-primary" onclick="enviarPedidoWhatsApp()" style="width:100%; padding:20px; font-size:1.2rem; background:var(--green); color:var(--black);">📲 ENVIAR PEDIDO NO WHATSAPP</button>
-    </div>
-</div>
-    
+
+<script src="js1-firebase.js?v=13"></script>
+<script src="js2-utils.js?v=13"></script>
+<script src="js8-envios.js?v=13"></script>
+<script src="js3-pdv.js?v=13"></script>
+<script src="js4-kanban.js?v=13"></script>
+<script src="js5-catalogo.js?v=13"></script>
+<script src="js6-crm.js?v=13"></script>
+<script src="js7-caixa.js?v=13"></script>
+<script src="js9-pdfs.js?v=13"></script>
+<script src="js11-dashboard.js?v=13"></script>
+<script src="js10-main.js?v=13"></script>
+
 </body>
 </html>
