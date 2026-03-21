@@ -412,6 +412,9 @@ function renderizarCatalogo() {
         let prod = document.getElementById('aba-producao'); if(prod) prod.style.display = 'none';
         let cli = document.getElementById('aba-clientes'); if(cli) cli.style.display = 'none';
         
+        // AQUI TÁ O EXTERMÍNIO DA BARRA INTRUSA 🔪
+        let bulkBar = document.getElementById('bulk-action-bar'); if(bulkBar) bulkBar.style.display = 'none';
+        
         let est = document.getElementById('aba-estampas'); if(est) est.style.display = 'block';
         let tit = document.getElementById('tituloPaginaCatalogo'); 
         if(tit) { tit.innerText = "CATÁLOGO WALLER CLOTHING"; tit.style.width = "100%"; tit.style.textAlign = "center"; tit.style.fontSize = "2rem"; }
