@@ -390,8 +390,10 @@ function copiarLinkVitrine(soEstoque) {
 }
 
 // ==========================================
-// RENDERIZAR CATÁLOGO (COM MODO VITRINE BLINDADO)
+// RENDERIZAR CATÁLOGO (COM MODO VITRINE BLINDADO E CARRINHO)
 // ==========================================
+let carrinhoVitrine = []; // Cérebro do carrinho
+
 function renderizarCatalogo() {
     let container = document.getElementById('listaEstampas');
     if (!container) return;
@@ -403,7 +405,7 @@ function renderizarCatalogo() {
     let modoVitrine = params.get('vitrine') === 'true';
     let soEstoque = params.get('estoque') === 'true';
 
-    // Se for Vitrine, ESCONDE todo o ERP e deixa só o Catálogo
+    // Se for Vitrine, ESCONDE todo o ERP e mostra o botão do Carrinho
     if (modoVitrine) {
         let nav = document.getElementById('mainNavbar'); if(nav) nav.style.display = 'none';
         let tabs = document.getElementById('mainTabMenu'); if(tabs) tabs.style.display = 'none';
@@ -411,8 +413,6 @@ function renderizarCatalogo() {
         let cad = document.getElementById('aba-cadastro'); if(cad) cad.style.display = 'none';
         let prod = document.getElementById('aba-producao'); if(prod) prod.style.display = 'none';
         let cli = document.getElementById('aba-clientes'); if(cli) cli.style.display = 'none';
-        
-        // AQUI TÁ O EXTERMÍNIO DA BARRA INTRUSA 🔪
         let bulkBar = document.getElementById('bulk-action-bar'); if(bulkBar) bulkBar.style.display = 'none';
         
         let est = document.getElementById('aba-estampas'); if(est) est.style.display = 'block';
@@ -420,6 +420,10 @@ function renderizarCatalogo() {
         if(tit) { tit.innerText = "CATÁLOGO WALLER CLOTHING"; tit.style.width = "100%"; tit.style.textAlign = "center"; tit.style.fontSize = "2rem"; }
         
         let best = document.getElementById('dashBestSellersContainer'); if(best) best.style.display = 'none';
+
+        // Mostra o botão de carrinho flutuante
+        let btnCart = document.getElementById('btnCarrinhoVitrine');
+        if (btnCart) btnCart.style.display = 'flex';
     }
 
     let html = '';
@@ -435,22 +439,23 @@ function renderizarCatalogo() {
         if (modoVitrine && soEstoque && totalEstoque <= 0) return;
 
         let corEstoque = totalEstoque > 0 ? 'var(--green)' : 'var(--red)';
-        let textoEstoque = totalEstoque > 0 ? `ESTOQUE: ${totalEstoque} PEÇAS` : `ESGOTADO ❌`;
+        let textoEstoque = totalEstoque > 0 ? `DISPONÍVEL PRA COMPRA 🔥` : `ESGOTADO ❌`;
+        if(!modoVitrine) textoEstoque = `ESTOQUE: ${totalEstoque} PEÇAS`;
         
         let htmlPrecos = '';
         let htmlGrade = '';
         let htmlBotoesAdmin = '';
 
         if (modoVitrine) {
-            // Layout Cliente: Sem custo, só preço de venda destacado e bloqueado para edição
-            htmlPrecos = `<span style="color: var(--black); font-size: 1.3rem; margin: 0 auto;">Por apenas: ${formatCurrency(p.precoVenda)}</span>`;
-            htmlGrade = `
-                <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
-                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.P > 0 ? '#000' : '#ccc'}">P: ${estq.P || 0}</span>
-                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.M > 0 ? '#000' : '#ccc'}">M: ${estq.M || 0}</span>
-                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.G > 0 ? '#000' : '#ccc'}">G: ${estq.G || 0}</span>
-                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.GG > 0 ? '#000' : '#ccc'}">GG: ${estq.GG || 0}</span>
-                </div>`;
+            // Layout Cliente: Botões Clicáveis para adicionar ao carrinho se tiver estoque!
+            htmlPrecos = `<span style="color: var(--black); font-size: 1.3rem; margin: 0 auto; font-weight:900;">${formatCurrency(p.precoVenda)}</span>`;
+            
+            let btnP = estq.P > 0 ? `<button onclick="addCartVitrine('${p.codigo}', '${p.nome}', 'P', ${p.precoVenda})" style="background:var(--black); color:var(--white); border:2px solid var(--black); padding:5px 12px; font-weight:900; cursor:pointer; transition:0.2s;">+ P</button>` : `<span style="background:var(--gray); border:2px solid var(--border-color); padding:5px 12px; font-weight:900; color:#aaa; text-decoration:line-through;">P</span>`;
+            let btnM = estq.M > 0 ? `<button onclick="addCartVitrine('${p.codigo}', '${p.nome}', 'M', ${p.precoVenda})" style="background:var(--black); color:var(--white); border:2px solid var(--black); padding:5px 12px; font-weight:900; cursor:pointer; transition:0.2s;">+ M</button>` : `<span style="background:var(--gray); border:2px solid var(--border-color); padding:5px 12px; font-weight:900; color:#aaa; text-decoration:line-through;">M</span>`;
+            let btnG = estq.G > 0 ? `<button onclick="addCartVitrine('${p.codigo}', '${p.nome}', 'G', ${p.precoVenda})" style="background:var(--black); color:var(--white); border:2px solid var(--black); padding:5px 12px; font-weight:900; cursor:pointer; transition:0.2s;">+ G</button>` : `<span style="background:var(--gray); border:2px solid var(--border-color); padding:5px 12px; font-weight:900; color:#aaa; text-decoration:line-through;">G</span>`;
+            let btnGG = estq.GG > 0 ? `<button onclick="addCartVitrine('${p.codigo}', '${p.nome}', 'GG', ${p.precoVenda})" style="background:var(--black); color:var(--white); border:2px solid var(--black); padding:5px 12px; font-weight:900; cursor:pointer; transition:0.2s;">+ GG</button>` : `<span style="background:var(--gray); border:2px solid var(--border-color); padding:5px 12px; font-weight:900; color:#aaa; text-decoration:line-through;">GG</span>`;
+
+            htmlGrade = `<div style="display:flex; justify-content:center; gap:8px; margin-top:10px; flex-wrap:wrap;">${btnP}${btnM}${btnG}${btnGG}</div>`;
         } else {
             // Layout Waller (ERP): Mostra custo, inputs pra editar estoque e os botões de ação
             htmlPrecos = `<span>Custo: ${formatCurrency(p.custo)}</span><span style="color: var(--black);">Venda: ${formatCurrency(p.precoVenda)}</span>`;
@@ -473,7 +478,7 @@ function renderizarCatalogo() {
         <div class="catalog-card" style="border: var(--border-thick); padding: 15px; background: var(--white); box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; height: 100%;">
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; min-height: 55px; margin-bottom: 10px;">
-                <h3 style="margin: 0; font-size: 1.1rem; line-height: 1.2; padding-right: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">[${p.codigo}] ${p.nome}</h3>
+                <h3 style="margin: 0; font-size: 1.1rem; line-height: 1.2; padding-right: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${modoVitrine?'':'['+p.codigo+'] '}${p.nome}</h3>
                 <span style="background: var(--black); color: var(--white); padding: 3px 6px; font-weight: 900; font-size: 0.6rem; white-space: nowrap;">${p.categoria || 'GERAL'}</span>
             </div>
             
@@ -494,6 +499,103 @@ function renderizarCatalogo() {
     container.innerHTML = html;
 }
 
+// ==========================================
+// FUNÇÕES DO CARRINHO DA VITRINE
+// ==========================================
+function addCartVitrine(sku, nome, tam, preco) {
+    carrinhoVitrine.push({ sku: sku, nome: nome, tam: tam, preco: preco });
+    atualizarBadgeVitrine();
+    showToast(`[${tam}] Adicionado ao Carrinho! 🛒`);
+}
+
+function atualizarBadgeVitrine() {
+    let badge = document.getElementById('badgeCarrinhoVitrine');
+    if(!badge) return;
+    if(carrinhoVitrine.length > 0) {
+        badge.innerText = carrinhoVitrine.length;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function abrirCarrinhoVitrine() {
+    renderizarItensVitrine();
+    document.getElementById('modalCarrinhoVitrine').style.display = 'flex';
+}
+
+function fecharCarrinhoVitrine() {
+    document.getElementById('modalCarrinhoVitrine').style.display = 'none';
+}
+
+function removerCartVitrine(index) {
+    carrinhoVitrine.splice(index, 1);
+    atualizarBadgeVitrine();
+    renderizarItensVitrine();
+}
+
+function renderizarItensVitrine() {
+    let lista = document.getElementById('listaItensVitrine');
+    let totalEl = document.getElementById('totalCarrinhoVitrine');
+    let total = 0;
+    
+    if(carrinhoVitrine.length === 0) {
+        lista.innerHTML = '<p style="text-align:center; font-weight:bold; color:var(--text-muted); padding:20px;">Seu carrinho tá vazio! Bora escolher uns drops 💀</p>';
+        totalEl.innerText = 'R$ 0,00';
+        return;
+    }
+
+    lista.innerHTML = carrinhoVitrine.map((item, i) => {
+        total += item.preco;
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--gray); padding:15px; border:2px dashed var(--border-color);">
+            <div>
+                <strong style="font-size:1.1rem; color:var(--black);">${item.nome}</strong><br>
+                <span style="font-size:0.85rem; color:var(--text-muted); font-weight:bold;">Tam: ${item.tam} | SKU: ${item.sku}</span><br>
+                <strong style="color:var(--red); font-size:1.2rem;">${formatCurrency(item.preco)}</strong>
+            </div>
+            <button onclick="removerCartVitrine(${i})" style="background:var(--red); color:var(--white); border:none; padding:8px 12px; font-weight:900; cursor:pointer;">X</button>
+        </div>`;
+    }).join('');
+
+    totalEl.innerText = formatCurrency(total);
+}
+
+function enviarPedidoWhatsApp() {
+    if(carrinhoVitrine.length === 0) {
+        showToast("Teu carrinho tá vazio!", true);
+        return;
+    }
+    let nome = document.getElementById('vitrineNomeCliente').value.trim();
+    if(!nome) {
+        showToast("Digita teu nome pra gente saber quem é!", true);
+        return;
+    }
+
+    // ⚠️ ATENÇÃO WALLER: TROQUE ESSE NÚMERO PELO SEU WHATSAPP REAL DA LOJA!
+    let numeroLoja = "5511999999999"; 
+
+    let texto = `Fala Waller! 💀\nAqui é o/a *${nome}* e acabei de montar meu carrinho na vitrine:\n\n`;
+    let total = 0;
+    
+    // Conta quantas unidades de cada peça tem para agrupar no texto
+    let itensAgrupados = {};
+    carrinhoVitrine.forEach(i => {
+        total += i.preco;
+        let chave = `${i.sku}-${i.tam}`;
+        if(!itensAgrupados[chave]) itensAgrupados[chave] = { ...i, qtd: 1 };
+        else itensAgrupados[chave].qtd++;
+    });
+
+    Object.values(itensAgrupados).forEach(i => {
+        texto += `🛒 ${i.qtd}x ${i.nome} (Tam: ${i.tam}) - SKU: ${i.sku}\n`;
+    });
+    
+    texto += `\n*TOTAL: ${formatCurrency(total)}*\n\nComo fazemos pra fechar o pedido e o frete? 👊`;
+
+    let url = `https://wa.me/${numeroLoja}?text=${encodeURIComponent(texto)}`;
+    window.open(url, '_blank');
+}
 // ==========================================
 // DESCARREGAR ETIQUETA VISUAL EM PNG (QR CODE PURO + TEXTOS LATERAIS)
 // ==========================================
