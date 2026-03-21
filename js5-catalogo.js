@@ -378,11 +378,46 @@ function imprimirFilaQR() {
     }, 1500);
 }
 
+// ==========================================
+// LINKS DA VITRINE (PÚBLICA PARA CLIENTES)
+// ==========================================
+function copiarLinkVitrine(soEstoque) { 
+    let baseUrl = window.location.origin + window.location.pathname;
+    let link = soEstoque ? baseUrl + '?vitrine=true&estoque=true' : baseUrl + '?vitrine=true'; 
+    navigator.clipboard.writeText(link).then(() => { 
+        showToast(soEstoque ? "Link (Só Estoque) copiado para enviar!" : "Link (Catálogo Completo) copiado!"); 
+    }); 
+}
+
+// ==========================================
+// RENDERIZAR CATÁLOGO (COM MODO VITRINE BLINDADO)
+// ==========================================
 function renderizarCatalogo() {
     let container = document.getElementById('listaEstampas');
     if (!container) return;
 
-    atualizarBotaoGlobalFila();
+    if(typeof atualizarBotaoGlobalFila === 'function') atualizarBotaoGlobalFila();
+
+    // Deteta se o cliente abriu o link da Vitrine
+    let params = new URLSearchParams(window.location.search);
+    let modoVitrine = params.get('vitrine') === 'true';
+    let soEstoque = params.get('estoque') === 'true';
+
+    // Se for Vitrine, ESCONDE todo o ERP e deixa só o Catálogo
+    if (modoVitrine) {
+        let nav = document.getElementById('mainNavbar'); if(nav) nav.style.display = 'none';
+        let tabs = document.getElementById('mainTabMenu'); if(tabs) tabs.style.display = 'none';
+        let acoes = document.getElementById('acoesAdminCatalogo'); if(acoes) acoes.style.display = 'none';
+        let cad = document.getElementById('aba-cadastro'); if(cad) cad.style.display = 'none';
+        let prod = document.getElementById('aba-producao'); if(prod) prod.style.display = 'none';
+        let cli = document.getElementById('aba-clientes'); if(cli) cli.style.display = 'none';
+        
+        let est = document.getElementById('aba-estampas'); if(est) est.style.display = 'block';
+        let tit = document.getElementById('tituloPaginaCatalogo'); 
+        if(tit) { tit.innerText = "CATÁLOGO WALLER CLOTHING"; tit.style.width = "100%"; tit.style.textAlign = "center"; tit.style.fontSize = "2rem"; }
+        
+        let best = document.getElementById('dashBestSellersContainer'); if(best) best.style.display = 'none';
+    }
 
     let html = '';
     Object.keys(catalogoEstampas).sort().forEach(cod => {
@@ -392,7 +427,44 @@ function renderizarCatalogo() {
         
         let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
         let totalEstoque = (estq.P || 0) + (estq.M || 0) + (estq.G || 0) + (estq.GG || 0);
+        
+        // Se for o link "SÓ ESTOQUE" e a peça tiver zerada, pula ela!
+        if (modoVitrine && soEstoque && totalEstoque <= 0) return;
+
         let corEstoque = totalEstoque > 0 ? 'var(--green)' : 'var(--red)';
+        let textoEstoque = totalEstoque > 0 ? `ESTOQUE: ${totalEstoque} PEÇAS` : `ESGOTADO ❌`;
+        
+        let htmlPrecos = '';
+        let htmlGrade = '';
+        let htmlBotoesAdmin = '';
+
+        if (modoVitrine) {
+            // Layout Cliente: Sem custo, só preço de venda destacado e bloqueado para edição
+            htmlPrecos = `<span style="color: var(--black); font-size: 1.3rem; margin: 0 auto;">Por apenas: ${formatCurrency(p.precoVenda)}</span>`;
+            htmlGrade = `
+                <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
+                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.P > 0 ? '#000' : '#ccc'}">P: ${estq.P || 0}</span>
+                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.M > 0 ? '#000' : '#ccc'}">M: ${estq.M || 0}</span>
+                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.G > 0 ? '#000' : '#ccc'}">G: ${estq.G || 0}</span>
+                    <span style="background:var(--white); border:2px solid var(--black); padding:5px 10px; font-weight:900; color:${estq.GG > 0 ? '#000' : '#ccc'}">GG: ${estq.GG || 0}</span>
+                </div>`;
+        } else {
+            // Layout Waller (ERP): Mostra custo, inputs pra editar estoque e os botões de ação
+            htmlPrecos = `<span>Custo: ${formatCurrency(p.custo)}</span><span style="color: var(--black);">Venda: ${formatCurrency(p.precoVenda)}</span>`;
+            htmlGrade = `
+                <div class="grade-tamanhos">
+                    <div class="grade-box">P <input type="number" value="${estq.P || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'P', this.value)"></div>
+                    <div class="grade-box">M <input type="number" value="${estq.M || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'M', this.value)"></div>
+                    <div class="grade-box">G <input type="number" value="${estq.G || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'G', this.value)"></div>
+                    <div class="grade-box">GG <input type="number" value="${estq.GG || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'GG', this.value)"></div>
+                </div>`;
+            htmlBotoesAdmin = `
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn-primary" style="flex: 0.5; padding: 10px; font-size: 0.8rem; margin:0; background:var(--black); color:var(--white);" onclick="abrirModalQRCode('${p.codigo}')" title="Gerar QR Code p/ Impressão">🖨️ QR</button>
+                    <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.8rem; margin:0;" onclick="prepararEdicaoEstampa('${p.codigo}')">✏️ EDITAR</button>
+                    <button class="btn-primary" style="flex: 0.5; padding: 10px; font-size: 0.8rem; background: var(--red); color: var(--white); border-color: var(--red); margin:0;" onclick="excluirEstampa('${p.id}')">❌</button>
+                </div>`;
+        }
         
         html += `
         <div class="catalog-card" style="border: var(--border-thick); padding: 15px; background: var(--white); box-shadow: 4px 4px 0px var(--border-color); display: flex; flex-direction: column; height: 100%;">
@@ -403,26 +475,15 @@ function renderizarCatalogo() {
             </div>
             
             <div style="font-weight: 900; color: var(--text-muted); display: flex; justify-content: space-between; font-size: 0.9rem;">
-                <span>Custo: ${formatCurrency(p.custo)}</span>
-                <span style="color: var(--black);">Venda: ${formatCurrency(p.precoVenda)}</span>
+                ${htmlPrecos}
             </div>
             
             <div style="margin-top: auto; padding-top: 15px;">
-                <div style="background: var(--gray); padding: 10px; border: 2px dashed var(--border-color);">
-                    <div style="font-weight: 900; color: ${corEstoque}; margin-bottom: 8px; font-size: 0.85rem;">ESTOQUE: ${totalEstoque} PEÇAS</div>
-                    <div class="grade-tamanhos">
-                        <div class="grade-box">P <input type="number" value="${estq.P || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'P', this.value)"></div>
-                        <div class="grade-box">M <input type="number" value="${estq.M || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'M', this.value)"></div>
-                        <div class="grade-box">G <input type="number" value="${estq.G || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'G', this.value)"></div>
-                        <div class="grade-box">GG <input type="number" value="${estq.GG || 0}" onchange="atualizarEstoqueGrade('${p.id}', 'GG', this.value)"></div>
-                    </div>
+                <div style="background: var(--gray); padding: 10px; border: 2px dashed var(--border-color); text-align:center;">
+                    <div style="font-weight: 900; color: ${corEstoque}; margin-bottom: 8px; font-size: 0.85rem;">${textoEstoque}</div>
+                    ${htmlGrade}
                 </div>
-                
-                <div style="margin-top: 15px; display: flex; gap: 10px;">
-                    <button class="btn-primary" style="flex: 0.5; padding: 10px; font-size: 0.8rem; margin:0; background:var(--black); color:var(--white);" onclick="abrirModalQRCode('${p.codigo}')" title="Gerar QR Code p/ Impressão">🖨️ QR</button>
-                    <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.8rem; margin:0;" onclick="prepararEdicaoEstampa('${p.codigo}')">✏️ EDITAR</button>
-                    <button class="btn-primary" style="flex: 0.5; padding: 10px; font-size: 0.8rem; background: var(--red); color: var(--white); border-color: var(--red); margin:0;" onclick="excluirEstampa('${p.id}')">❌</button>
-                </div>
+                ${htmlBotoesAdmin}
             </div>
         </div>`;
     });
