@@ -573,7 +573,7 @@ function enviarPedidoWhatsApp() {
     }
 
     // ⚠️ ATENÇÃO WALLER: TROQUE ESSE NÚMERO PELO SEU WHATSAPP REAL DA LOJA!
-    let numeroLoja = "5511999999999"; 
+    let numeroLoja = "5511948434639"; 
 
     let texto = `Fala Waller! 💀\nAqui é o/a *${nome}* e acabei de montar meu carrinho na vitrine:\n\n`;
     let total = 0;
