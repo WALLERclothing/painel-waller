@@ -51,7 +51,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
         let overlay = document.getElementById('loginOverlay');
         if (overlay) overlay.style.display = 'none';
         
-        if(todosPedidos.length === 0 && !isVitrine) {
+        // CORREÇÃO: Agora a Vitrine também tem permissão para iniciar o Firestore (com restrições)
+        if(todosPedidos.length === 0) {
             iniciarListenersFirestore();
         }
     } else {
@@ -137,7 +138,20 @@ async function salvarPerfil(e) {
 
 // Inicializa a extração de dados
 function iniciarListenersFirestore() {
-    if(isVitrine) return;
+    
+    // =====================================
+    // MODO VITRINE: TRAVA DE SEGURANÇA
+    // =====================================
+    if(isVitrine) {
+        // Se for o cliente abrindo a Vitrine, só puxa as estampas e para por aqui!
+        db.collection("estampas").onSnapshot(snap => { 
+            catalogoEstampas = {}; 
+            snap.forEach(doc => { let d = doc.data(); d.id = doc.id; catalogoEstampas[d.codigo] = d; }); 
+            if(typeof renderizarCatalogo === 'function') renderizarCatalogo(); 
+        });
+        return; // Impede o cliente de baixar Caixa, Pedidos e CRM!
+    }
+    // =====================================
 
     db.collection("despesas").onSnapshot(snap => { 
         despesasGlobais = []; 
@@ -162,7 +176,6 @@ function iniciarListenersFirestore() {
         catalogoEstampas = {}; 
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; catalogoEstampas[d.codigo] = d; }); 
         if(typeof renderizarCatalogo === 'function') renderizarCatalogo(); 
-        // AQUI ESTÁ A MÁGICA QUE CARREGA AS TUAS SUGESTÕES DE AUTOCOMPLETAR
         if(typeof atualizarListasDeSugestaoEstampas === 'function') atualizarListasDeSugestaoEstampas();
     });
 
