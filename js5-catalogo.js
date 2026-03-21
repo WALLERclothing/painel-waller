@@ -561,41 +561,69 @@ function renderizarItensVitrine() {
     totalEl.innerText = formatCurrency(total);
 }
 
-function enviarPedidoWhatsApp() {
+function transferirVitrineParaPDV() {
     if(carrinhoVitrine.length === 0) {
-        showToast("Teu carrinho tá vazio!", true);
-        return;
-    }
-    let nome = document.getElementById('vitrineNomeCliente').value.trim();
-    if(!nome) {
-        showToast("Digita teu nome pra gente saber quem é!", true);
+        showToast("Nenhuma peça selecionada!", true);
         return;
     }
 
-    // ⚠️ ATENÇÃO WALLER: TROQUE ESSE NÚMERO PELO SEU WHATSAPP REAL DA LOJA!
-    let numeroLoja = "5511948434639"; 
-
-    let texto = `Fala Waller! 💀\nAqui é o/a *${nome}* e acabei de montar meu carrinho na vitrine:\n\n`;
-    let total = 0;
-    
-    // Conta quantas unidades de cada peça tem para agrupar no texto
+    // Agrupa itens repetidos antes de mandar pro PDV (ex: clicou 3x no mesmo M)
     let itensAgrupados = {};
-    carrinhoVitrine.forEach(i => {
-        total += i.preco;
-        let chave = `${i.sku}-${i.tam}`;
-        if(!itensAgrupados[chave]) itensAgrupados[chave] = { ...i, qtd: 1 };
-        else itensAgrupados[chave].qtd++;
+    carrinhoVitrine.forEach(item => {
+        let chave = `${item.sku}-${item.tam}`;
+        if(itensAgrupados[chave]) {
+            itensAgrupados[chave].quantidade++;
+        } else {
+            let p = catalogoEstampas[item.sku];
+            
+            // Tenta descobrir o tipo da peça pela categoria pra poupar teu tempo
+            let tipoDescoberto = 'OVERSIZED';
+            if (p && p.categoria) {
+                let catUp = p.categoria.toUpperCase();
+                if(catUp.includes('MOLETOM')) tipoDescoberto = 'MOLETOM';
+                else if(catUp.includes('REGATA')) tipoDescoberto = 'REGATA';
+                else if(catUp.includes('TRADICIONAL') || catUp.includes('CAMISETA')) tipoDescoberto = 'CAMISETA TRADICIONAL';
+            }
+
+            itensAgrupados[chave] = {
+                codigoEstampa: item.sku,
+                nomeEstampa: item.nome,
+                tipoPeca: tipoDescoberto,
+                tamanho: item.tam,
+                cor: 'PRETA', // Cor padrão, podes alterar lá no Caixa se precisar
+                quantidade: 1,
+                valorUnitario: item.preco,
+                custoUnitario: p ? safeNum(p.custo) : 0
+            };
+        }
     });
 
+    // Joga os itens agrupados pro carrinho oficial do PDV
     Object.values(itensAgrupados).forEach(i => {
-        texto += `🛒 ${i.qtd}x ${i.nome} (Tam: ${i.tam}) - SKU: ${i.sku}\n`;
+        carrinhoTemporario.push(i);
     });
-    
-    texto += `\n*TOTAL: ${formatCurrency(total)}*\n\nComo fazemos pra fechar o pedido e o frete? 👊`;
 
-    let url = `https://wa.me/${numeroLoja}?text=${encodeURIComponent(texto)}`;
-    window.open(url, '_blank');
+    // Limpa a vitrine para a próxima venda
+    carrinhoVitrine = [];
+    atualizarBadgeVitrine();
+    fecharCarrinhoVitrine();
+
+    // A MÁGICA ACONTECE AQUI:
+    // 1. Limpa o "?vitrine=true" da URL sem recarregar a página (para não perder o carrinho)
+    window.history.pushState({}, document.title, window.location.pathname);
+    
+    // 2. Acorda o ERP (Mostra a navbar e os menus que a vitrine escondeu)
+    let nav = document.getElementById('mainNavbar'); if(nav) nav.style.display = 'flex';
+    let tabs = document.getElementById('mainTabMenu'); if(tabs) tabs.style.display = 'flex';
+    let btnCart = document.getElementById('btnCarrinhoVitrine'); if (btnCart) btnCart.style.display = 'none';
+    
+    // 3. Troca automaticamente para a aba do Caixa e atualiza os valores!
+    if(typeof mudarAba === 'function') mudarAba('cadastro');
+    if(typeof atualizarTelaCarrinho === 'function') atualizarTelaCarrinho();
+
+    showToast("Peças transferidas pro Caixa! Finalize a venda. 💀💸");
 }
+
 // ==========================================
 // DESCARREGAR ETIQUETA VISUAL EM PNG (QR CODE PURO + TEXTOS LATERAIS)
 // ==========================================
