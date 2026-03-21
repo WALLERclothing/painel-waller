@@ -201,7 +201,9 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap:10px;">
             <h2 class="card-title" style="margin: 0;" id="tituloPaginaCatalogo">Catálogo e Estoque</h2>
             <div style="display:flex; gap:10px;" id="acoesAdminCatalogo">
-                <button class="btn-nav" style="border-color:var(--black); color:var(--green); font-weight:900;" onclick="copiarLinkVitrine()">🔗 LINK DA VITRINE</button>
+                <button class="btn-nav" style="border-color:var(--black); color:var(--green); font-weight:900;" onclick="copiarLinkVitrine(true)">🔗 VITRINE (SÓ ESTOQUE)</button>
+                <button class="btn-nav" style="border-color:var(--black); color:var(--black);" onclick="copiarLinkVitrine(false)">🔗 VITRINE (COMPLETA)</button>
+                
                 <button class="btn-nav" style="border-color:var(--black); color:var(--black);" onclick="abrirBalancoMassa()">📋 BALANÇO RÁPIDO</button>
                 <button class="btn-nav" style="background:var(--gray); border-color:var(--black); color:var(--black);" onclick="gerarRelatorioEstoquePDF()">📄 PDF ESTOQUE</button>
                 <button class="btn-primary" style="width: auto; margin: 0; padding: 0.8rem 1.5rem;" onclick="abrirModalEstampa()">+ NOVO PRODUTO</button>
