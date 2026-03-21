@@ -507,3 +507,86 @@ async function baixarQRPng(codigo, tamanho) {
         console.error(error);
     }
 }
+
+// ==========================================
+// GERAR RELATÓRIO DE ESTOQUE EM PDF
+// ==========================================
+function gerarRelatorioEstoquePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4'); 
+
+    // Título Brutalista
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("RAIO-X DE ESTOQUE | WALLER CLOTHING", 40, 40);
+
+    // Subtítulo / Data
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, 60);
+
+    let tableData = [];
+    let totalPecasGeral = 0;
+
+    // Filtra produtos ativos e ordena pelo SKU
+    let produtos = Object.values(catalogoEstampas).filter(p => !p.apagado);
+    produtos.sort((a, b) => {
+        let codA = (a.codigo || '').toString().toUpperCase();
+        let codB = (b.codigo || '').toString().toUpperCase();
+        return codA.localeCompare(codB);
+    });
+
+    // Monta as linhas da tabela
+    produtos.forEach(p => {
+        let estq = p.estoqueGrade || p.estoque || {P:0, M:0, G:0, GG:0};
+        let pQtd = parseInt(estq.P || 0);
+        let mQtd = parseInt(estq.M || 0);
+        let gQtd = parseInt(estq.G || 0);
+        let ggQtd = parseInt(estq.GG || 0);
+        
+        let totalProduto = pQtd + mQtd + gQtd + ggQtd;
+        totalPecasGeral += totalProduto;
+
+        tableData.push([
+            p.codigo || '-',
+            (p.categoria || 'GERAL').toUpperCase(),
+            (p.nome || '').toUpperCase(),
+            pQtd.toString(),
+            mQtd.toString(),
+            gQtd.toString(),
+            ggQtd.toString(),
+            totalProduto.toString()
+        ]);
+    });
+
+    // Desenha a Tabela
+    doc.autoTable({
+        startY: 80,
+        head: [['SKU', 'CATEGORIA', 'PRODUTO', 'P', 'M', 'G', 'GG', 'TOTAL']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [17, 17, 17], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: {
+            0: { cellWidth: 60, fontStyle: 'bold' }, 
+            1: { cellWidth: 80 }, 
+            2: { cellWidth: 'auto' }, 
+            3: { halign: 'center', cellWidth: 30 }, 
+            4: { halign: 'center', cellWidth: 30 }, 
+            5: { halign: 'center', cellWidth: 30 }, 
+            6: { halign: 'center', cellWidth: 30 }, 
+            7: { halign: 'center', fontStyle: 'bold', cellWidth: 40, textColor: [193, 18, 31] } 
+        }
+    });
+
+    // Rodapé com Resumo
+    let finalY = doc.lastAutoTable.finalY || 80;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(`TOTAL DE PECAS NO ESTOQUE: ${totalPecasGeral} UNIDADES`, 40, finalY + 30);
+
+    // Download
+    let nomeArquivo = `Waller_Estoque_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+    showToast("Relatório de Estoque baixado com sucesso! 💀📄");
+}
